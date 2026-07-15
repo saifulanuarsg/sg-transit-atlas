@@ -347,7 +347,7 @@ function buildBus(){
       groups.trunk.addLayer(s._jump);
     }
   });
-  groups.trunk.addTo(map);
+  // trunk buses off by default (opt-in via the toggle)
 }
 
 // ---------------- POIs (footprint polygon where OSM has one, else a dot) -----
@@ -380,7 +380,7 @@ function buildRailLines(){
       groups.rail.addLayer(layer);S.railLayers.push(layer);
     });
   });
-  groups.rail.addTo(map);   // rail always visible; the legend controls focus
+  // rail off by default (opt-in via the toggle; legend controls focus)
 }
 // isolate one line (its stations appear, others desaturate) — null = show all, no stations
 function setActiveLine(code){
@@ -425,7 +425,7 @@ function updateRailLegend(){
   const all=host.querySelector('.rl-all');if(all)all.classList.toggle('on',!S.activeLine);
 }
 // master show/hide for the whole rail layer (legend below controls focus)
-S.railOn=true;
+S.railOn=false;
 function setRailVisible(on){
   S.railOn=on;
   if(on){groups.rail.addTo(map);
@@ -453,7 +453,7 @@ function buildHubs(){
       weight:2,fillColor:'#fff',fillOpacity:1}));
     groups.hubs.addLayer(labelMarker(lat,lng,label,'hublab'));
   });
-  groups.hubs.addTo(map);          // hubs on by default (zoom-gated)
+  // hubs off by default (opt-in via the toggle)
 }
 function buildStations(){
   S.stationItems=[];
@@ -497,19 +497,19 @@ function buildPanel(){
   const nt=$('netToggles');
   const all=Object.values(S.svcs);
   const nTr=all.filter(s=>!s.feeder).length, nFd=all.filter(s=>s.feeder).length;
-  const r1=toggleRow('Trunk bus services',groups.trunk,true,'<span class="dot" style="background:#64748b"></span>');
+  const r1=toggleRow('Trunk bus services',groups.trunk,false,'<span class="dot" style="background:#64748b"></span>');
   r1.querySelector('.cnt').textContent=nTr;
   r1.title='Main cross-town routes (the drawn network)';   // plain-language help (#2/#10)
   nt.appendChild(r1);
-  const rH=toggleRow('Bus hubs',groups.hubs,true,'<span class="dot" style="background:#fff;border:2px solid #1e3a8a"></span>');
+  const rH=toggleRow('Bus hubs',groups.hubs,false,'<span class="dot" style="background:#fff;border:2px solid #1e3a8a"></span>');
   rH.querySelector('.cnt').textContent=groups.hubs.getLayers().length/2;
   rH.title='Bus interchanges & terminals';
   nt.appendChild(rH);
   // master on/off for rail lines (the legend below controls per-line focus)
   if(S.railLines&&S.railLines.length){
-    S.railOn=true;
+    S.railOn=false;   // rail off by default (opt-in)
     const rR=document.createElement('div');
-    rR.className='row on';rR.setAttribute('role','switch');rR.setAttribute('aria-checked','true');
+    rR.className='row';rR.setAttribute('role','switch');rR.setAttribute('aria-checked','false');
     rR.setAttribute('aria-label','MRT / LRT lines');rR.tabIndex=0;
     rR.innerHTML='<span class="dot" style="background:linear-gradient(90deg,#d42e12,#009645,#9900aa,#fa9e0d)"></span>'
       +'<span>MRT / LRT lines</span><span class="cnt">'+S.railLines.length+'</span><span class="track"></span>';
@@ -523,6 +523,8 @@ function buildPanel(){
     +`Hub & station labels appear as you zoom in.`;
   nt.appendChild(fnote);
   buildRailLegend();
+  if(!S.railOn){$('railLegend').classList.add('rail-off');
+    const rs=$('railSub');if(rs)rs.classList.add('rail-off');}
   map.whenReady(gateLabels);
 
   const pt=$('poiToggles');
@@ -804,8 +806,8 @@ function renderSelection(opt){
   const c=$('selcard');
   if(!S.selected.length){   // empty state doubles as onboarding help (heuristic #10)
     c.classList.add('show');
-    c.innerHTML='<div class="sel-empty">Tap a bus route on the map, or search a service, '
-      +'to see its stops and nearby places. Select several to compare their coverage.</div>';
+    c.innerHTML='<div class="sel-empty">Switch on a layer below, or search a bus service, to begin. '
+      +'Tap a route for its stops, nearby places and audience — pick several to compare coverage.</div>';
     return;
   }
   const sel=S.selected.map(n=>S.svcs[n]);
