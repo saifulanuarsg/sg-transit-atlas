@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Singapore Transit Atlas</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  :root{
+    --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --bg:#f8fafc;
+    --primary:#1e40af; --primary-soft:#eef2fb; --accent:#d97706;
+    --panel-w:372px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:system-ui,"Inter",-apple-system,sans-serif;font-size:14px}
+  #app{display:flex;height:100vh;overflow:hidden}
+  #map{flex:1;min-width:0;background:#e8ecef}
+  .leaflet-container{font:inherit}
+
+  /* ---------- panel ---------- */
+  #panel{width:var(--panel-w);flex:none;background:#fff;border-left:1px solid var(--line);
+    display:flex;flex-direction:column;overflow:hidden}
+  .p-head{padding:14px 16px 12px;border-bottom:1px solid var(--line)}
+  .p-head h1{margin:0;font-size:15px;font-weight:800;letter-spacing:.2px}
+  .p-head .sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .ph-row{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+  .export{display:flex;gap:6px;flex:none}
+  .exp-btn{font:700 11px/1 system-ui;color:var(--primary);background:var(--primary-soft);
+    border:1px solid #c9d4ee;border-radius:7px;padding:6px 9px;cursor:pointer}
+  .exp-btn:hover{background:#e3eafb}
+  .exp-btn:disabled{opacity:.6;cursor:progress}
+  .exp-btn:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
+  .searchwrap{position:relative;padding:10px 16px;border-bottom:1px solid var(--line)}
+  #search{width:100%;font:500 13px/1 system-ui;padding:9px 12px;border:1px solid var(--line);
+    border-radius:8px;outline:none;background:var(--bg)}
+  #search:focus{border-color:var(--primary);background:#fff}
+  #results{position:absolute;left:16px;right:16px;top:100%;margin-top:-6px;z-index:1200;
+    background:#fff;border:1px solid var(--line);border-radius:8px;
+    box-shadow:0 8px 24px rgba(15,23,42,.12);max-height:260px;overflow-y:auto;display:none}
+  .res{display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer;font-size:13px}
+  .res:hover{background:var(--primary-soft)}
+  .res .tag{font:700 10px/1 system-ui;padding:3px 7px;border-radius:5px;flex:none;
+    background:#e2e8f0;color:#475569;text-transform:uppercase;letter-spacing:.4px}
+  .res .tag.svc{background:#dbeafe;color:var(--primary)}
+  .res .rn{font-weight:700;min-width:34px}
+  .res .rd{color:var(--muted);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  #body{flex:1;overflow-y:auto}
+  .sec{padding:12px 16px;border-bottom:1px solid var(--line)}
+  .sec-lab{font:700 10px/1 system-ui;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.7px;margin-bottom:9px;display:flex;align-items:center;gap:6px}
+  .row{display:flex;align-items:center;gap:10px;padding:5px 0;cursor:pointer;user-select:none;
+    font:600 13px/1.2 system-ui}
+  .row .cnt{color:var(--muted);font-weight:500;margin-left:auto;font-size:12px}
+  .row.dis{opacity:.45;cursor:default}
+  .row:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:6px}
+  .dot{width:11px;height:11px;border-radius:3px;flex:none}
+  .track{width:32px;height:19px;border-radius:999px;background:#cbd5e1;position:relative;
+    transition:.15s;flex:none}
+  .track::after{content:"";position:absolute;top:2.5px;left:2.5px;width:14px;height:14px;
+    border-radius:50%;background:#fff;transition:.15s;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+  .row.on .track{background:var(--primary)}
+  .row.on .track::after{transform:translateX(13px)}
+  select{font:600 12.5px/1 system-ui;padding:7px 10px;border:1px solid var(--line);
+    border-radius:8px;background:#fff;color:var(--ink);width:100%;cursor:pointer}
+  .note{font-size:11px;color:var(--muted);line-height:1.45;margin-top:7px}
+  .legend{display:flex;margin-top:9px;border-radius:6px;overflow:hidden;border:1px solid var(--line)}
+  .legend div{flex:1;height:10px}
+  .legend-lab{display:flex;justify-content:space-between;font:500 10px/1 system-ui;
+    color:var(--muted);margin-top:4px}
+
+  /* ---------- selection card ---------- */
+  #selcard{display:none}
+  #selcard.show{display:block}
+  .card-top{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+  .badge{background:var(--primary);color:#fff;font:800 15px/1 system-ui;padding:7px 12px;
+    border-radius:999px;min-width:36px;text-align:center}
+  .badge.area{background:var(--accent);border-radius:9px;font-size:13px;padding:8px 12px}
+  .card-name{font:700 13.5px/1.3 system-ui;flex:1}
+  .chip{font:700 9.5px/1 system-ui;padding:4px 7px;border-radius:5px;text-transform:uppercase;
+    letter-spacing:.4px;flex:none}
+  .chip.trunk{background:#dcfce7;color:#166534}
+  .chip.feeder{background:#fef3c7;color:#92400e}
+  .xbtn{margin-left:auto;flex:none;border:1px solid var(--line);background:#fff;color:var(--muted);
+    width:26px;height:26px;border-radius:7px;cursor:pointer;font-size:14px;line-height:1}
+  .xbtn:hover{background:var(--bg);color:var(--ink)}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:11px 0}
+  .stat{background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px 11px}
+  .stat .v{font:800 17px/1 system-ui;color:var(--primary);font-variant-numeric:tabular-nums}
+  .stat .k{font:600 9.5px/1.2 system-ui;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.4px;margin-top:4px}
+  .subhead{font:700 11px/1 system-ui;color:var(--ink);margin:13px 0 7px}
+  .agebar{display:flex;height:14px;border-radius:6px;overflow:hidden;border:1px solid var(--line)}
+  .agebar div{height:100%}
+  .agekey{display:flex;gap:12px;font:500 10.5px/1 system-ui;color:var(--muted);margin-top:6px;
+    flex-wrap:wrap}
+  .agekey i{width:8px;height:8px;border-radius:2px;display:inline-block;margin-right:4px}
+  .chips{display:flex;flex-wrap:wrap;gap:5px}
+  .achip{font:600 11px/1 system-ui;background:var(--bg);border:1px solid var(--line);
+    border-radius:6px;padding:5px 8px;cursor:pointer;color:#334155}
+  .achip:hover{border-color:var(--primary);color:var(--primary)}
+  .selchip{display:inline-flex;align-items:center;gap:6px}
+  .selchip .cdot{width:9px;height:9px;border-radius:50%;flex:none}
+  .selchip .x{color:var(--muted);font-size:10px;margin-left:2px}
+  .selchip:hover{border-color:var(--destructive);color:var(--destructive)}
+  .selchip:hover .x{color:var(--destructive)}
+  .poirow{display:flex;align-items:center;gap:8px;padding:4px 0;font:500 12.5px/1 system-ui}
+  .poirow .n{margin-left:auto;font-weight:800;font-variant-numeric:tabular-nums}
+  .poirow .n small{font-weight:600;color:var(--muted);font-size:10px}
+  details.more{margin-top:8px}
+  details.more summary{cursor:pointer;font:600 11.5px/1 system-ui;color:var(--primary)}
+  .placeholder{color:var(--muted);font-size:12px;line-height:1.5;padding:2px 0}
+  .sel-empty{font:500 12px/1.5 system-ui;color:var(--muted);padding:2px 0}
+
+  /* ---------- rail line legend (per-line focus) ---------- */
+  .sub-lab{font:700 10px/1 system-ui;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.6px;margin:12px 0 7px;display:flex;align-items:baseline;gap:8px}
+  .hint-txt{font:500 10px/1 system-ui;color:#94a3b8;text-transform:none;letter-spacing:0}
+  #railLegend{display:flex;flex-direction:column;gap:1px}
+  #railLegend.rail-off{opacity:.4;pointer-events:none}
+  .sub-lab.rail-off{opacity:.5}
+  .rl-all{align-self:flex-start;margin-bottom:5px;font:600 11px/1 system-ui;color:var(--muted);
+    background:none;border:1px solid var(--line);border-radius:7px;padding:5px 10px;cursor:pointer}
+  .rl-all.on{background:var(--primary);border-color:var(--primary);color:#fff}
+  .rl-all:not(.on):hover{background:var(--bg);color:var(--ink)}
+  .rl-row{display:flex;align-items:center;gap:10px;width:100%;text-align:left;cursor:pointer;
+    background:none;border:none;border-radius:8px;padding:7px 8px;font:inherit;color:var(--ink)}
+  .rl-row:hover{background:var(--bg)}
+  .rl-row .rl-bar{width:16px;height:5px;border-radius:3px;flex:none;transition:height .12s}
+  .rl-row .rl-name{flex:1;font:600 12.5px/1.2 system-ui;white-space:nowrap;overflow:hidden;
+    text-overflow:ellipsis}
+  .rl-row .rl-cnt{font:700 11.5px/1 system-ui;color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
+  .rl-row.active{background:var(--primary-soft)}
+  .rl-row.active .rl-bar{height:9px}
+  .rl-row.active .rl-name{font-weight:800}
+  .rl-row.active .rl-cnt{color:var(--primary)}
+  .rl-row:focus-visible,.rl-all:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
+
+  /* ---------- reach ranking ---------- */
+  #rankList{margin-top:2px}
+  .rrow{display:flex;align-items:center;gap:8px;padding:7px 0;cursor:pointer;
+    border-bottom:1px solid #f1f5f9}
+  .rrow:hover{background:var(--bg)}
+  .rrow .rk{font:700 11px/1 system-ui;color:var(--muted);width:18px;text-align:right;flex:none}
+  .rrow .rbadge{font:800 12px/1 system-ui;color:#fff;background:var(--primary);
+    border-radius:999px;padding:5px 8px;min-width:30px;text-align:center;flex:none}
+  .rmid{flex:1;min-width:0}
+  .rtop{display:flex;align-items:center;gap:8px}
+  .rnm{flex:1;font:500 11px/1.3 system-ui;color:var(--muted);white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis}
+  .rct{font:800 13px/1 system-ui;font-variant-numeric:tabular-nums;flex:none}
+  .rbar-wrap{height:4px;background:var(--line);border-radius:2px;margin-top:4px;overflow:hidden}
+  .rbar{height:100%;border-radius:2px}
+
+  /* ---------- footer ---------- */
+  #foot{border-top:1px solid var(--line);background:#fbfcfd;padding:9px 16px;font:500 10.5px/1.5 system-ui;
+    color:var(--muted)}
+  #foot summary{cursor:pointer;font-weight:700;color:#475569}
+  #foot ul{margin:6px 0 0;padding-left:16px}
+  #foot li{margin:2px 0}
+
+  /* ---------- map extras ---------- */
+  .rpill{background:#d97706;color:#fff;font:800 12px/1 system-ui;padding:5px 10px;
+    border-radius:999px;border:2px solid #fff;box-shadow:0 1px 4px rgba(15,23,42,.35);
+    white-space:nowrap;display:inline-block;transform:translate(-50%,-50%)}
+  .hublab{position:absolute;transform:translate(8px,-50%);white-space:nowrap;
+    font:700 11px/1 system-ui;color:#1e3a8a;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff;
+    transition:opacity .1s}
+  .stnlab{position:absolute;transform:translate(6px,-50%);white-space:nowrap;
+    font:600 10px/1 system-ui;color:#0f766e;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff;
+    transition:opacity .1s}
+
+  #loading{position:absolute;inset:0;z-index:2000;background:rgba(248,250,252,.9);
+    display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+  .spin{width:30px;height:30px;border:3px solid var(--line);border-top-color:var(--primary);
+    border-radius:50%;animation:sp 0.8s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  @media(prefers-reduced-motion:reduce){.spin{animation-duration:2s}}
+  @media(max-width:760px){
+    #app{flex-direction:column;height:auto;overflow:visible}
+    #map{flex:0 0 56vh;height:56vh}
+    #panel{width:auto;border-left:none;border-top:1px solid var(--line)}
+    #body{overflow:visible}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="map"></div>
+  <aside id="panel">
+    <div class="p-head">
+      <div class="ph-row">
+        <div><h1>Singapore Transit Atlas</h1>
+          <div class="sub">Trunk bus network &middot; stops &middot; places</div></div>
+        <div class="export">
+          <button id="expJpg" class="exp-btn" title="Download the current map as an image">JPG</button>
+          <button id="expPpt" class="exp-btn" title="Download the current map as a PowerPoint slide">PPTX</button>
+        </div>
+      </div>
+    </div>
+    <div class="searchwrap">
+      <input id="search" placeholder="Search a bus service…" autocomplete="off"
+        aria-label="Search a bus service">
+      <div id="results"></div>
+    </div>
+    <div id="body">
+      <div class="sec" id="selcard"></div>
+      <div class="sec">
+        <div class="sec-lab">Transit network</div>
+        <div id="netToggles"></div>
+        <div class="sub-lab" id="railSub">Rail lines <span class="hint-txt">tap a line to focus its stations</span></div>
+        <div id="railLegend"></div>
+      </div>
+      <div class="sec">
+        <div class="sec-lab">Places &amp; landmarks</div>
+        <div id="poiToggles"></div>
+      </div>
+      <div class="sec">
+        <div class="sec-lab">Reach ranking</div>
+        <select id="rankSel" aria-label="Rank trunk routes by reach">
+          <option value="">Rank trunk routes by…</option>
+        </select>
+        <div id="rankNote" class="note" style="display:none">
+          Trunk routes ranked by places within 400 m of their stops. Feeders excluded.</div>
+        <div id="rankList"></div>
+      </div>
+      <div class="sec">
+        <div class="sec-lab">Demographics</div>
+        <div id="demoToggle"></div>
+      </div>
+    </div>
+    <details id="foot">
+      <summary>Data sources &amp; method</summary>
+      <ul id="srcList">
+        <li><b>Bus network</b> — LTA stop &amp; route data; road-aligned via OSRM. Feeders (span &lt; 6 km) are searchable but not drawn. Dashed = express legs (no stops between).</li>
+        <li><b>Schools</b> (337) — MOE school directory, geocoded via OneMap; footprints from OpenStreetMap.</li>
+        <li><b>IHLs</b> (16) — curated list (universities, polytechnics, ITE, arts); campus boundaries from OpenStreetMap / Nominatim.</li>
+        <li><b>Shopping malls</b> (237) — OpenStreetMap <code>shop=mall</code>, non-malls filtered out.</li>
+        <li><b>Supermarkets</b> (532) — OpenStreetMap <code>shop=supermarket</code>, minimarts excluded.</li>
+        <li><b>Police</b> (118) — OpenStreetMap <code>amenity=police</code> (SPF centres, posts, HQs, Coast Guard); non-SPF removed.</li>
+        <li><b>Bus hubs</b> (54) — interchanges &amp; terminals derived from LTA stop names. <b>MRT/LRT lines &amp; stations</b> (8 lines, 182 stations) — OpenStreetMap; stations filtered to those on a drawn line (future CRL/RTS-Link stations omitted). Labels appear as you zoom in.</li>
+        <li><b>Audience</b> — modelled opportunities-to-see = passenger taps (LTA DataMall, Passenger Volume by Bus Stops, Jun 2026) × catchment segment share (SingStat Census 2020: residents by planning area &amp; age; households by income). Planning areas: URA Master Plan 2019. Every figure is aggregate and modelled, not panel-measured; no individual-level data (PDPA).</li>
+        <li>Places shown as areas where they span 2+ buildings, else as points. Within-400 m counts use footprints. All layers clipped to the Singapore boundary. Data compiled Jul 2026.</li>
+        <li>Basemap © OpenStreetMap contributors © CARTO.</li>
+      </ul>
+    </details>
+  </aside>
+</div>
+<div id="loading"><div class="spin"></div><div style="font:600 13px system-ui;color:#475569">Loading network…</div></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const fmt=n=>Math.round(n).toLocaleString('en-SG');
+const AGE_C={youth:'#60a5fa',working:'#1e40af',senior:'#d97706'};
+const CHORO_C=['#eff6ff','#bfdbfe','#60a5fa','#2563eb','#1e3a8a'];
+// distinct colours for multi-route selection (dark enough for white pill text)
+const SELP=['#d97706','#2563eb','#7c3aed','#16a34a','#db2777','#0891b2','#dc2626','#ca8a04'];
+const FEATURES={demographics:false};   // flipped on when planning-area data is present
+
+// ---------------- map ----------------
+const map=L.map('map',{zoomControl:false}).setView([1.352,103.82],12);
+L.control.zoom({position:'bottomright'}).addTo(map);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
+  attribution:'&copy; OpenStreetMap contributors &copy; CARTO',maxZoom:19,
+  crossOrigin:'anonymous'}).addTo(map);   // enables canvas export of the basemap
+['areas','bus','poi'].forEach((p,i)=>{map.createPane(p).style.zIndex=380+i*20;});
+map.createPane('rail').style.zIndex=410;   // coloured rail lines over the grey bus base
+map.createPane('sel').style.zIndex=470;
+map.createPane('pill').style.zIndex=490;   // route pills sit above their lines
+map.createPane('label').style.zIndex=495;  // hub / station reference labels on top
+map.getPane('label').style.pointerEvents='none';
+const rBus=L.canvas({pane:'bus',padding:.4}), rPoi=L.canvas({pane:'poi',padding:.4}),
+      rRail=L.canvas({pane:'rail',padding:.4});
+
+// ---------------- state ----------------
+const POI=[
+  {key:'schools',label:'Schools',color:'#7c3aed',file:'data/poi_schools.json'},
+  {key:'ihl',label:'IHLs (universities, polys, ITE)',color:'#0891b2',file:'data/poi_ihl.json'},
+  {key:'malls',label:'Shopping malls',color:'#db2777',file:'data/poi_malls.json'},
+  {key:'supermarkets',label:'Supermarkets',color:'#16a34a',file:'data/poi_supermarkets.json'},
+  {key:'police',label:'Police (stations & posts)',color:'#2563eb',file:'data/poi_police.json'},
+];
+const S={svcs:{},stops:{},areas:null,pois:{},
+  stopArea:{},areaStats:{},selected:[],selLayers:[],_areaLayer:null,
+  railLayers:[],stationItems:[],activeLine:null};
+const isSel=n=>S.selected.includes(n);
+const RAIL_NAME={EWL:'East–West Line',NSL:'North–South Line',NEL:'North East Line',
+  CCL:'Circle Line',DTL:'Downtown Line',TEL:'Thomson–East Coast Line',
+  SKLRT:'Sengkang LRT',JRL:'Jurong Region Line (future)'};
+const groups={trunk:L.layerGroup(),rail:L.layerGroup(),hubs:L.layerGroup(),stations:L.layerGroup()};
+POI.forEach(p=>groups[p.key]=L.layerGroup());
+const busStyle=()=>({color:'#64748b',weight:1.8,opacity:.55});
+
+// ---------------- data load ----------------
+// revalidate on load so refreshed data files are picked up (not served stale from cache)
+const get=u=>fetch(u,{cache:'no-cache'}).then(r=>r.ok?r.json():Promise.reject(u)).catch(()=>null);
+Promise.all([
+  get('data/network.json'),get('data/stops.json'),get('data/rail_stations.json'),
+  get('data/rail_lines.json'),get('data/planning_areas.geojson'),
+  get('data/stop_area.json'),get('data/stop_volume.json'),
+  ...POI.map(p=>get(p.file))
+]).then(([net,stops,stations,railLines,areas,stopArea,stopVol,...pois])=>{
+  S.stops=stops||{};S.stations=stations||[];S.railLines=railLines||[];
+  S.areas=areas;S.stopArea=stopArea||{};S.stopVol=stopVol||{};
+  if(areas){FEATURES.demographics=true;
+    S.areaProps={};areas.features.forEach(f=>S.areaProps[f.properties.name]=f.properties);
+    S.baseline=(areas.meta||{}).baseline||{};}
+  (net?net.services:[]).forEach(s=>S.svcs[s.n]=s);
+  POI.forEach((p,i)=>S.pois[p.key]=pois[i]);
+  buildBus();buildRailLines();buildPois();buildHubs();buildStations();buildAreas();buildPanel();
+  renderSelection();   // show the empty-state onboarding hint
+  gateLabels();map.on('zoomend',gateLabels);
+  $('loading').remove();
+});
+
+// ---------------- audience segments (modelled target-audience impressions) ----
+// impressions(segment) = passenger_volume(stop) x segment_share(catchment area)
+const SEG=[
+  {key:'all',     label:'All commuters',           prop:null},
+  {key:'affluent',label:'Affluent (≥$10k/mth)', prop:'share_affluent'},
+  {key:'family',  label:'Families (children)',      prop:'share_family'},
+  {key:'senior',  label:'Seniors (65+)',            prop:'share_senior'},
+  {key:'youth',   label:'Students & youth (15–24)',prop:'share_youth'},
+];
+S.segment='none';   // active choropleth segment (none = no shading by default)
+
+// ---------------- bus network (trunk services only; feeders stay searchable) --
+const toLL=seg=>seg.map(p=>[p[1],p[0]]);
+function buildBus(){
+  Object.values(S.svcs).forEach(s=>{
+    if(s.feeder)return;                    // feeders: no layer, selectable on demand
+    const line=L.polyline(s.segs.map(toLL),{...busStyle(),renderer:rBus,interactive:true});
+    line.on('click',e=>{L.DomEvent.stop(e);toggleRoute(s.n);});
+    line.on('mouseover',function(){if(!isSel(s.n)){this.setStyle({weight:3,opacity:.9,color:'#334155'});
+      this.bindTooltip(`<b>${s.n}</b> ${s.name}`,{sticky:true}).openTooltip();}});
+    line.on('mouseout',function(){if(!isSel(s.n))this.setStyle(busStyle());});
+    s._line=line;
+    groups.trunk.addLayer(line);
+    if(s.jumps.length){ // chord-fallback express legs while road alignment builds
+      s._jump=L.polyline(s.jumps.map(toLL),{renderer:rBus,color:'#94a3b8',weight:.9,
+        opacity:.28,dashArray:'2 7',interactive:false});
+      groups.trunk.addLayer(s._jump);
+    }
+  });
+  groups.trunk.addTo(map);
+}
+
+// ---------------- POIs (footprint polygon where OSM has one, else a dot) -----
+function poiTip(p){return p.kind?`<b>${p.name}</b> · ${p.kind}`:p.name;}
+function poiLayer(p,color){
+  const tip=poiTip(p);
+  if(p.poly&&p.poly.length){
+    const shells=p.poly.map(r=>[r.map(c=>[c[1],c[0]])]); // each ring its own shell
+    return L.polygon(shells,{renderer:rPoi,color:color,weight:1.2,opacity:.9,
+      fillColor:color,fillOpacity:.28}).bindTooltip(tip);
+  }
+  return L.circleMarker([p.lat,p.lng],{renderer:rPoi,radius:3,color:'#fff',weight:1,
+    fillColor:color,fillOpacity:.92}).bindTooltip(tip);
+}
+function buildPois(){
+  POI.forEach(cfg=>{
+    (S.pois[cfg.key]||[]).forEach(p=>groups[cfg.key].addLayer(poiLayer(p,cfg.color)));
+  });
+}
+
+// ---------------- rail lines in official colours, per-line focus ----------------
+function buildRailLines(){
+  S.railLayers=[];
+  (S.railLines||[]).forEach(ln=>{
+    ln.segs.forEach(seg=>{
+      const layer=L.polyline(toLL(seg),{pane:'rail',renderer:rRail,color:ln.color,
+        weight:2.8,opacity:.92,lineCap:'round',lineJoin:'round'})
+        .bindTooltip(RAIL_NAME[ln.code]||ln.name,{sticky:true});
+      layer._code=ln.code;layer._color=ln.color;
+      groups.rail.addLayer(layer);S.railLayers.push(layer);
+    });
+  });
+  groups.rail.addTo(map);   // rail always visible; the legend controls focus
+}
+// isolate one line (its stations appear, others desaturate) — null = show all, no stations
+function setActiveLine(code){
+  if(S.railOn===false)return;   // legend inert while rail is switched off
+  S.activeLine=(S.activeLine===code)?null:code;
+  const a=S.activeLine;
+  S.railLayers.forEach(l=>{
+    if(a===null)l.setStyle({color:l._color,weight:2.8,opacity:.92});
+    else if(l._code===a)l.setStyle({color:l._color,weight:4,opacity:1});
+    else l.setStyle({color:'#c7ccd1',weight:1.3,opacity:.5});   // desaturate non-focused
+  });
+  groups.stations.clearLayers();
+  if(a!==null){
+    S.stationItems.forEach(it=>{if(it.lines.includes(a)){
+      groups.stations.addLayer(it.circle);groups.stations.addLayer(it.label);}});
+    if(!map.hasLayer(groups.stations))groups.stations.addTo(map);
+  }
+  updateRailLegend();gateLabels();
+}
+function buildRailLegend(){
+  const host=$('railLegend');if(!host)return;host.innerHTML='';
+  const all=document.createElement('button');all.className='rl-all';all.type='button';
+  all.textContent='All lines';all.onclick=()=>{if(S.activeLine)setActiveLine(S.activeLine);};
+  host.appendChild(all);
+  (S.railLines||[]).forEach(ln=>{
+    const n=(S.stations||[]).filter(s=>(s.lines||[]).includes(ln.code)).length;
+    const row=document.createElement('button');row.type='button';row.className='rl-row';
+    row.dataset.code=ln.code;row.setAttribute('aria-pressed','false');
+    row.innerHTML=`<span class="rl-bar" style="background:${ln.color}"></span>`
+      +`<span class="rl-name">${RAIL_NAME[ln.code]||ln.name}</span>`
+      +`<span class="rl-cnt">${n}</span>`;
+    row.onclick=()=>setActiveLine(ln.code);
+    host.appendChild(row);
+  });
+  updateRailLegend();
+}
+function updateRailLegend(){
+  const host=$('railLegend');if(!host)return;
+  host.querySelectorAll('.rl-row').forEach(r=>{
+    const on=r.dataset.code===S.activeLine;
+    r.classList.toggle('active',on);r.setAttribute('aria-pressed',String(on));});
+  const all=host.querySelector('.rl-all');if(all)all.classList.toggle('on',!S.activeLine);
+}
+// master show/hide for the whole rail layer (legend below controls focus)
+S.railOn=true;
+function setRailVisible(on){
+  S.railOn=on;
+  if(on){groups.rail.addTo(map);
+    S.railLayers.forEach(l=>l.setStyle({color:l._color,weight:2.8,opacity:.92}));}
+  else{map.removeLayer(groups.rail);map.removeLayer(groups.stations);
+    S.activeLine=null;updateRailLegend();}
+  const host=$('railLegend');if(host)host.classList.toggle('rail-off',!on);
+  const sub=document.getElementById('railSub');if(sub)sub.classList.toggle('rail-off',!on);
+}
+
+// ---------------- reference labels: bus hubs + rail stations ----------------
+function labelMarker(lat,lng,text,cls){
+  return L.marker([lat,lng],{pane:'label',interactive:false,
+    icon:L.divIcon({className:'',html:`<span class="${cls}">${text}</span>`,iconSize:[0,0]})});
+}
+function buildHubs(){
+  const acc={};
+  for(const c in S.stops){const st=S.stops[c],nm=st[2];
+    const m=/^(?!Opp |Aft |Bef |Bet |B4 )(.+? (?:Int|Ter))$/.exec(nm);
+    if(m){(acc[m[1]]=acc[m[1]]||[]).push([st[0],st[1]]);}}
+  Object.entries(acc).forEach(([nm,pts])=>{
+    const lng=pts.reduce((a,p)=>a+p[0],0)/pts.length, lat=pts.reduce((a,p)=>a+p[1],0)/pts.length;
+    const label=nm.replace(/ Int$/,'').replace(/ Ter$/,'');
+    groups.hubs.addLayer(L.circleMarker([lat,lng],{pane:'label',radius:3.4,color:'#1e3a8a',
+      weight:2,fillColor:'#fff',fillOpacity:1}));
+    groups.hubs.addLayer(labelMarker(lat,lng,label,'hublab'));
+  });
+  groups.hubs.addTo(map);          // hubs on by default (zoom-gated)
+}
+function buildStations(){
+  S.stationItems=[];
+  (S.stations||[]).forEach(s=>{
+    const col=s.kind==='LRT'?'#748477':'#0f766e';
+    const circle=L.circleMarker([s.lat,s.lng],{pane:'label',radius:2.8,
+      color:col,weight:1.6,fillColor:'#fff',fillOpacity:1}).bindTooltip(s.name);
+    const label=labelMarker(s.lat,s.lng,s.name,'stnlab');
+    S.stationItems.push({lines:s.lines||[],circle,label});
+  });   // not shown until a rail line is focused
+}
+// reveal reference labels progressively by zoom so the island view stays uncluttered
+const LBL_HUB=13, LBL_STN=15;   // zoom thresholds for hub / station text labels
+function gateLabels(){
+  const z=map.getZoom();
+  map.getPane('label').style.display='';
+  document.querySelectorAll('.hublab').forEach(e=>e.style.opacity=z>=LBL_HUB?1:0);
+  const stnZ=S.activeLine?12:LBL_STN;   // a focused line has few stations — reveal earlier
+  document.querySelectorAll('.stnlab').forEach(e=>e.style.opacity=z>=stnZ?1:0);
+}
+
+// ---------------- panel toggles ----------------
+function toggleRow(label,group,on,extra){
+  const d=document.createElement('div');
+  d.className='row'+(on?' on':'')+(group?'':' dis');
+  d.setAttribute('role','switch');d.setAttribute('aria-label',label);
+  d.setAttribute('aria-checked',String(!!on));
+  d.innerHTML=(extra||'')+`<span>${label}</span><span class="cnt"></span><span class="track"></span>`;
+  if(group){
+    d.tabIndex=0;
+    if(on)group.addTo(map);
+    const flip=()=>{const now=map.hasLayer(group);
+      now?map.removeLayer(group):group.addTo(map);
+      d.classList.toggle('on',!now);d.setAttribute('aria-checked',String(!now));};
+    d.onclick=flip;
+    d.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();flip();}};
+  }else{d.setAttribute('aria-disabled','true');}
+  return d;
+}
+function buildPanel(){
+  const nt=$('netToggles');
+  const all=Object.values(S.svcs);
+  const nTr=all.filter(s=>!s.feeder).length, nFd=all.filter(s=>s.feeder).length;
+  const r1=toggleRow('Trunk bus services',groups.trunk,true,'<span class="dot" style="background:#64748b"></span>');
+  r1.querySelector('.cnt').textContent=nTr;
+  r1.title='Main cross-town routes (the drawn network)';   // plain-language help (#2/#10)
+  nt.appendChild(r1);
+  const rH=toggleRow('Bus hubs',groups.hubs,true,'<span class="dot" style="background:#fff;border:2px solid #1e3a8a"></span>');
+  rH.querySelector('.cnt').textContent=groups.hubs.getLayers().length/2;
+  rH.title='Bus interchanges & terminals';
+  nt.appendChild(rH);
+  // master on/off for rail lines (the legend below controls per-line focus)
+  if(S.railLines&&S.railLines.length){
+    S.railOn=true;
+    const rR=document.createElement('div');
+    rR.className='row on';rR.setAttribute('role','switch');rR.setAttribute('aria-checked','true');
+    rR.setAttribute('aria-label','MRT / LRT lines');rR.tabIndex=0;
+    rR.innerHTML='<span class="dot" style="background:linear-gradient(90deg,#d42e12,#009645,#9900aa,#fa9e0d)"></span>'
+      +'<span>MRT / LRT lines</span><span class="cnt">'+S.railLines.length+'</span><span class="track"></span>';
+    const flip=()=>{setRailVisible(!S.railOn);rR.classList.toggle('on',S.railOn);
+      rR.setAttribute('aria-checked',String(S.railOn));};
+    rR.onclick=flip;rR.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();flip();}};
+    nt.appendChild(rR);
+  }
+  const fnote=document.createElement('div');fnote.className='note';
+  fnote.textContent=`${nFd} feeder / short local services aren't drawn — search to find them. `
+    +`Hub & station labels appear as you zoom in.`;
+  nt.appendChild(fnote);
+  buildRailLegend();
+  map.whenReady(gateLabels);
+
+  const pt=$('poiToggles');
+  POI.forEach(cfg=>{
+    const row=toggleRow(cfg.label,S.pois[cfg.key]?groups[cfg.key]:null,false,
+      `<span class="dot" style="background:${cfg.color}"></span>`);
+    row.querySelector('.cnt').textContent=S.pois[cfg.key]?S.pois[cfg.key].length:'—';
+    pt.appendChild(row);
+  });
+  buildRanking();
+  buildDemographics();
+  buildSearch();
+}
+// Scenario 4 — feature-flagged Demographics layer. Disabled until data is present;
+// FEATURES.demographics flips true when planning-area data loads, enabling the overlay.
+// planning-area polygons — clickable, choropleth-able
+function buildAreas(){
+  if(!S.areas)return;
+  S._areaLayer=L.geoJSON(S.areas,{pane:'areas',
+    style:{color:'#94a3b8',weight:1,opacity:.3,fillColor:'#000',fillOpacity:0},
+    onEachFeature:(f,ly)=>{const p=f.properties;
+      ly.bindTooltip(p.name,{sticky:true});
+      ly.on('click',()=>{if(!p.population){return;}
+        ly.bindPopup(`<b>${p.name}</b><br>${fmt(p.population)} residents · ${p.density}/km²`
+          +`<br>${(p.share_senior*100).toFixed(0)}% seniors · ${(p.share_family*100).toFixed(0)}% children`
+          +(p.income_median?`<br>median income $${fmt(p.income_median)}`:'')).openPopup();});
+    }}).addTo(map);
+}
+function areaMetric(p,seg){
+  if(seg==='none')return null;
+  if(seg==='all')return p.population||null;
+  const cfg=SEG.find(s=>s.key===seg),b=S.baseline[seg];
+  return (cfg&&p[cfg.prop]!=null&&b) ? p[cfg.prop]/b : null;   // index vs national avg
+}
+function paintChoro(seg){
+  const lg=$('choroLegend');if(lg)lg.innerHTML='';
+  if(!S._areaLayer)return;
+  if(seg==='none'){S._areaLayer.setStyle({fillOpacity:0,opacity:.3});return;}
+  const vals=[];S._areaLayer.eachLayer(l=>{const v=areaMetric(l.feature.properties,seg);
+    if(v!=null&&isFinite(v))vals.push(v);});
+  if(!vals.length)return;
+  vals.sort((a,b)=>a-b);
+  const q=i=>vals[Math.min(vals.length-1,Math.floor(i*vals.length/5))],br=[q(1),q(2),q(3),q(4)];
+  S._areaLayer.eachLayer(l=>{const v=areaMetric(l.feature.properties,seg);
+    if(v==null||!isFinite(v)){l.setStyle({fillOpacity:0});return;}
+    let i=0;while(i<4&&v>=br[i])i++;
+    l.setStyle({fillColor:CHORO_C[i],fillOpacity:.55,color:'#64748b',weight:1,opacity:.4});});
+  if(lg){const f=seg==='all'?(v=>Math.round(v/1000)+'k'):(v=>v.toFixed(1)+'×');
+    lg.innerHTML='<div class="legend">'+CHORO_C.map(c=>`<div style="background:${c}"></div>`).join('')+'</div>'
+      +`<div class="legend-lab"><span>${f(vals[0])}</span><span>${seg==='all'?'residents':'index'}</span><span>${f(vals[vals.length-1])}</span></div>`;}
+}
+function buildDemographics(){
+  const host=$('demoToggle');host.innerHTML='';
+  if(!FEATURES.demographics||!S.areas){
+    const n=document.createElement('div');n.className='note';n.textContent='Demographic data not loaded.';
+    host.appendChild(n);return;}
+  const sel=document.createElement('select');sel.setAttribute('aria-label','Shade map by audience segment');
+  [['none','Shade areas by…'],['all','Residents (population)'],['affluent','Affluent index'],
+   ['family','Families index'],['senior','Seniors index'],['youth','Students & youth index']]
+   .forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;sel.appendChild(o);});
+  sel.onchange=()=>{S.segment=sel.value;paintChoro(S.segment);if(S.selected.length)renderSelection();};
+  host.appendChild(sel);
+  const lg=document.createElement('div');lg.id='choroLegend';host.appendChild(lg);
+  const note=document.createElement('div');note.className='note';
+  note.textContent='Modelled opportunities-to-see: LTA passenger taps (Jun 2026) × Census 2020 '
+    +'catchment share. Aggregate and modelled, not panel-measured.';
+  host.appendChild(note);
+}
+
+// ---------------- reach ranking (turns the map into a planner) ----------------
+S._rankCache={};
+function buildRanking(){
+  const sel=$('rankSel');
+  POI.forEach(cfg=>{
+    if(!S.pois[cfg.key])return;
+    const o=document.createElement('option');o.value=cfg.key;
+    o.textContent='Routes reaching '+cfg.label.toLowerCase();sel.appendChild(o);
+  });
+  sel.onchange=()=>rankBy(sel.value);
+}
+// inverted index: stop -> trunk routes, plus a global grid of trunk-served stops.
+// Ranking then scans each POI once (find nearby stops -> credit their routes),
+// which is far cheaper than scanning every route against every POI.
+function pipRing(pt,r){let inside=false;
+  for(let i=0,j=r.length-1;i<r.length;j=i++){
+    const xi=r[i][0],yi=r[i][1],xj=r[j][0],yj=r[j][1];
+    if(((yi>pt[1])!==(yj>pt[1]))&&(pt[0]<(xj-xi)*(pt[1]-yi)/(yj-yi)+xi))inside=!inside;
+  }return inside;}
+function buildStopIndex(){
+  if(S._stopIdx)return S._stopIdx;
+  const cell=.005,grid={},stopRoutes={};
+  Object.values(S.svcs).forEach(s=>{if(s.feeder)return;
+    s.stops.forEach(c=>{(stopRoutes[c]=stopRoutes[c]||[]).push(s.n);});});
+  Object.keys(stopRoutes).forEach(c=>{const st=S.stops[c];if(!st)return;
+    const k=Math.floor(st[0]/cell)+','+Math.floor(st[1]/cell);
+    (grid[k]=grid[k]||[]).push([st[0],st[1],c]);});
+  return S._stopIdx={cell,grid,stopRoutes};
+}
+function routesNearPoi(p,km,found){
+  const {cell,grid,stopRoutes}=S._stopIdx,kmDeg=km/111.32,d2=kmDeg*kmDeg;
+  const credit=c=>stopRoutes[c].forEach(n=>found.add(n));
+  if(p.poly&&p.poly.length){
+    let x0=9,y0=9,x1=-9,y1=-9;
+    p.poly.forEach(r=>r.forEach(([x,y])=>{if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}));
+    for(let cx=Math.floor((x0-kmDeg)/cell);cx<=Math.floor((x1+kmDeg)/cell);cx++)
+      for(let cy=Math.floor((y0-kmDeg)/cell);cy<=Math.floor((y1+kmDeg)/cell);cy++){
+        const arr=grid[cx+','+cy];if(!arr)continue;
+        for(const[sx,sy,c]of arr){
+          let hit=(sx>=x0&&sx<=x1&&sy>=y0&&sy<=y1&&p.poly.some(r=>pipRing([sx,sy],r)));
+          if(!hit)for(const r of p.poly){for(const[vx,vy]of r){
+            const ax=(vx-sx)*Math.cos(sy*.01745),ay=vy-sy;if(ax*ax+ay*ay<d2){hit=true;break;}}if(hit)break;}
+          if(hit)credit(c);
+        }
+      }
+  }else{
+    const cx=Math.floor(p.lng/cell),cy=Math.floor(p.lat/cell);
+    for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){
+      const arr=grid[(cx+dx)+','+(cy+dy)];if(!arr)continue;
+      for(const[sx,sy,c]of arr){const ax=(p.lng-sx)*Math.cos(p.lat*.01745),ay=p.lat-sy;
+        if(ax*ax+ay*ay<d2)credit(c);}
+    }
+  }
+}
+function computeRank(key){
+  if(S._rankCache[key])return S._rankCache[key];
+  buildStopIndex();
+  const counts={};
+  Object.values(S.svcs).forEach(s=>{if(!s.feeder)counts[s.n]=0;});
+  (S.pois[key]||[]).forEach(p=>{const found=new Set();routesNearPoi(p,.4,found);
+    found.forEach(n=>{if(counts[n]!=null)counts[n]++;});});
+  const scored=Object.entries(counts).map(([num,ct])=>({s:S.svcs[num],n:ct}))
+    .sort((a,b)=>b.n-a.n);
+  S._rankCache[key]=scored;return scored;
+}
+function rankBy(key){
+  const list=$('rankList'),note=$('rankNote');
+  list.innerHTML='';
+  if(!key){note.style.display='none';return;}
+  note.style.display='';
+  list.innerHTML='<div class="placeholder">Ranking…</div>';
+  const cfg=POI.find(c=>c.key===key);
+  setTimeout(()=>{
+    const scored=computeRank(key);
+    const max=scored.length?Math.max(1,scored[0].n):1;
+    list.innerHTML='';
+    scored.slice(0,20).forEach((r,i)=>{
+      const row=document.createElement('div');row.className='rrow';
+      row.innerHTML=`<span class="rk">${i+1}</span>`
+        +`<span class="rbadge">${r.s.n}</span>`
+        +`<div class="rmid"><div class="rtop">`
+        +`<span class="rnm">${r.s.name}</span>`
+        +`<span class="rct" style="color:${cfg.color}">${r.n}</span></div>`
+        +`<div class="rbar-wrap"><div class="rbar" style="width:${Math.max(3,100*r.n/max)}%;background:${cfg.color}"></div></div></div>`;
+      row.onclick=()=>toggleRoute(r.s.n);
+      row.onmouseenter=()=>{if(r.s._line&&!isSel(r.s.n))r.s._line.setStyle({color:cfg.color,weight:3.2,opacity:1});};
+      row.onmouseleave=()=>{if(r.s._line&&!isSel(r.s.n))r.s._line.setStyle(busStyle());};
+      list.appendChild(row);
+    });
+  },20);
+}
+
+// ---------------- selection helpers ----------------
+function clearSel(){
+  S.selected.forEach(n=>{const s=S.svcs[n];if(s&&s._line)s._line.setStyle(busStyle());});
+  S.selected=[];
+  renderSelection();
+}
+function near(pois,stopsLL,km){ // count pois within km of any stop; area POIs use footprint
+  if(!pois)return null;
+  const cell=.005,g={};
+  stopsLL.forEach(([lng,lat])=>{const k=Math.floor(lng/cell)+','+Math.floor(lat/cell);
+    (g[k]=g[k]||[]).push([lng,lat]);});
+  const kmDeg=km/111.32,d2max=kmDeg*kmDeg;
+  const gather=(x0,y0,x1,y1)=>{const out=[];
+    for(let cx=Math.floor(x0/cell);cx<=Math.floor(x1/cell);cx++)
+      for(let cy=Math.floor(y0/cell);cy<=Math.floor(y1/cell);cy++){
+        const a=g[cx+','+cy];if(a)for(const s of a)out.push(s);}
+    return out;};
+  const pipR=(pt,r)=>{let inside=false;
+    for(let i=0,j=r.length-1;i<r.length;j=i++){
+      const xi=r[i][0],yi=r[i][1],xj=r[j][0],yj=r[j][1];
+      if(((yi>pt[1])!==(yj>pt[1]))&&(pt[0]<(xj-xi)*(pt[1]-yi)/(yj-yi)+xi))inside=!inside;
+    }return inside;};
+  let n=0;
+  pois.forEach(p=>{
+    if(p.poly&&p.poly.length){
+      let x0=9,y0=9,x1=-9,y1=-9;
+      p.poly.forEach(r=>r.forEach(([x,y])=>{if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}));
+      const cands=gather(x0-kmDeg,y0-kmDeg,x1+kmDeg,y1+kmDeg);let hit=false;
+      for(const[sx,sy]of cands){
+        if(sx>=x0&&sx<=x1&&sy>=y0&&sy<=y1&&p.poly.some(r=>pipR([sx,sy],r))){hit=true;break;}
+        for(const r of p.poly){for(const[vx,vy]of r){
+          const ax=(vx-sx)*Math.cos(sy*.01745),ay=vy-sy;
+          if(ax*ax+ay*ay<d2max){hit=true;break;}}if(hit)break;}
+        if(hit)break;
+      }
+      if(hit)n++;
+    }else{
+      const cx=Math.floor(p.lng/cell),cy=Math.floor(p.lat/cell);
+      outer:for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){
+        for(const[sx,sy]of(g[(cx+dx)+','+(cy+dy)]||[])){
+          const ax=(p.lng-sx)*Math.cos(p.lat*.01745),ay=p.lat-sy;
+          if(ax*ax+ay*ay<d2max){n++;break outer;}
+        }
+      }
+    }
+  });
+  return n;
+}
+function ageBar(y,w,s){
+  const t=y+w+s;if(!t)return'';
+  const pc=v=>(100*v/t).toFixed(1);
+  return `<div class="agebar">
+    <div style="width:${pc(y)}%;background:${AGE_C.youth}"></div>
+    <div style="width:${pc(w)}%;background:${AGE_C.working}"></div>
+    <div style="width:${pc(s)}%;background:${AGE_C.senior}"></div></div>
+  <div class="agekey"><span><i style="background:${AGE_C.youth}"></i>0–14 · ${pc(y)}%</span>
+    <span><i style="background:${AGE_C.working}"></i>15–64 · ${pc(w)}%</span>
+    <span><i style="background:${AGE_C.senior}"></i>65+ · ${pc(s)}%</span></div>`;
+}
+function segLen(seg){
+  let km=0;
+  for(let i=1;i<seg.length;i++){
+    const ax=(seg[i][0]-seg[i-1][0])*111.32*Math.cos(seg[i][1]*.01745),
+          ay=(seg[i][1]-seg[i-1][1])*110.57;
+    km+=Math.hypot(ax,ay);
+  }
+  return km;
+}
+function routeLen(s){
+  return s.segs.reduce((a,g)=>a+segLen(g),0)+s.jumps.reduce((a,g)=>a+segLen(g),0);
+}
+
+// ---------------- multi-route selection ----------------
+function toggleRoute(n){
+  if(!S.svcs[n])return;
+  const i=S.selected.indexOf(n);
+  if(i>=0){S.selected.splice(i,1);const s=S.svcs[n];if(s._line)s._line.setStyle(busStyle());}
+  else S.selected.push(n);
+  renderSelection({fit:i<0});   // fit map only when adding
+}
+// shift a [lng,lat] segment perpendicular to its direction by m metres (parallel lane)
+function offsetSeg(seg,m){
+  if(!m||seg.length<2)return seg;
+  const n=seg.length,out=[];
+  for(let i=0;i<n;i++){
+    const a=seg[Math.max(0,i-1)],b=seg[Math.min(n-1,i+1)],cl=Math.cos(seg[i][1]*.01745);
+    let tx=(b[0]-a[0])*111320*cl,ty=(b[1]-a[1])*110540;const L=Math.hypot(tx,ty)||1e-9;
+    const px=-ty/L*m,py=tx/L*m;                       // perpendicular offset in metres
+    out.push([seg[i][0]+px/(111320*cl),seg[i][1]+py/110540]);
+  }
+  return out;
+}
+// draw one route's path/stops/pill/termini in a colour, offset into its own lane
+function drawRoute(s,color,offM,withDots){
+  const segs=s.segs.map(g=>offsetSeg(g,offM)),mls=segs.map(toLL),out=[];
+  out.push(L.polyline(mls,{pane:'sel',color:'#fff',weight:6.5,opacity:.95}));
+  out.push(L.polyline(mls,{pane:'sel',color,weight:3.4,opacity:1}));
+  if(s.jumps.length)out.push(L.polyline(s.jumps.map(g=>toLL(offsetSeg(g,offM))),
+    {pane:'sel',color,weight:1.6,opacity:.5,dashArray:'3 8',interactive:false}));
+  if(withDots)out.push(L.layerGroup(s.stops.filter(c=>S.stops[c]).map(c=>{const st=S.stops[c];
+    return L.circleMarker([st[1],st[0]],{pane:'sel',radius:2.4,color:'#fff',weight:1,
+      fillColor:color,fillOpacity:1}).bindTooltip(`${st[2]} · ${st[3]}`);})));
+  const last=segs[segs.length-1],term=[segs[0][0],last[last.length-1]];
+  const isLoop=segLen([term[0],term[1]])<0.15;
+  (isLoop?[term[0]]:term).forEach(p=>out.push(L.circleMarker([p[1],p[0]],{pane:'sel',
+    radius:4.2,color,weight:2.4,fillColor:'#fff',fillOpacity:1})));
+  const flat=segs.flat();let half=segs.reduce((a,g)=>a+segLen(g),0)/2,mid=flat[0];
+  outer:for(const g of segs){for(let i=1;i<g.length;i++){const d=segLen([g[i-1],g[i]]);
+    if(d>=half){const t=half/d;mid=[g[i-1][0]+(g[i][0]-g[i-1][0])*t,g[i-1][1]+(g[i][1]-g[i-1][1])*t];break outer;}half-=d;}}
+  if(!isFinite(mid[0])||!isFinite(mid[1]))mid=flat[Math.floor(flat.length/2)];
+  out.push(L.marker([mid[1],mid[0]],{pane:'pill',interactive:false,   // pill above the line
+    icon:L.divIcon({className:'',html:`<span class="rpill" style="background:${color}">${s.n}</span>`,iconSize:[0,0]})}));
+  return out;
+}
+function renderSelection(opt){
+  opt=opt||{};
+  S.selLayers.forEach(l=>map.removeLayer(l));S.selLayers=[];
+  const c=$('selcard');
+  if(!S.selected.length){   // empty state doubles as onboarding help (heuristic #10)
+    c.classList.add('show');
+    c.innerHTML='<div class="sel-empty">Tap a bus route on the map, or search a service, '
+      +'to see its stops and nearby places. Select several to compare their coverage.</div>';
+    return;
+  }
+  const sel=S.selected.map(n=>S.svcs[n]);
+  const colOf={},N=sel.length,SP=16;   // 16 m lane spacing between overlapping routes
+  sel.forEach((s,i)=>{const color=SELP[i%SELP.length];colOf[s.n]=color;
+    const offM=N>1?(i-(N-1)/2)*SP:0;
+    drawRoute(s,color,offM,N===1).forEach(l=>{l.addTo(map);S.selLayers.push(l);});});
+  if(opt.fit){
+    let b=null;S.selLayers.forEach(l=>{if(l.getBounds){b=b?b.extend(l.getBounds()):l.getBounds();}});
+    if(b)map.fitBounds(b,{padding:[40,40]});
+  }
+  // --- metrics: total vs unique stops, combined length ---
+  const total=sel.reduce((a,s)=>a+s.sc,0);
+  const uCodes=new Set();sel.forEach(s=>s.stops.forEach(cd=>{if(S.stops[cd])uCodes.add(cd);}));
+  const unique=uCodes.size;
+  const km=sel.reduce((a,s)=>a+routeLen(s),0);
+  const stopsLL=[...uCodes].map(cd=>[S.stops[cd][0],S.stops[cd][1]]);
+  const poiRows=POI.map(cfg=>{const n=near(S.pois[cfg.key],stopsLL,.4);
+    return n==null?'':`<div class="poirow"><span class="dot" style="background:${cfg.color}"></span>${cfg.label}<span class="n">${n}</span></div>`;}).join('');
+  const single=sel.length===1?sel[0]:null;
+  const header=single
+    ? `<span class="badge" style="background:${colOf[single.n]}">${single.n}</span>
+       <span class="card-name">${single.name}</span>
+       <span class="chip ${single.feeder?'feeder':'trunk'}">${single.feeder?'feeder':'trunk'}</span>`
+    : `<span class="card-name" style="font-size:14px">${sel.length} routes selected</span>`;
+  const stopStats=single
+    ? `<div class="stat"><div class="v">${single.sc}</div><div class="k">stops (unique)</div></div>
+       <div class="stat"><div class="v">${km.toFixed(1)} km</div><div class="k">route length</div></div>`
+    : `<div class="stat"><div class="v">${fmt(unique)}</div><div class="k">unique stops</div></div>
+       <div class="stat"><div class="v">${fmt(total)}</div><div class="k">total stops (with overlap)</div></div>
+       <div class="stat"><div class="v">${fmt(total-unique)}</div><div class="k">shared / overlapping</div></div>
+       <div class="stat"><div class="v">${km.toFixed(1)} km</div><div class="k">combined length</div></div>`;
+  const chips=sel.length>1
+    ? `<div class="subhead">Selected routes</div><div class="chips">`
+      +sel.map(s=>`<span class="achip selchip" data-rm="${s.n}"><span class="cdot" style="background:${colOf[s.n]}"></span><b>${s.n}</b> ${s.name.split(/[⇄⟲]/)[0].trim().slice(0,16)} <span class="x">✕</span></span>`).join('')+`</div>`
+    : '';
+  const poi=poiRows?`<div class="subhead">Within 400 m of ${single?'stops':'the selected routes'}</div>${poiRows}`:'';
+  const demo=FEATURES.demographics
+    ? renderDemographics(sel,uCodes)
+    : `<div class="subhead">Demographics</div><div class="placeholder">Demographic layer not loaded yet — will overlay for the selection once data is available.</div>`;
+  c.innerHTML=`<div class="card-top">${header}
+      <button class="xbtn" aria-label="Clear selection">&#10005;</button></div>
+    <div class="stat-grid">${stopStats}</div>${chips}${poi}${demo}`;
+  c.classList.add('show');
+  wireCard(c);
+  $('body').scrollTop=0;
+}
+// stub: wired to overlay demographics relative to the selection once data lands
+// modelled target-audience impressions for the current selection + catchment profile
+function renderDemographics(sel,uCodes){
+  if(!FEATURES.demographics)return '';
+  const codes=[...uCodes];
+  let allImp=0;codes.forEach(c=>{const v=S.stopVol[c];if(v)allImp+=v.wd;});
+  // catchment profile: sum age/income over served planning areas
+  const served=new Set();codes.forEach(c=>{const a=S.stopArea[c];if(a)served.add(a);});
+  let ch=0,y=0,w=0,sr=0,incW=0,incP=0,servedWithData=0;
+  served.forEach(a=>{const p=S.areaProps[a];if(!p||!p.population)return;servedWithData++;
+    ch+=p.a0_14;y+=p.a15_24;w+=p.a25_64;sr+=p.a65p;
+    if(p.income_median){incW+=p.income_median*p.population;incP+=p.population;}});
+  const medInc=incP?Math.round(incW/incP):null;
+  // active-segment impressions + index vs national
+  const seg=SEG.find(s=>s.key===S.segment&&s.prop);let segBlock='';
+  if(seg){
+    let segImp=0;codes.forEach(c=>{const v=S.stopVol[c],a=S.stopArea[c],p=a&&S.areaProps[a];
+      if(v&&p&&p[seg.prop]!=null)segImp+=v.wd*p[seg.prop];});
+    const idx=(allImp&&S.baseline[seg.key])?Math.round((segImp/allImp)/S.baseline[seg.key]*100):null;
+    segBlock=`<div class="stat-grid" style="margin-top:8px">
+      <div class="stat"><div class="v">${fmt(segImp)}</div><div class="k">${seg.label} · daily OTS</div></div>
+      <div class="stat"><div class="v" style="color:${idx>=110?'#16a34a':idx<=90?'#d97706':'var(--primary)'}">${idx!=null?idx:'–'}</div><div class="k">index vs national (100 = avg)</div></div></div>`;
+  }
+  return `<div class="subhead">Audience — modelled OTS</div>
+    <div class="stat"><div class="v">${fmt(allImp)}</div>
+      <div class="k">daily impressions · all commuters (avg weekday)</div></div>
+    ${segBlock}
+    ${servedWithData?`<div class="subhead">Catchment profile — ${servedWithData} area${servedWithData===1?'':'s'}</div>
+      ${ageBar(ch,y+w,sr)}
+      ${medInc?`<div class="poirow" title="Population-weighted average of the median monthly household income (from work, Census 2020) across the planning areas this route serves"><span class="dot" style="background:#1e3a8a"></span>Median household income · areas served<span class="n">$${fmt(medInc)}<small>/mo</small></span></div>`:''}`:''}
+    <div class="note">Modelled OTS = LTA taps (Jun 2026) × Census 2020 catchment share. Aggregate, not measured.</div>`;
+}
+// back-compat: some callers still name single selection
+function selectRoute(n){ clearSel(); toggleRoute(n); }
+
+// ---------------- selection: area ----------------
+function selectArea(name){
+  clearSel();
+  const st=S.areaStats[name];if(!st)return;
+  S.sel=name;S.selType='area';
+  const p=st.f.properties;
+  S._areaLayer.eachLayer(l=>{
+    if(l.feature.properties.name===name){l.setStyle({color:'#d97706',weight:2.6,opacity:1});
+      map.fitBounds(l.getBounds(),{padding:[30,30]});}
+  });
+  const svcs=[...st.svcs].map(n=>S.svcs[n]);
+  const tr=svcs.filter(s=>!s.feeder).sort((a,b)=>b.sc-a.sc),
+        fd=svcs.filter(s=>s.feeder);
+  const demo=p.population?`
+    <div class="stat-grid">
+      <div class="stat"><div class="v">${fmt(p.population)}</div><div class="k">residents${p.pop_year?' ('+p.pop_year+')':''}</div></div>
+      <div class="stat"><div class="v">${st.stops}</div><div class="k">bus stops in area</div></div>
+      ${p.income!=null?`<div class="stat"><div class="v">$${fmt(p.income)}</div><div class="k">median household income</div></div>`:''}
+    </div>${ageBar(p.age_youth||0,p.age_working||0,p.age_senior||0)}`
+    :`<div class="stat-grid"><div class="stat"><div class="v">${st.stops}</div><div class="k">bus stops in area</div></div></div>`;
+  const c=$('selcard');
+  c.innerHTML=`
+    <div class="card-top"><span class="badge area">${name}</span>
+      <span class="card-name">Planning area</span>
+      <button class="xbtn" aria-label="Clear selection">&#10005;</button></div>
+    ${demo}
+    <div class="subhead">Served by ${tr.length} trunk service${tr.length===1?'':'s'}</div>
+    <div class="chips">${tr.map(s=>`<span class="achip" data-svc="${s.n}"><b>${s.n}</b></span>`).join('')||'<span class="placeholder">none</span>'}</div>
+    ${fd.length?`<details class="more"><summary>${fd.length} feeder / short service${fd.length===1?'':'s'}</summary>
+      <div class="chips" style="margin-top:7px">${fd.map(s=>`<span class="achip" data-svc="${s.n}">${s.n}</span>`).join('')}</div></details>`:''}`;
+  c.classList.add('show');
+  wireCard(c);
+  $('body').scrollTop=0;
+}
+function wireCard(c){
+  const x=c.querySelector('.xbtn');if(x)x.onclick=clearSel;
+  c.querySelectorAll('.achip').forEach(ch=>{
+    ch.onclick=()=>{if(ch.dataset.rm)toggleRoute(ch.dataset.rm);        // remove from selection
+      else if(ch.dataset.svc)toggleRoute(ch.dataset.svc);};
+  });
+}
+
+// ---------------- search ----------------
+function buildSearch(){
+  const inp=$('search'),res=$('results');
+  inp.addEventListener('input',()=>{
+    const q=inp.value.trim().toLowerCase();
+    if(!q){res.style.display='none';return;}
+    const hits=[];
+    Object.values(S.svcs).forEach(s=>{
+      if(s.n.toLowerCase().startsWith(q)||s.name.toLowerCase().includes(q))hits.push({t:'svc',s});
+    });
+    Object.keys(S.areaStats).forEach(a=>{if(a.toLowerCase().includes(q))hits.push({t:'area',a});});
+    (S.stations||[]).forEach(st=>{if(st.name.toLowerCase().includes(q))hits.push({t:'stn',st});});
+    res.innerHTML=hits.slice(0,12).map(h=>
+      h.t==='svc'?`<div class="res" data-t="svc" data-k="${h.s.n}"><span class="tag svc">bus</span><span class="rn">${h.s.n}</span><span class="rd">${h.s.name}</span></div>`
+      :h.t==='area'?`<div class="res" data-t="area" data-k="${h.a}"><span class="tag">area</span><span class="rd" style="font-weight:700;color:var(--ink)">${h.a}</span></div>`
+      :`<div class="res" data-t="stn" data-k="${h.st.name}"><span class="tag" style="background:#dcfce7;color:#166534">rail</span><span class="rd" style="font-weight:700;color:var(--ink)">${h.st.name}</span></div>`
+    ).join('')||'<div class="res"><span class="rd">No matches</span></div>';
+    res.style.display='block';
+  });
+  res.addEventListener('click',e=>{
+    const d=e.target.closest('.res');if(!d||!d.dataset.k)return;
+    res.style.display='none';inp.value='';
+    if(d.dataset.t==='svc')toggleRoute(d.dataset.k);   // add to selection
+    else{const st=(S.stations||[]).find(x=>x.name===d.dataset.k);
+      if(st){map.setView([st.lat,st.lng],15);
+        if(!map.hasLayer(groups.stations))groups.stations.addTo(map);}}
+  });
+  document.addEventListener('click',e=>{if(!e.target.closest('.searchwrap'))res.style.display='none';});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')clearSel();});
+}
+
+// ---------------- export current map as JPG / PPTX ----------------
+// captures the live map (current layer + segment + route combination) as an image,
+// with the selected factors compiled into a caption / native slide text.
+function currentFactors(){
+  const on=g=>map.hasLayer(g), layers=[];
+  if(on(groups.trunk))layers.push('trunk buses');
+  if(on(groups.hubs))layers.push('bus hubs');
+  if(S.railOn)layers.push(S.activeLine?('rail — '+(RAIL_NAME[S.activeLine]||S.activeLine)):'MRT/LRT lines');
+  POI.forEach(c=>{if(on(groups[c.key]))layers.push(c.label.toLowerCase());});
+  const segCfg=SEG.find(s=>s.key===S.segment), lines=[];
+  if(S.selected.length)lines.push('Routes selected: '+S.selected.join(', '));
+  if(S.segment&&S.segment!=='none')
+    lines.push('Shading: '+(S.segment==='all'?'residents (population)':(segCfg?segCfg.label:S.segment)+' index'));
+  lines.push('Layers: '+(layers.join(', ')||'basemap only'));
+  if(S.selected.length&&FEATURES.demographics){
+    const uc=new Set();S.selected.forEach(n=>S.svcs[n]&&S.svcs[n].stops.forEach(c=>{if(S.stops[c])uc.add(c);}));
+    let imp=0;uc.forEach(c=>{const v=S.stopVol[c];if(v)imp+=v.wd;});
+    if(imp)lines.push('≈ '+fmt(imp)+' modelled daily impressions (all commuters)');
+  }
+  return {title:'Singapore Transit Atlas',lines,
+    source:'Basemap © OpenStreetMap © CARTO · LTA DataMall passenger volume (Jun 2026) · '
+      +'SingStat Census 2020 · figures modelled, not measured'};
+}
+function captureMap(){
+  if(typeof html2canvas==='undefined')return Promise.reject(new Error('image library not loaded'));
+  return html2canvas(document.getElementById('map'),{useCORS:true,backgroundColor:'#e8ecef',
+    scale:1.6,logging:false,
+    ignoreElements:n=>n.classList&&n.classList.contains('leaflet-control-zoom')});
+}
+function dl(url,name){const a=document.createElement('a');a.href=url;a.download=name;
+  document.body.appendChild(a);a.click();a.remove();}
+async function exportJPG(){
+  const b=$('expJpg');b.disabled=true;b.textContent='…';
+  try{
+    const mc=await captureMap(),f=currentFactors(),K=2,W=mc.width;
+    const head=52*K, foot=(16+f.lines.length*20+22)*K;
+    const cv=document.createElement('canvas');cv.width=W;cv.height=head+mc.height+foot;
+    const x=cv.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,cv.width,cv.height);
+    x.fillStyle='#0f172a';x.font=`bold ${22*K}px system-ui`;x.fillText(f.title,20*K,34*K);
+    x.drawImage(mc,0,head);
+    x.fillStyle='#334155';x.font=`500 ${14*K}px system-ui`;let yy=head+mc.height+24*K;
+    f.lines.forEach(l=>{x.fillText(l,20*K,yy);yy+=20*K;});
+    x.fillStyle='#94a3b8';x.font=`400 ${11*K}px system-ui`;x.fillText(f.source,20*K,yy+2*K);
+    dl(cv.toDataURL('image/jpeg',0.92),'transit-atlas.jpg');
+  }catch(e){alert('Image export failed: '+e.message);}
+  b.disabled=false;b.textContent='JPG';
+}
+async function exportPPT(){
+  const b=$('expPpt');b.disabled=true;b.textContent='…';
+  try{
+    if(typeof PptxGenJS==='undefined')throw new Error('PowerPoint library not loaded');
+    const mc=await captureMap(),img=mc.toDataURL('image/jpeg',0.92),f=currentFactors();
+    const p=new PptxGenJS();p.defineLayout({name:'W',width:13.333,height:7.5});p.layout='W';
+    const s=p.addSlide();
+    s.addText(f.title,{x:0.4,y:0.25,w:9,h:0.5,fontSize:24,bold:true,color:'1E293B'});
+    const ar=mc.width/mc.height;let iw=8.7,ih=iw/ar;if(ih>6.0){ih=6.0;iw=ih*ar;}
+    s.addImage({data:img,x:0.4,y:0.95,w:iw,h:ih});
+    s.addText(f.lines.map(l=>({text:l,options:{bullet:true,fontSize:12,color:'334155',breakLine:true}})),
+      {x:9.3,y:0.95,w:3.6,h:4.5,valign:'top'});
+    s.addText(f.source,{x:0.4,y:7.05,w:12.5,h:0.35,fontSize:8,color:'94A3B8'});
+    const cap=new Promise((_,rej)=>setTimeout(()=>rej(new Error('generation stalled — try again')),30000));
+    await Promise.race([p.writeFile({fileName:'transit-atlas.pptx'}),cap]);
+  }catch(e){alert('PowerPoint export failed: '+e.message);}
+  b.disabled=false;b.textContent='PPTX';
+}
+$('expJpg').onclick=exportJPG;$('expPpt').onclick=exportPPT;
+</script>
+</body>
+</html>
