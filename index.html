@@ -14,9 +14,64 @@
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
     font-family:system-ui,"Inter",-apple-system,sans-serif;font-size:14px}
-  #app{display:flex;height:100vh;overflow:hidden}
-  #map{flex:1;min-width:0;background:#e8ecef}
+  #app{display:flex;height:100vh;overflow:hidden;position:relative}
+  #map{flex:1;min-width:0;background:#e8ecef;position:relative}
   .leaflet-container{font:inherit}
+
+  /* ---------- left rail: selected-route list with stop drill-down ---------- */
+  #leftbar{width:288px;flex:none;background:#fff;border-right:1px solid var(--line);
+    display:flex;flex-direction:column;overflow:hidden}
+  #leftbar.closed{display:none}
+  .lb-head{padding:13px 14px 11px;border-bottom:1px solid var(--line);
+    font:700 12px/1 system-ui;display:flex;align-items:center;gap:8px}
+  .lb-head .cnt{color:var(--muted);font-weight:600}
+  #lbBody{flex:1;overflow-y:auto}
+  .lb-route{display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;
+    border-bottom:1px solid #f1f5f9;font:600 12.5px/1.2 system-ui}
+  .lb-route:hover{background:var(--bg)}
+  .lb-route .cdot{width:10px;height:10px;border-radius:50%;flex:none}
+  .lb-route .lb-n{font-weight:800;min-width:30px}
+  .lb-route .lb-name{flex:1;color:var(--muted);font-weight:500;font-size:11px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lb-route .lb-sc{font:700 11px/1 system-ui;color:var(--muted);font-variant-numeric:tabular-nums}
+  .lb-route .lb-car{color:#94a3b8;font-size:10px;flex:none;transition:transform .12s}
+  .lb-route.open .lb-car{transform:rotate(90deg)}
+  .lb-route .lb-x{border:none;background:none;color:#cbd5e1;cursor:pointer;font-size:12px;
+    padding:2px 4px;flex:none}
+  .lb-route .lb-x:hover{color:var(--destructive,#dc2626)}
+  .lb-stops{display:none;border-bottom:1px solid #f1f5f9;background:#fbfcfd}
+  .lb-stops.show{display:block}
+  .dir-tabs{display:flex;gap:6px;padding:8px 12px 4px}
+  .dir-tab{flex:1;font:600 10.5px/1.25 system-ui;padding:6px 8px;border:1px solid var(--line);
+    border-radius:7px;background:#fff;color:var(--muted);cursor:pointer;text-align:left;
+    overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .dir-tab.on{border-color:var(--primary);color:var(--primary);background:var(--primary-soft)}
+  .lb-stoplist{margin:4px 0 8px;padding:0;list-style:none;max-height:300px;overflow-y:auto}
+  .lb-stop{display:flex;align-items:baseline;gap:8px;padding:4px 12px 4px 16px;cursor:pointer;
+    font:500 11.5px/1.35 system-ui}
+  .lb-stop:hover{background:var(--primary-soft)}
+  .lb-stop .idx{font:600 9.5px/1 system-ui;color:#94a3b8;min-width:16px;text-align:right;
+    font-variant-numeric:tabular-nums}
+  .lb-stop .code{font:500 9.5px/1 system-ui;color:#94a3b8;margin-left:auto;
+    font-variant-numeric:tabular-nums}
+  .lb-empty{padding:14px;font:500 11.5px/1.5 system-ui;color:var(--muted)}
+
+  /* ---------- edge toggles to collapse / restore either sidebar ---------- */
+  .edge-tgl{position:absolute;top:50%;transform:translateY(-50%);z-index:1150;width:20px;
+    height:56px;background:#fff;border:1px solid var(--line);cursor:pointer;padding:0;
+    color:#64748b;font:700 12px/1 system-ui;box-shadow:0 1px 5px rgba(15,23,42,.18)}
+  .edge-tgl:hover{color:var(--primary);background:var(--primary-soft)}
+  .edge-tgl.left{left:0;border-radius:0 8px 8px 0;border-left:none}
+  .edge-tgl.right{right:0;border-radius:8px 0 0 8px;border-right:none}
+  .edge-tgl[hidden]{display:none}
+
+  /* ---------- segmented control (POI scope) ---------- */
+  .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:8px}
+  .seg button{flex:1;font:600 11px/1.2 system-ui;padding:7px 6px;background:#fff;border:none;
+    cursor:pointer;color:var(--muted)}
+  .seg button+button{border-left:1px solid var(--line)}
+  .seg button.on{background:var(--primary);color:#fff}
+  .seg button:focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
 
   /* ---------- panel ---------- */
   #panel{width:var(--panel-w);flex:none;background:#fff;border-left:1px solid var(--line);
@@ -191,8 +246,8 @@
     transition:opacity .1s}
   /* termini labels for the selected routes (chip so they survive image export) */
   .termlab{position:absolute;top:0;transform:translateY(-50%);white-space:nowrap;
-    font:700 10.5px/1 system-ui;color:#0f172a;background:rgba(255,255,255,.9);
-    padding:3px 6px;border-radius:6px;box-shadow:0 1px 3px rgba(15,23,42,.28)}
+    font:700 10.5px/1 system-ui;color:#0f172a;background:rgba(255,255,255,.58);
+    padding:3px 6px;border-radius:6px;box-shadow:0 1px 3px rgba(15,23,42,.22)}
   /* impressions-on-export toggle */
   .mini-tgl{display:inline-flex;align-items:center;gap:7px;margin-top:9px;cursor:pointer;
     font:600 11px/1.2 system-ui;color:var(--muted);user-select:none}
@@ -220,12 +275,23 @@
     #map{flex:0 0 56vh;height:56vh}
     #panel{width:auto;border-left:none;border-top:1px solid var(--line)}
     #body{overflow:visible}
+    #leftbar{width:auto;max-height:38vh;border-right:none;border-bottom:1px solid var(--line)}
+    .edge-tgl{display:none}
   }
 </style>
 </head>
 <body>
 <div id="app">
-  <div id="map"></div>
+  <aside id="leftbar" class="closed" aria-label="Selected route list">
+    <div class="lb-head">Selected routes <span class="cnt" id="lbCount"></span></div>
+    <div id="lbBody"></div>
+  </aside>
+  <div id="map">
+    <button id="tglLeft" class="edge-tgl left" hidden
+      title="Show / hide the route list" aria-label="Toggle route list">‹</button>
+    <button id="tglRight" class="edge-tgl right"
+      title="Show / hide the control panel" aria-label="Toggle control panel">›</button>
+  </div>
   <aside id="panel">
     <div class="p-head">
       <div class="ph-row">
@@ -261,7 +327,12 @@
       </div>
       <div class="sec">
         <div class="sec-lab">Places &amp; landmarks</div>
+        <div class="seg" id="poiScopeSeg" role="group" aria-label="Which places to show">
+          <button type="button" data-s="all" class="on">All</button>
+          <button type="button" data-s="near">Within 400 m of selection</button>
+        </div>
         <div id="poiToggles"></div>
+        <div class="note" id="poiScopeNote" style="display:none"></div>
       </div>
       <div class="sec">
         <div class="sec-lab">Reach ranking</div>
@@ -307,6 +378,13 @@ const cf=n=>n>=1e6?((n/1e6>=100?Math.round(n/1e6):(n/1e6).toFixed(1))+'M'):fmt(n
 const TRIPS_DAY=7, DIRS=2;   // operating assumption: each service runs 2 ways × 7 trips a day
 const AGE_C={youth:'#60a5fa',working:'#1e40af',senior:'#d97706'};
 const CHORO_C=['#eff6ff','#bfdbfe','#60a5fa','#2563eb','#1e3a8a'];
+// one colour family per audience segment so shaded maps are tellable-apart at a glance
+const CHORO_R={
+  all:     CHORO_C,                                                    // blues
+  affluent:['#f5f3ff','#ddd6fe','#a78bfa','#7c3aed','#4c1d95'],        // violets
+  family:  ['#fff7ed','#fed7aa','#fb923c','#ea580c','#7c2d12'],        // oranges
+  senior:  ['#f0fdfa','#99f6e4','#2dd4bf','#0d9488','#134e4a'],        // teals
+  youth:   ['#fdf2f8','#fbcfe8','#f472b6','#db2777','#831843']};       // pinks
 // distinct colours for multi-route selection (dark enough for white pill text).
 // 16 unique — covers the largest product set with no repeats; consecutive entries
 // are far apart in hue so overlapping lanes stay tellable-apart.
@@ -449,8 +527,10 @@ function poiLayer(p,color){
     fillColor:color,fillOpacity:.92}).bindTooltip(tip);
 }
 function buildPois(){
+  S.poiItems={};   // keep poi↔layer pairs so the 400 m scope filter can rebuild groups
   POI.forEach(cfg=>{
-    (S.pois[cfg.key]||[]).forEach(p=>groups[cfg.key].addLayer(poiLayer(p,cfg.color)));
+    S.poiItems[cfg.key]=(S.pois[cfg.key]||[]).map(p=>({p,layer:poiLayer(p,cfg.color)}));
+    S.poiItems[cfg.key].forEach(it=>groups[cfg.key].addLayer(it.layer));
   });
 }
 
@@ -619,8 +699,14 @@ function buildPanel(){
   POI.forEach(cfg=>{
     const row=toggleRow(cfg.label,S.pois[cfg.key]?groups[cfg.key]:null,false,
       `<span class="dot" style="background:${cfg.color}"></span>`);
-    row.querySelector('.cnt').textContent=S.pois[cfg.key]?S.pois[cfg.key].length:'—';
+    cfg._cntEl=row.querySelector('.cnt');
+    cfg._cntEl.textContent=S.pois[cfg.key]?S.pois[cfg.key].length:'—';
     pt.appendChild(row);
+  });
+  document.querySelectorAll('#poiScopeSeg button').forEach(b=>b.onclick=()=>{
+    S.poiScope=b.dataset.s;
+    document.querySelectorAll('#poiScopeSeg button').forEach(x=>x.classList.toggle('on',x===b));
+    applyPoiScope();
   });
   buildClusters();
   buildRanking();
@@ -695,6 +781,7 @@ function paintChoro(seg){
   const lg=$('choroLegend');if(lg)lg.innerHTML='';
   if(!S._areaLayer)return;
   if(seg==='none'){S._areaLayer.setStyle({fillOpacity:0,opacity:.3});return;}
+  const ramp=CHORO_R[seg]||CHORO_C;
   const vals=[];S._areaLayer.eachLayer(l=>{const v=areaMetric(l.feature.properties,seg);
     if(v!=null&&isFinite(v))vals.push(v);});
   if(!vals.length)return;
@@ -703,9 +790,9 @@ function paintChoro(seg){
   S._areaLayer.eachLayer(l=>{const v=areaMetric(l.feature.properties,seg);
     if(v==null||!isFinite(v)){l.setStyle({fillOpacity:0});return;}
     let i=0;while(i<4&&v>=br[i])i++;
-    l.setStyle({fillColor:CHORO_C[i],fillOpacity:.55,color:'#64748b',weight:1,opacity:.4});});
+    l.setStyle({fillColor:ramp[i],fillOpacity:.55,color:'#64748b',weight:1,opacity:.4});});
   if(lg){const f=seg==='all'?(v=>Math.round(v/1000)+'k'):(v=>v.toFixed(1)+'×');
-    lg.innerHTML='<div class="legend">'+CHORO_C.map(c=>`<div style="background:${c}"></div>`).join('')+'</div>'
+    lg.innerHTML='<div class="legend">'+ramp.map(c=>`<div style="background:${c}"></div>`).join('')+'</div>'
       +`<div class="legend-lab"><span>${f(vals[0])}</span><span>${seg==='all'?'residents':'index'}</span><span>${f(vals[vals.length-1])}</span></div>`;}
 }
 function buildDemographics(){
@@ -825,6 +912,10 @@ function clearSel(){
   renderSelection();
 }
 function near(pois,stopsLL,km){ // count pois within km of any stop; area POIs use footprint
+  const m=nearMask(pois,stopsLL,km);
+  return m?m.reduce((a,b)=>a+(b?1:0),0):null;
+}
+function nearMask(pois,stopsLL,km){ // per-poi boolean: within km of any stop
   if(!pois)return null;
   const cell=.005,g={};
   stopsLL.forEach(([lng,lat])=>{const k=Math.floor(lng/cell)+','+Math.floor(lat/cell);
@@ -840,8 +931,7 @@ function near(pois,stopsLL,km){ // count pois within km of any stop; area POIs u
       const xi=r[i][0],yi=r[i][1],xj=r[j][0],yj=r[j][1];
       if(((yi>pt[1])!==(yj>pt[1]))&&(pt[0]<(xj-xi)*(pt[1]-yi)/(yj-yi)+xi))inside=!inside;
     }return inside;};
-  let n=0;
-  pois.forEach(p=>{
+  return pois.map(p=>{
     if(p.poly&&p.poly.length){
       let x0=9,y0=9,x1=-9,y1=-9;
       p.poly.forEach(r=>r.forEach(([x,y])=>{if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}));
@@ -853,18 +943,17 @@ function near(pois,stopsLL,km){ // count pois within km of any stop; area POIs u
           if(ax*ax+ay*ay<d2max){hit=true;break;}}if(hit)break;}
         if(hit)break;
       }
-      if(hit)n++;
-    }else{
-      const cx=Math.floor(p.lng/cell),cy=Math.floor(p.lat/cell);
-      outer:for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){
-        for(const[sx,sy]of(g[(cx+dx)+','+(cy+dy)]||[])){
-          const ax=(p.lng-sx)*Math.cos(p.lat*.01745),ay=p.lat-sy;
-          if(ax*ax+ay*ay<d2max){n++;break outer;}
-        }
+      return hit;
+    }
+    const cx=Math.floor(p.lng/cell),cy=Math.floor(p.lat/cell);
+    for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){
+      for(const[sx,sy]of(g[(cx+dx)+','+(cy+dy)]||[])){
+        const ax=(p.lng-sx)*Math.cos(p.lat*.01745),ay=p.lat-sy;
+        if(ax*ax+ay*ay<d2max)return true;
       }
     }
+    return false;
   });
-  return n;
 }
 function ageBar(y,w,s){
   const t=y+w+s;if(!t)return'';
@@ -929,13 +1018,16 @@ function termLabel(lat,lng,s){
 }
 // draw one route's path/stops/pill in a colour, offset into its own lane.
 // returns {out: layers, mid:{lat,lng} (pill point), termini:[{lat,lng,name,color}]}
-function drawRoute(s,color,offM,withDots,multi){
-  const casW=multi?5:6.5, linW=multi?3:3.4;   // thinner casing when stacked so lanes don't occlude
+// withCasing: white halo per lane. Off when zoomed out (scale bar ≥ ~1 km) so the
+// two carriageway strands of the SAME route merge into one visual line; on when
+// zoomed in (≤ ~500 m scale), where lanes have room to read separately.
+function drawRoute(s,color,offM,withDots,multi,withCasing){
+  const casW=multi?4.6:6.5, linW=multi?3:3.4;
   // SF = screen-space Douglas–Peucker (px): keeps only real on-road vertices, dropping
   // sub-pixel detail when zoomed out. Never invents off-road points — lines hug the roads.
   const SF=2;
   const segs=s.segs.map(g=>offsetSeg(g,offM)),mls=segs.map(toLL),out=[];
-  out.push(L.polyline(mls,{pane:'sel',renderer:rSel,color:'#fff',weight:casW,opacity:.95,smoothFactor:SF}));
+  if(withCasing)out.push(L.polyline(mls,{pane:'sel',renderer:rSel,color:'#fff',weight:casW,opacity:.95,smoothFactor:SF}));
   out.push(L.polyline(mls,{pane:'sel',renderer:rSel,color,weight:linW,opacity:1,smoothFactor:SF}));
   if(s.jumps.length)out.push(L.polyline(s.jumps.map(g=>toLL(offsetSeg(g,offM))),
     {pane:'sel',renderer:rSel,color,weight:1.6,opacity:.5,dashArray:'3 8',interactive:false,smoothFactor:SF}));
@@ -944,8 +1036,6 @@ function drawRoute(s,color,offM,withDots,multi){
       fillColor:color,fillOpacity:1}).bindTooltip(`${st[2]} · ${st[3]}`);})));
   const last=segs[segs.length-1],term=[segs[0][0],last[last.length-1]];
   const isLoop=segLen([term[0],term[1]])<0.15;
-  (isLoop?[term[0]]:term).forEach(p=>out.push(L.circleMarker([p[1],p[0]],{pane:'sel',renderer:rSel,
-    radius:4.2,color,weight:2.4,fillColor:'#fff',fillOpacity:1})));
   const flat=segs.flat();let half=segs.reduce((a,g)=>a+segLen(g),0)/2,mid=flat[0];
   outer:for(const g of segs){for(let i=1;i<g.length;i++){const d=segLen([g[i-1],g[i]]);
     if(d>=half){const t=half/d;mid=[g[i-1][0]+(g[i][0]-g[i-1][0])*t,g[i-1][1]+(g[i][1]-g[i-1][1])*t];break outer;}half-=d;}}
@@ -963,19 +1053,35 @@ function drawRoute(s,color,offM,withDots,multi){
 function laneMpp(){const z=map.getZoom(),lat=map.getCenter().lat;
   return 40075016.686*Math.cos(lat*Math.PI/180)/Math.pow(2,z+8);}
 function clearTermini(){(S.termLayers||[]).forEach(l=>map.removeLayer(l));S.termLayers=[];}
-// draw the selection's lines/pills at ~6 px lane spacing (zoom-aware so overlaps stay legible)
+// draw the selection's lines/pills in tight lanes (zoom-aware so overlaps stay legible)
+const Z_CASING=15;   // at z ≥ 15 (scale ≤ ~500 m) lanes get their white casing back
 function paintLines(fit){
   S.selLayers.forEach(l=>map.removeLayer(l));S.selLayers=[];
   const colOf={};S._pillPts=[];S._termPts=[];
   if(!S.selected.length){clearTermini();return colOf;}
   const sel=S.selected.map(n=>S.svcs[n]).filter(Boolean),N=sel.length;
-  // lane offset in px, but cap the TOTAL spread so many overlapping routes stay hugging the road
-  const LANE_PX=6, MAX_SPREAD=14, stepM=N>1?Math.min(LANE_PX,MAX_SPREAD/(N-1))*laneMpp():0;
+  // lane offset in px — one line-width apart, capping TOTAL spread so stacks hug the road
+  const LANE_PX=4.2, MAX_SPREAD=10, stepM=N>1?Math.min(LANE_PX,MAX_SPREAD/(N-1))*laneMpp():0;
+  const withCasing=map.getZoom()>=Z_CASING;
   sel.forEach((s,i)=>{const color=SELP[i%SELP.length];colOf[s.n]=color;
     const offM=N>1?(i-(N-1)/2)*stepM:0;
-    const r=drawRoute(s,color,offM,N===1,N>1);
+    const r=drawRoute(s,color,offM,N===1,N>1,withCasing);
     r.out.forEach(l=>{l.addTo(map);S.selLayers.push(l);});
     S._pillPts.push(r.mid);r.termini.forEach(t=>S._termPts.push(t));});
+  // termini circles: routes sharing a terminus get ONE black circle; unique ends
+  // keep their route colour. Grouped by interchange/terminal name.
+  const byName={};
+  S._termPts.forEach(t=>{const k=t.name||('@'+t.lat.toFixed(4)+','+t.lng.toFixed(4));
+    (byName[k]=byName[k]||[]).push(t);});
+  Object.values(byName).forEach(g=>{
+    const shared=g.length>1;
+    const lat=g.reduce((a,t)=>a+t.lat,0)/g.length, lng=g.reduce((a,t)=>a+t.lng,0)/g.length;
+    const c=shared
+      ?L.circleMarker([lat,lng],{pane:'sel',renderer:rSel,radius:5.2,color:'#fff',weight:2,
+        fillColor:'#0f172a',fillOpacity:1})
+      :L.circleMarker([lat,lng],{pane:'sel',renderer:rSel,radius:4.2,color:g[0].color,
+        weight:2.4,fillColor:'#fff',fillOpacity:1});
+    c.addTo(map);S.selLayers.push(c);});
   S._colOf=colOf;
   if(fit){map.invalidateSize({animate:false});   // guard against a stale cached map size → over-zoom
     let b=null;S.selLayers.forEach(l=>{if(l.getBounds){b=b?b.extend(l.getBounds()):l.getBounds();}});
@@ -1024,6 +1130,7 @@ function renderSelection(opt){
     c.classList.add('show');
     c.innerHTML='<div class="sel-empty">Switch on a layer below, or search a bus service, to begin. '
       +'Tap a route for its stops, nearby places and audience — pick several to compare coverage.</div>';
+    renderLeftbar();applyPoiScope();
     return;
   }
   const sel=S.selected.map(n=>S.svcs[n]);
@@ -1068,6 +1175,7 @@ function renderSelection(opt){
     <div class="stat-grid">${stopStats}</div>${covNote}${chips}${poi}${demo}`;
   c.classList.add('show');
   wireCard(c);
+  renderLeftbar();applyPoiScope();
   $('body').scrollTop=0;
 }
 // stub: wired to overlay demographics relative to the selection once data lands
@@ -1151,6 +1259,109 @@ function wireCard(c){
     ch.onclick=()=>{if(ch.dataset.rm)toggleRoute(ch.dataset.rm);        // remove from selection
       else if(ch.dataset.svc)toggleRoute(ch.dataset.svc);};
   });
+}
+
+// ---------------- left rail: selected routes with stop drill-down ----------------
+S.lbOpen=true;S.lbExpand=new Set();S.lbDir={};
+function lbSync(){
+  const has=S.selected.length>0,open=has&&S.lbOpen;
+  $('tglLeft').hidden=!has;
+  $('tglLeft').textContent=open?'‹':'›';
+  $('leftbar').classList.toggle('closed',!open);
+  map.invalidateSize({animate:false});
+}
+function renderLeftbar(){
+  const body=$('lbBody');
+  $('lbCount').textContent=S.selected.length?'('+S.selected.length+')':'';
+  body.innerHTML='';
+  S.lbExpand.forEach(n=>{if(!S.selected.includes(n))S.lbExpand.delete(n);});
+  S.selected.forEach(n=>{
+    const s=S.svcs[n];if(!s)return;
+    const color=(S._colOf||{})[n]||'#64748b';
+    const row=document.createElement('div');
+    row.className='lb-route'+(S.lbExpand.has(n)?' open':'');
+    row.setAttribute('role','button');row.tabIndex=0;
+    row.title='Tap to see every stop this service calls at';
+    row.innerHTML=`<span class="lb-car">▶</span><span class="cdot" style="background:${color}"></span>`
+      +`<b class="lb-n">${n}</b><span class="lb-name">${s.name}</span>`
+      +`<span class="lb-sc" title="${s.sc} unique stops">${s.sc}</span>`
+      +`<button class="lb-x" title="Remove ${n} from selection">✕</button>`;
+    row.querySelector('.lb-x').onclick=e=>{e.stopPropagation();toggleRoute(n);};
+    const flip=()=>{S.lbExpand.has(n)?S.lbExpand.delete(n):S.lbExpand.add(n);renderLeftbar();};
+    row.onclick=flip;
+    row.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();flip();}};
+    body.appendChild(row);
+    if(S.lbExpand.has(n)){
+      const box=document.createElement('div');box.className='lb-stops show';
+      box.innerHTML='<div class="lb-empty">Loading stops…</div>';
+      body.appendChild(box);
+      loadRouteStops().then(()=>renderStops(box,n,color));
+    }
+  });
+  lbSync();
+}
+function loadRouteStops(){   // ordered per-direction stop codes, fetched once on demand
+  if(S.routeStops)return Promise.resolve();
+  if(!S._rsPromise)S._rsPromise=get('data/route_stops.json').then(d=>{S.routeStops=d||{};});
+  return S._rsPromise;
+}
+function renderStops(box,n,color){
+  if(!box.isConnected)return;   // row collapsed while the file loaded
+  const dirs=(S.routeStops||{})[n];
+  if(!dirs||!dirs.length){
+    box.innerHTML='<div class="lb-empty">Stop sequence unavailable for this service.</div>';return;}
+  const di=Math.min(S.lbDir[n]||0,dirs.length-1);
+  const tabs=dirs.length>1?`<div class="dir-tabs">${dirs.map((d,i)=>{
+    const a=S.stops[d[0]],b=S.stops[d[d.length-1]];
+    return `<button type="button" class="dir-tab${i===di?' on':''}" data-d="${i}"
+      title="Direction ${i+1} · ${d.length} stops">${a?a[2]:'?'} → ${b?b[2]:'?'}</button>`;}).join('')}</div>`:'';
+  const list=dirs[di].map((c,i)=>{const st=S.stops[c];if(!st)return '';
+    return `<li class="lb-stop" data-c="${c}" title="Zoom to this stop">`
+      +`<span class="idx">${i+1}</span><span>${st[2]}</span><span class="code">${c}</span></li>`;}).join('');
+  box.innerHTML=tabs+`<ol class="lb-stoplist">${list}</ol>`;
+  box.querySelectorAll('.dir-tab').forEach(t=>t.onclick=e=>{e.stopPropagation();
+    S.lbDir[n]=+t.dataset.d;renderStops(box,n,color);});
+  box.querySelectorAll('.lb-stop').forEach(li=>li.onclick=e=>{e.stopPropagation();
+    const st=S.stops[li.dataset.c];if(!st)return;
+    map.setView([st[1],st[0]],Math.max(map.getZoom(),16));
+    flashStop(st[1],st[0],color);});
+}
+function flashStop(lat,lng,color){   // brief ring so the eye lands on the right stop
+  const m=L.circleMarker([lat,lng],{pane:'pill',radius:11,color,weight:3,fill:false,opacity:.95});
+  m.addTo(map);setTimeout(()=>map.removeLayer(m),2200);
+}
+$('tglLeft').onclick=()=>{S.lbOpen=!S.lbOpen;lbSync();};
+$('tglRight').onclick=()=>{const p=$('panel'),hidden=p.style.display==='none';
+  p.style.display=hidden?'':'none';$('tglRight').textContent=hidden?'›':'‹';
+  map.invalidateSize({animate:false});};
+
+// ---------------- POI scope: everything vs within 400 m of the selection ------
+S.poiScope='all';
+function applyPoiScope(){
+  if(!S.poiItems)return;
+  const active=S.poiScope==='near'&&S.selected.length>0;
+  let stopsLL=null;
+  if(active){
+    const uc=new Set();
+    S.selected.forEach(n=>{const s=S.svcs[n];s&&s.stops.forEach(c=>{if(S.stops[c])uc.add(c);});});
+    stopsLL=[...uc].map(c=>[S.stops[c][0],S.stops[c][1]]);
+  }
+  POI.forEach(cfg=>{
+    const items=S.poiItems[cfg.key];if(!items||!items.length){return;}
+    const grp=groups[cfg.key];grp.clearLayers();
+    let shown=0;
+    if(active){
+      const mask=nearMask(items.map(it=>it.p),stopsLL,.4);
+      items.forEach((it,i)=>{if(mask[i]){grp.addLayer(it.layer);shown++;}});
+    }else{items.forEach(it=>grp.addLayer(it.layer));shown=items.length;}
+    if(cfg._cntEl)cfg._cntEl.textContent=active?shown+' / '+items.length:String(items.length);
+  });
+  const note=$('poiScopeNote');
+  if(S.poiScope==='near'){note.style.display='';
+    note.textContent=S.selected.length
+      ?'Showing only places within 400 m of a stop on the selected routes.'
+      :'Select routes first — showing all places until then.';}
+  else note.style.display='none';
 }
 
 // ---------------- search ----------------
@@ -1258,6 +1469,7 @@ async function captureFramed(w,h){
       width:w,height:h,
       ignoreElements:n=>n.classList&&(n.classList.contains('leaflet-control-zoom')
         ||n.classList.contains('leaflet-control-scale')
+        ||n.classList.contains('edge-tgl')
         ||n.classList.contains('leaflet-control-attribution'))});
   }finally{
     Object.assign(el.style,css);
