@@ -182,6 +182,20 @@
   .stnlab{position:absolute;transform:translate(6px,-50%);white-space:nowrap;
     font:600 10px/1 system-ui;color:#0f766e;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff;
     transition:opacity .1s}
+  /* termini labels for the selected routes (chip so they survive image export) */
+  .termlab{position:absolute;top:0;transform:translateY(-50%);white-space:nowrap;
+    font:700 10.5px/1 system-ui;color:#0f172a;background:rgba(255,255,255,.9);
+    padding:3px 6px;border-radius:6px;box-shadow:0 1px 3px rgba(15,23,42,.28)}
+  /* impressions-on-export toggle */
+  .mini-tgl{display:inline-flex;align-items:center;gap:7px;margin-top:9px;cursor:pointer;
+    font:600 11px/1.2 system-ui;color:var(--muted);user-select:none}
+  .mini-tgl input{appearance:none;-webkit-appearance:none;width:32px;height:18px;border-radius:999px;
+    background:#cbd5e1;position:relative;flex:none;cursor:pointer;transition:.15s;margin:0}
+  .mini-tgl input::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;
+    border-radius:50%;background:#fff;transition:.15s;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+  .mini-tgl input:checked{background:var(--accent)}
+  .mini-tgl input:checked::after{transform:translateX(14px)}
+  .mini-tgl input:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
 
   #loading{position:absolute;inset:0;z-index:2000;background:rgba(248,250,252,.9);
     display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px}
@@ -210,6 +224,8 @@
           <button id="expPpt" class="exp-btn" title="Download the current map as a PowerPoint slide">PPTX</button>
         </div>
       </div>
+      <label class="mini-tgl" title="Include the modelled daily-impressions figure on the exported image / slide">
+        <input type="checkbox" id="impToggle" checked> Show impressions on exports</label>
     </div>
     <div class="searchwrap">
       <input id="search" placeholder="Search a bus service…" autocomplete="off"
@@ -311,8 +327,8 @@ const POI=[
   {key:'police',label:'Police (stations & posts)',color:'#2563eb',file:'data/poi_police.json'},
 ];
 const S={svcs:{},stops:{},areas:null,pois:{},
-  stopArea:{},areaStats:{},selected:[],selLayers:[],_areaLayer:null,
-  railLayers:[],stationItems:[],activeLine:null};
+  stopArea:{},areaStats:{},selected:[],selLayers:[],termLayers:[],_areaLayer:null,
+  railLayers:[],stationItems:[],activeLine:null,showImp:true};
 const isSel=n=>S.selected.includes(n);
 const RAIL_NAME={EWL:'East–West Line',NSL:'North–South Line',NEL:'North East Line',
   CCL:'Circle Line',DTL:'Downtown Line',TEL:'Thomson–East Coast Line',
@@ -839,11 +855,13 @@ function offsetSeg(seg,m){
   }
   return out;
 }
-// draw one route's path/stops/pill/termini in a colour, offset into its own lane
-function drawRoute(s,color,offM,withDots){
+// draw one route's path/stops/pill in a colour, offset into its own lane.
+// returns {out: layers, mid:{lat,lng} (pill point), termini:[{lat,lng,name,color}]}
+function drawRoute(s,color,offM,withDots,multi){
+  const casW=multi?5:6.5, linW=multi?3:3.4;   // thinner casing when stacked so lanes don't occlude
   const segs=s.segs.map(g=>offsetSeg(g,offM)),mls=segs.map(toLL),out=[];
-  out.push(L.polyline(mls,{pane:'sel',renderer:rSel,color:'#fff',weight:6.5,opacity:.95}));
-  out.push(L.polyline(mls,{pane:'sel',renderer:rSel,color,weight:3.4,opacity:1}));
+  out.push(L.polyline(mls,{pane:'sel',renderer:rSel,color:'#fff',weight:casW,opacity:.95}));
+  out.push(L.polyline(mls,{pane:'sel',renderer:rSel,color,weight:linW,opacity:1}));
   if(s.jumps.length)out.push(L.polyline(s.jumps.map(g=>toLL(offsetSeg(g,offM))),
     {pane:'sel',renderer:rSel,color,weight:1.6,opacity:.5,dashArray:'3 8',interactive:false}));
   if(withDots)out.push(L.layerGroup(s.stops.filter(c=>S.stops[c]).map(c=>{const st=S.stops[c];
@@ -859,28 +877,83 @@ function drawRoute(s,color,offM,withDots){
   if(!isFinite(mid[0])||!isFinite(mid[1]))mid=flat[Math.floor(flat.length/2)];
   out.push(L.marker([mid[1],mid[0]],{pane:'pill',interactive:false,   // pill above the line
     icon:L.divIcon({className:'',html:`<span class="rpill" style="background:${color}">${s.n}</span>`,iconSize:[0,0]})}));
-  return out;
+  // terminus label positions (true stop location) + names (from the route name's two ends)
+  const termini=[],codes=s.stops.filter(c=>S.stops[c]),parts=s.name.split(/[⇄⟲]/).map(t=>t.trim());
+  if(codes.length){
+    const o=S.stops[codes[0]],d=S.stops[codes[codes.length-1]];
+    termini.push({lat:o[1],lng:o[0],name:parts[0]||o[2],color});
+    if(!isLoop&&parts[1])termini.push({lat:d[1],lng:d[0],name:parts[1],color});
+  }
+  return {out,mid:{lat:mid[1],lng:mid[0]},termini};
 }
+// ground metres per screen pixel at the current view — turns pixel lane spacing into metres
+function laneMpp(){const z=map.getZoom(),lat=map.getCenter().lat;
+  return 40075016.686*Math.cos(lat*Math.PI/180)/Math.pow(2,z+8);}
+function clearTermini(){(S.termLayers||[]).forEach(l=>map.removeLayer(l));S.termLayers=[];}
+// draw the selection's lines/pills at ~6 px lane spacing (zoom-aware so overlaps stay legible)
+function paintLines(fit){
+  S.selLayers.forEach(l=>map.removeLayer(l));S.selLayers=[];
+  const colOf={};S._pillPts=[];S._termPts=[];
+  if(!S.selected.length){clearTermini();return colOf;}
+  const sel=S.selected.map(n=>S.svcs[n]).filter(Boolean),N=sel.length;
+  const LANE_PX=6, stepM=N>1?LANE_PX*laneMpp():0;
+  sel.forEach((s,i)=>{const color=SELP[i%SELP.length];colOf[s.n]=color;
+    const offM=N>1?(i-(N-1)/2)*stepM:0;
+    const r=drawRoute(s,color,offM,N===1,N>1);
+    r.out.forEach(l=>{l.addTo(map);S.selLayers.push(l);});
+    S._pillPts.push(r.mid);r.termini.forEach(t=>S._termPts.push(t));});
+  S._colOf=colOf;
+  if(fit){let b=null;S.selLayers.forEach(l=>{if(l.getBounds){b=b?b.extend(l.getBounds()):l.getBounds();}});
+    if(b)map.fitBounds(b,{padding:[40,40]});}
+  placeTermini();
+  return colOf;
+}
+// label the selected routes' termini, dropping any that would overlap a label or a route pill
+function placeTermini(){
+  clearTermini();
+  const pts=S._termPts||[];if(!pts.length)return;
+  const size=map.getSize(),placed=[];
+  (S._pillPts||[]).forEach(p=>{const cp=map.latLngToContainerPoint([p.lat,p.lng]);
+    placed.push({x0:cp.x-17,y0:cp.y-12,x1:cp.x+17,y1:cp.y+12});});   // reserve pill space
+  const seen=new Set(),uniq=[];   // one label per terminus name (several routes may share Woodlands / Toa Payoh)
+  pts.forEach(t=>{if(seen.has(t.name))return;seen.add(t.name);uniq.push(t);});
+  const CH=6.6,PADX=7,H=19,GAP=10;
+  uniq.forEach(t=>{
+    const cp=map.latLngToContainerPoint([t.lat,t.lng]);
+    if(cp.x<-30||cp.y<-30||cp.x>size.x+30||cp.y>size.y+30)return;   // outside the frame
+    const w=t.name.length*CH+2*PADX;
+    const side=(cp.x+GAP+w>size.x-4)?-1:1;                          // flip left near the right edge
+    const x0=side>0?cp.x+GAP:cp.x-GAP-w,rect={x0,y0:cp.y-H/2,x1:x0+w,y1:cp.y+H/2};
+    if(placed.some(r=>!(rect.x1<r.x0||rect.x0>r.x1||rect.y1<r.y0||rect.y0>r.y1)))return;   // collide → drop
+    placed.push(rect);
+    const anchorX=side>0?GAP:-(GAP+w);
+    const m=L.marker([t.lat,t.lng],{pane:'label',interactive:false,
+      icon:L.divIcon({className:'',iconSize:[0,0],
+        html:`<span class="termlab" style="left:${anchorX}px">${t.name}</span>`})});
+    m.addTo(map);S.termLayers.push(m);
+  });
+}
+// keep the selection legible on zoom (relayer lanes) and on pan (re-declutter termini)
+map.on('moveend',()=>{
+  if(!S.selected.length)return;
+  const z=map.getZoom();
+  if(z!==S._lastZoom){S._lastZoom=z;paintLines(false);}
+  else placeTermini();
+});
 function renderSelection(opt){
   opt=opt||{};
   updateClusterBtns();   // keep cluster presets in sync with the live selection
-  S.selLayers.forEach(l=>map.removeLayer(l));S.selLayers=[];
   const c=$('selcard');
   if(!S.selected.length){   // empty state doubles as onboarding help (heuristic #10)
+    paintLines(false);
     c.classList.add('show');
     c.innerHTML='<div class="sel-empty">Switch on a layer below, or search a bus service, to begin. '
       +'Tap a route for its stops, nearby places and audience — pick several to compare coverage.</div>';
     return;
   }
   const sel=S.selected.map(n=>S.svcs[n]);
-  const colOf={},N=sel.length,SP=16;   // 16 m lane spacing between overlapping routes
-  sel.forEach((s,i)=>{const color=SELP[i%SELP.length];colOf[s.n]=color;
-    const offM=N>1?(i-(N-1)/2)*SP:0;
-    drawRoute(s,color,offM,N===1).forEach(l=>{l.addTo(map);S.selLayers.push(l);});});
-  if(opt.fit){
-    let b=null;S.selLayers.forEach(l=>{if(l.getBounds){b=b?b.extend(l.getBounds()):l.getBounds();}});
-    if(b)map.fitBounds(b,{padding:[40,40]});
-  }
+  const colOf=paintLines(opt.fit);
+  S._lastZoom=map.getZoom();
   // --- metrics: total vs unique stops, combined length ---
   const total=sel.reduce((a,s)=>a+s.sc,0);
   const uCodes=new Set();sel.forEach(s=>s.stops.forEach(cd=>{if(S.stops[cd])uCodes.add(cd);}));
@@ -1053,6 +1126,8 @@ function selImpressions(){
   let imp=0;uc.forEach(c=>{const v=S.stopVol[c];if(v)imp+=v.wd;});
   return imp||null;
 }
+// gated by the "Show impressions on exports" toggle
+function impForExport(){return S.showImp?selImpressions():null;}
 function fileBase(){
   const m=matchedCluster();
   if(m)return 'transit-'+CLUSTERS[m].slug;
@@ -1110,7 +1185,7 @@ function roundRect(x,rx,ry,w,h,r){x.beginPath();
   x.arcTo(rx,ry+h,rx,ry,r);x.arcTo(rx,ry,rx+w,ry,r);x.closePath();}
 // stamp the Moove-styled title card onto a canvas context. W = canvas width (px).
 function stampCard(x,W){
-  const info=titleInfo(),imp=selImpressions(),u=W/1000;   // scale unit
+  const info=titleInfo(),imp=impForExport(),u=W/1000;   // scale unit
   x.textBaseline='alphabetic';
   const M=28*u, pad=22*u;
   const eyeF=13*u, badgeF=info.badge.length<=3?34*u:22*u, titleF=20*u, statF=15*u;
@@ -1232,7 +1307,7 @@ async function exportPPT(){
     const w=Math.round(Math.min(window.innerWidth-8,(window.innerHeight-8)*16/9,1280));
     const h=Math.round(w*9/16);
     const mc=await captureFramed(w,h),img=mc.toDataURL('image/jpeg',0.9);
-    const info=titleInfo(),imp=selImpressions();
+    const info=titleInfo(),imp=impForExport();
     const p=new PptxGenJS();p.defineLayout({name:'W',width:13.333,height:7.5});p.layout='W';
     const s=p.addSlide();
     s.background={color:'FFFFFF'};
@@ -1246,6 +1321,7 @@ async function exportPPT(){
   b.disabled=false;b.textContent='PPTX';
 }
 $('expJpg').onclick=exportJPG;$('expPpt').onclick=exportPPT;
+$('impToggle').onchange=e=>{S.showImp=e.target.checked;};
 </script>
 </body>
 </html>
