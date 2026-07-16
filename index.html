@@ -1206,21 +1206,18 @@ function renderSelection(opt){
        <div class="stat"><div class="v">${fmt(total/sel.length)}</div><div class="k">avg stops per route</div></div>
        <div class="stat"><div class="v">${fmt(total-unique)}</div><div class="k">shared / overlapping</div></div>
        <div class="stat"><div class="v">${km.toFixed(1)} km</div><div class="k">combined length</div></div>`;
-  const chips=sel.length>1
-    ? `<div class="subhead">Selected routes</div><div class="chips">`
-      +sel.map(s=>`<span class="achip selchip" data-rm="${s.n}"><span class="cdot" style="background:${colOf[s.n]}"></span><b>${s.n}</b> ${s.name.split(/[⇄⟲]/)[0].trim().slice(0,16)} <span class="x">✕</span></span>`).join('')+`</div>`
-    : '';
+  // (the per-route list lives in its own "Selected routes" section below — no chips here)
   const poi=poiRows?`<div class="subhead">Within 400 m of ${single?'stops':'the selected routes'}</div>${poiRows}`:'';
   const demo=FEATURES.demographics
     ? renderDemographics(sel,uCodes)
     : `<div class="subhead">Demographics</div><div class="placeholder">Demographic layer not loaded yet — will overlay for the selection once data is available.</div>`;
   c.innerHTML=`<div class="card-top">${header}
       <button class="xbtn" aria-label="Clear selection">&#10005;</button></div>
-    <div class="stat-grid">${stopStats}</div>${covNote}${chips}${poi}${demo}`;
+    <div class="stat-grid">${stopStats}</div>${covNote}${poi}${demo}`;
   c.classList.add('show');
   wireCard(c);
   renderLeftbar();applyPoiScope();if(typeof syncExportUI==="function")syncExportUI();
-  $('body').scrollTop=0;
+  $('leftBody').scrollTop=0;
 }
 // stub: wired to overlay demographics relative to the selection once data lands
 // modelled target-audience impressions for the current selection + catchment profile
@@ -1295,7 +1292,7 @@ function selectArea(name){
       <div class="chips" style="margin-top:7px">${fd.map(s=>`<span class="achip" data-svc="${s.n}">${s.n}</span>`).join('')}</div></details>`:''}`;
   c.classList.add('show');
   wireCard(c);
-  $('body').scrollTop=0;
+  $('leftBody').scrollTop=0;
 }
 function wireCard(c){
   const x=c.querySelector('.xbtn');if(x)x.onclick=clearSel;
