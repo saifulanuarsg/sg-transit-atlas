@@ -870,6 +870,36 @@ function toggleRoute(n){
   else S.selected.push(n);
   renderSelection({fit:i<0});   // fit map only when adding
 }
+// --- geometry smoothing: strip micro-zigzags, then round corners (endpoints kept) ---
+// Douglas–Peucker simplify; tol in metres (lng/lat treated planar — fine at SG latitude)
+function simplifyPath(pts,tolM){
+  if(pts.length<3)return pts;
+  const tol=tolM/111320,sq=tol*tol,keep=new Array(pts.length).fill(false);
+  keep[0]=keep[pts.length-1]=true;const stack=[[0,pts.length-1]];
+  while(stack.length){
+    const [s,e]=stack.pop(),[x1,y1]=pts[s],[x2,y2]=pts[e];
+    const dx=x2-x1,dy=y2-y1,len=dx*dx+dy*dy||1e-12;let maxD=0,idx=-1;
+    for(let i=s+1;i<e;i++){const [px,py]=pts[i];
+      let t=((px-x1)*dx+(py-y1)*dy)/len;t=t<0?0:t>1?1:t;
+      const cx=x1+t*dx,cy=y1+t*dy,d=(px-cx)**2+(py-cy)**2;
+      if(d>maxD){maxD=d;idx=i;}}
+    if(maxD>sq&&idx>-1){keep[idx]=true;stack.push([s,idx],[idx,e]);}
+  }
+  return pts.filter((_,i)=>keep[i]);
+}
+// Chaikin corner-cutting; keeps first/last points so termini don't move
+function chaikin(pts,iters){
+  let out=pts;
+  for(let k=0;k<iters&&out.length>=3;k++){
+    const n=out.length,r=[out[0]];
+    for(let i=0;i<n-1;i++){const a=out[i],b=out[i+1];
+      r.push([a[0]*.75+b[0]*.25,a[1]*.75+b[1]*.25]);
+      r.push([a[0]*.25+b[0]*.75,a[1]*.25+b[1]*.75]);}
+    r.push(out[n-1]);out=r;
+  }
+  return out;
+}
+const smoothPath=g=>chaikin(simplifyPath(g,22),2);   // ~22 m tolerance, 2 rounding passes
 // shift a [lng,lat] segment perpendicular to its direction by m metres (parallel lane)
 function offsetSeg(seg,m){
   if(!m||seg.length<2)return seg;
@@ -886,10 +916,12 @@ function offsetSeg(seg,m){
 // returns {out: layers, mid:{lat,lng} (pill point), termini:[{lat,lng,name,color}]}
 function drawRoute(s,color,offM,withDots,multi){
   const casW=multi?5:6.5, linW=multi?3:3.4;   // thinner casing when stacked so lanes don't occlude
-  const segs=s.segs.map(g=>offsetSeg(g,offM)),mls=segs.map(toLL),out=[];
+  const base=s._smSegs||(s._smSegs=s.segs.map(smoothPath));         // smoothed geometry, cached
+  const jbase=s._smJumps||(s._smJumps=(s.jumps||[]).map(smoothPath));
+  const segs=base.map(g=>offsetSeg(g,offM)),mls=segs.map(toLL),out=[];
   out.push(L.polyline(mls,{pane:'sel',renderer:rSel,color:'#fff',weight:casW,opacity:.95}));
   out.push(L.polyline(mls,{pane:'sel',renderer:rSel,color,weight:linW,opacity:1}));
-  if(s.jumps.length)out.push(L.polyline(s.jumps.map(g=>toLL(offsetSeg(g,offM))),
+  if(jbase.length)out.push(L.polyline(jbase.map(g=>toLL(offsetSeg(g,offM))),
     {pane:'sel',renderer:rSel,color,weight:1.6,opacity:.5,dashArray:'3 8',interactive:false}));
   if(withDots)out.push(L.layerGroup(s.stops.filter(c=>S.stops[c]).map(c=>{const st=S.stops[c];
     return L.circleMarker([st[1],st[0]],{pane:'sel',renderer:rSel,radius:2.4,color:'#fff',weight:1,
