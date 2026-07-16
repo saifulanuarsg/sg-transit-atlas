@@ -77,6 +77,8 @@
   .pl-spec{font:600 10px/1.25 system-ui;color:var(--muted);text-align:right;white-space:nowrap}
   #clusterBtns .cluster-btns{margin-bottom:2px}
   .cluster-btns{display:flex;gap:8px}
+  .cluster-btns.grid2{flex-wrap:wrap}
+  .cluster-btns.grid2 .clbtn{flex:1 1 calc(50% - 4px);padding:9px 8px}
   .clbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;
     font:700 13px/1 system-ui;color:var(--ink);background:#fff;border:1.5px solid var(--line);
     border-radius:10px;padding:11px 10px;transition:.12s}
@@ -242,8 +244,9 @@
       <div class="sec">
         <div class="sec-lab">Bus products</div>
         <div id="clusterBtns"></div>
-        <div class="note">Each preset loads a product's City or City-outer route set — tap again to clear.
-          Counts are routes drawn; “×2” buses on a route don't change the modelled reach.</div>
+        <div class="note">Each preset loads a product route set — tap again to clear. Dominance sells as one
+          of four fixed 5-bus combis. (GAS) in a preset's tooltip = Go-Ahead Singapore service on the
+          multi-route format. Counts are routes drawn; “×2” buses on a route don't change the modelled reach.</div>
       </div>
       <div class="sec">
         <div class="sec-lab">Transit network</div>
@@ -295,30 +298,42 @@
 'use strict';
 const $=id=>document.getElementById(id);
 const fmt=n=>Math.round(n).toLocaleString('en-SG');
+const cf=n=>n>=1e6?((n/1e6>=100?Math.round(n/1e6):(n/1e6).toFixed(1))+'M'):fmt(n); // compact
+const TRIPS_DAY=7, DIRS=2;   // operating assumption: each service runs 2 ways × 7 trips a day
 const AGE_C={youth:'#60a5fa',working:'#1e40af',senior:'#d97706'};
 const CHORO_C=['#eff6ff','#bfdbfe','#60a5fa','#2563eb','#1e3a8a'];
-// distinct colours for multi-route selection (dark enough for white pill text)
-const SELP=['#d97706','#2563eb','#7c3aed','#16a34a','#db2777','#0891b2','#dc2626','#ca8a04'];
-// bus products — each has a City and a City-outer route set, loaded as a one-tap preset.
+// distinct colours for multi-route selection (dark enough for white pill text).
+// 16 unique — covers the largest product set with no repeats; consecutive entries
+// are far apart in hue so overlapping lanes stay tellable-apart.
+const SELP=['#dc2626','#2563eb','#16a34a','#d97706','#7c3aed','#0e7490','#db2777','#4d7c0f',
+  '#4338ca','#92400e','#0891b2','#a21caf','#991b1b','#1e3a8a','#047857','#c2410c'];
+// GAS = Go-Ahead Singapore services running on the multi-route format
+const GAS=new Set(['518','85','31','43','65','2','12','10','28','39','72']);
+// bus products — each preset (City / City-outer, or a Dominance combi) loads a route set.
 // "×N buses" specs count physical buses (some routes carry 2); the map draws each route once
 // and modelled reach is route-level, so bus multiples don't change the audience figure.
 const PRODUCTS=[
-  {key:'classic', name:'Dynamic Bus · Classic', spec:'18 curated services',
-    city :['5','107','111','121','132','147'],
-    outer:['117','21','45','103','102','109','153','157','161','163','168','198']},
-  {key:'dual', name:'DB Portrait · Dual screen', spec:'20 buses · 100% dominance',
-    city :['190','972','143','518','960','70','97','176','133'],
-    outer:['117','198','76','89','87','31','43','85']},
-  {key:'single', name:'DB Portrait · Single screen', spec:'30 buses · SOT / programmatic',
-    city :['190','972','106','143','132','65','2','12','80','188','960','961','5','70','130','10'],
-    outer:['117','71','28','39','72','979','962','335','181','185','800','806','807','811']},
+  {key:'landscape', name:'Dynamic Bus · Landscape', spec:'18 curated services', sets:[
+    {ck:'city', label:'City',       color:'#091CA1', routes:['5','107','111','121','132','147']},
+    {ck:'outer',label:'City outer', color:'#0E8A6E', routes:['117','21','45','103','102','109','153','157','161','163','168','198']},
+  ]},
+  // 100% dominance sells as one of four fixed 5-bus combis — each is its own preset
+  {key:'dual', name:'DB Portrait · Dual screen', spec:'100% dominance · 5 buses per combi', sets:[
+    {ck:'c1', label:'Combi 1', color:'#091CA1', routes:['190','518','70','117','87']},
+    {ck:'c2', label:'Combi 2', color:'#0E8A6E', routes:['190','70','133','198','85']},
+    {ck:'c3', label:'Combi 3', color:'#7C2D92', routes:['972','143','5','76','31']},
+    {ck:'c4', label:'Combi 4', color:'#C2410C', routes:['972','97','130','89','43']},
+  ]},
+  {key:'single', name:'DB Portrait · Single screen', spec:'30 buses · SOT / programmatic', sets:[
+    {ck:'city', label:'City',       color:'#091CA1', routes:['190','972','106','143','132','65','80','188','960','961','70','176','2','12','10']},
+    {ck:'outer',label:'City outer', color:'#0E8A6E', routes:['117','71','28','39','72','979','962','335','181','185','800','806','807','811']},
+  ]},
 ];
 // flat key→cluster lookup (product-cluster id) used by selection / highlight / export title
 const CLUSTERS={};
-PRODUCTS.forEach(p=>['city','outer'].forEach(ck=>{
-  const label=ck==='city'?'City':'City outer';
-  CLUSTERS[p.key+'-'+ck]={routes:p[ck],label,slug:p.key+'-'+ck,
-    color:ck==='city'?'#091CA1':'#0E8A6E',title:p.name+' · '+label,product:p.name,spec:p.spec};
+PRODUCTS.forEach(p=>p.sets.forEach(st=>{
+  CLUSTERS[p.key+'-'+st.ck]={routes:st.routes,label:st.label,slug:p.key+'-'+st.ck,
+    color:st.color,title:p.name+' · '+st.label,product:p.name,spec:p.spec};
 }));
 const FEATURES={demographics:false};   // flipped on when planning-area data is present
 
@@ -612,13 +627,14 @@ function buildClusters(){
     const lab=document.createElement('div');lab.className='prod-lab'+(pi===0?' first':'');
     lab.innerHTML=`<span class="pl-name">${p.name}</span><span class="pl-spec">${p.spec}</span>`;
     host.appendChild(lab);
-    const row=document.createElement('div');row.className='cluster-btns';
-    ['city','outer'].forEach(ck=>{
-      const key=p.key+'-'+ck,c=CLUSTERS[key];
+    const row=document.createElement('div');
+    row.className='cluster-btns'+(p.sets.length>2?' grid2':'');   // 4 combis wrap 2×2
+    p.sets.forEach(st=>{
+      const key=p.key+'-'+st.ck,c=CLUSTERS[key];
       const n=c.routes.filter(x=>S.svcs[x]).length;
       const btn=document.createElement('button');btn.type='button';btn.className='clbtn';
       btn.dataset.k=key;btn.style.setProperty('--cc',c.color);btn.setAttribute('aria-pressed','false');
-      btn.title=`${c.title} — ${c.routes.join(', ')}`;
+      btn.title=`${c.title} — ${c.routes.map(r=>GAS.has(r)?r+' (GAS)':r).join(', ')}`;
       btn.innerHTML=`<span class="cl-name">${c.label}</span><span class="cl-n">${n}</span>`;
       btn.onclick=()=>selectCluster(key);
       row.appendChild(btn);
@@ -1020,11 +1036,16 @@ function renderSelection(opt){
        <span class="card-name">${single.name}</span>
        <span class="chip ${single.feeder?'feeder':'trunk'}">${single.feeder?'feeder':'trunk'}</span>`
     : `<span class="card-name" style="font-size:14px">${sel.length} routes selected</span>`;
+  const coverage=unique*DIRS*TRIPS_DAY;   // stop-coverage events per day
+  const covNote=`<div class="note" style="margin:-3px 0 6px">Stops covered / day = unique stops × ${DIRS} directions × ${TRIPS_DAY} trips a day.</div>`;
   const stopStats=single
     ? `<div class="stat"><div class="v">${single.sc}</div><div class="k">stops (unique)</div></div>
-       <div class="stat"><div class="v">${km.toFixed(1)} km</div><div class="k">route length</div></div>`
+       <div class="stat"><div class="v">${km.toFixed(1)} km</div><div class="k">route length</div></div>
+       <div class="stat"><div class="v">${fmt(coverage)}</div><div class="k">stops covered / day</div></div>`
     : `<div class="stat"><div class="v">${fmt(unique)}</div><div class="k">unique stops</div></div>
        <div class="stat"><div class="v">${fmt(total)}</div><div class="k">total stops (with overlap)</div></div>
+       <div class="stat"><div class="v">${fmt(coverage)}</div><div class="k">stops covered / day</div></div>
+       <div class="stat"><div class="v">${fmt(total/sel.length)}</div><div class="k">avg stops per route</div></div>
        <div class="stat"><div class="v">${fmt(total-unique)}</div><div class="k">shared / overlapping</div></div>
        <div class="stat"><div class="v">${km.toFixed(1)} km</div><div class="k">combined length</div></div>`;
   const chips=sel.length>1
@@ -1037,7 +1058,7 @@ function renderSelection(opt){
     : `<div class="subhead">Demographics</div><div class="placeholder">Demographic layer not loaded yet — will overlay for the selection once data is available.</div>`;
   c.innerHTML=`<div class="card-top">${header}
       <button class="xbtn" aria-label="Clear selection">&#10005;</button></div>
-    <div class="stat-grid">${stopStats}</div>${chips}${poi}${demo}`;
+    <div class="stat-grid">${stopStats}</div>${covNote}${chips}${poi}${demo}`;
   c.classList.add('show');
   wireCard(c);
   $('body').scrollTop=0;
@@ -1047,7 +1068,9 @@ function renderSelection(opt){
 function renderDemographics(sel,uCodes){
   if(!FEATURES.demographics)return '';
   const codes=[...uCodes];
-  let allImp=0;codes.forEach(c=>{const v=S.stopVol[c];if(v)allImp+=v.wd;});
+  let allImp=0,weImp=0;codes.forEach(c=>{const v=S.stopVol[c];
+    if(v){allImp+=v.wd;weImp+=(v.we!=null?v.we:v.wd);}});
+  const w12=Math.round((5*allImp+2*weImp)*12);   // 12 weeks = (5 × weekday + 2 × weekend) × 12
   // catchment profile: sum age/income over served planning areas
   const served=new Set();codes.forEach(c=>{const a=S.stopArea[c];if(a)served.add(a);});
   let ch=0,y=0,w=0,sr=0,incW=0,incP=0,servedWithData=0;
@@ -1066,8 +1089,12 @@ function renderDemographics(sel,uCodes){
       <div class="stat"><div class="v" style="color:${idx>=110?'#16a34a':idx<=90?'#d97706':'var(--primary)'}">${idx!=null?idx:'–'}</div><div class="k">index vs national (100 = avg)</div></div></div>`;
   }
   return `<div class="subhead">Audience — modelled OTS</div>
-    <div class="stat"><div class="v">${fmt(allImp)}</div>
-      <div class="k">daily impressions · all commuters (avg weekday)</div></div>
+    <div class="stat-grid" style="margin:0 0 4px">
+      <div class="stat"><div class="v">${fmt(allImp)}</div>
+        <div class="k">daily impressions · all commuters (avg weekday)</div></div>
+      <div class="stat" title="${fmt(w12)} = (5 × weekday + 2 × weekend taps) × 12 weeks">
+        <div class="v">${cf(w12)}</div><div class="k">impressions · 12 weeks (84 days)</div></div>
+    </div>
     ${segBlock}
     ${servedWithData?`<div class="subhead">Catchment profile — ${servedWithData} area${servedWithData===1?'':'s'}</div>
       ${ageBar(ch,y+w,sr)}
@@ -1175,8 +1202,8 @@ function titleInfo(){
 function selImpressions(){
   if(!FEATURES.demographics||!S.selected.length)return null;
   const uc=new Set();S.selected.forEach(n=>S.svcs[n]&&S.svcs[n].stops.forEach(c=>{if(S.stops[c])uc.add(c);}));
-  let imp=0;uc.forEach(c=>{const v=S.stopVol[c];if(v)imp+=v.wd;});
-  return imp||null;
+  let wd=0,we=0;uc.forEach(c=>{const v=S.stopVol[c];if(v){wd+=v.wd;we+=(v.we!=null?v.we:v.wd);}});
+  return wd?{wd,w12:Math.round((5*wd+2*we)*12)}:null;   // 12 weeks = (5×wd + 2×we) × 12
 }
 // gated by the "Show impressions on exports" toggle
 function impForExport(){return S.showImp?selImpressions():null;}
@@ -1258,12 +1285,13 @@ function stampCard(x,W){
   x.font=`800 ${eyeF}px Inter,system-ui,sans-serif`;
   const eyeW=x.measureText(info.eyebrow.toUpperCase()).width+eyeF*2;
   const rowW=(info.badge?bw+16*u:0)+titleBlockW;
-  const statTxt=imp?'≈ '+fmt(imp)+'  daily impressions':'';
   x.font=`700 ${statF}px Inter,system-ui,sans-serif`;
-  const statW=imp?x.measureText(statTxt).width:0;
+  const statW=imp?Math.max(
+    x.measureText('≈ '+fmt(imp.wd)+'  daily impressions').width,
+    x.measureText('≈ '+cf(imp.w12)+'  impressions · 12 weeks').width):0;
   const cardW=Math.min(W-2*M,Math.max(eyeW,rowW,statW)+2*pad);
   const titleLineH=titleF*1.18, badgeRowH=Math.max(badgeH,tl.length*titleLineH);
-  const cardH=pad+eyeF+14*u+badgeRowH+(imp?18*u+statF:0)+pad;
+  const cardH=pad+eyeF+14*u+badgeRowH+(imp?18*u+statF+9*u+statF:0)+pad;
   // card
   x.save();
   x.shadowColor='rgba(15,23,42,.18)';x.shadowBlur=22*u;x.shadowOffsetY=6*u;
@@ -1292,14 +1320,20 @@ function stampCard(x,W){
   const titleTop=rowMidY-(tl.length*titleLineH)/2+titleF*0.82;
   tl.forEach((t,i)=>x.fillText(t,tx,titleTop+i*titleLineH));
   cy=rowTop+badgeRowH;
-  // impressions stat
+  // impressions stats — daily + 12-week campaign figure
   if(imp){
     cy+=18*u+statF*0.5;
     x.font=`800 ${statF}px Inter,system-ui,sans-serif`;x.fillStyle=MOOVE.pink;
-    const lead='≈ '+fmt(imp)+' ';const lw=x.measureText(lead).width;
+    const lead='≈ '+fmt(imp.wd)+' ';const lw=x.measureText(lead).width;
     x.fillText(lead,M+pad,cy);
     x.font=`600 ${statF}px Inter,system-ui,sans-serif`;x.fillStyle=MOOVE.grey;
     x.fillText('daily impressions',M+pad+lw,cy);
+    cy+=statF+9*u;
+    x.font=`800 ${statF}px Inter,system-ui,sans-serif`;x.fillStyle=MOOVE.blue;
+    const lead2='≈ '+cf(imp.w12)+' ';const lw2=x.measureText(lead2).width;
+    x.fillText(lead2,M+pad,cy);
+    x.font=`600 ${statF}px Inter,system-ui,sans-serif`;x.fillStyle=MOOVE.grey;
+    x.fillText('impressions · 12 weeks',M+pad+lw2,cy);
   }
 }
 // source strip along the bottom (translucent so the map still reads through it)
@@ -1332,7 +1366,7 @@ function addMooveCard(s,info,imp){
   const hex=h=>h.replace('#',''),PINK=hex(MOOVE.pink),BLUE=hex(MOOVE.blue),
     INK=hex(MOOVE.ink),GREY=hex(MOOVE.grey);
   const long=info.title.length>26;
-  const cardW=long?6.2:5.0, cardH=imp?1.95:1.55, X=0.35, Y=0.35, P=0.22;
+  const cardW=long?6.2:5.0, cardH=imp?2.28:1.55, X=0.35, Y=0.35, P=0.22;
   s.addShape('roundRect',{x:X,y:Y,w:cardW,h:cardH,fill:{color:'FFFFFF'},
     line:{color:'E6E9EE',width:1},rectRadius:0.11,shadow:{type:'outer',color:'0F172A',
       opacity:0.22,blur:9,offset:3,angle:90}});
@@ -1350,8 +1384,11 @@ function addMooveCard(s,info,imp){
     w:cardW-2*P-(info.badge?badgeW+0.18:0),h:0.78,fontSize:long?15:17,bold:true,
     color:BLUE,valign:'middle',fontFace:'Inter'});
   if(imp){
-    s.addText([{text:'≈ '+fmt(imp)+' ',options:{bold:true,color:PINK,fontSize:13,fontFace:'Inter'}},
+    s.addText([{text:'≈ '+fmt(imp.wd)+' ',options:{bold:true,color:PINK,fontSize:13,fontFace:'Inter'}},
       {text:'daily impressions · modelled',options:{color:GREY,fontSize:11,fontFace:'Inter'}}],
+      {x:X+P,y:Y+cardH-0.74,w:cardW-2*P,h:0.32,valign:'middle'});
+    s.addText([{text:'≈ '+cf(imp.w12)+' ',options:{bold:true,color:BLUE,fontSize:13,fontFace:'Inter'}},
+      {text:'impressions · 12 weeks',options:{color:GREY,fontSize:11,fontFace:'Inter'}}],
       {x:X+P,y:Y+cardH-0.42,w:cardW-2*P,h:0.32,valign:'middle'});
   }
 }
