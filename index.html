@@ -70,6 +70,18 @@
   .legend-lab{display:flex;justify-content:space-between;font:500 10px/1 system-ui;
     color:var(--muted);margin-top:4px}
 
+  /* ---------- route clusters (curated fleet presets) ---------- */
+  .cluster-btns{display:flex;gap:8px}
+  .clbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;
+    font:700 13px/1 system-ui;color:var(--ink);background:#fff;border:1.5px solid var(--line);
+    border-radius:10px;padding:11px 10px;transition:.12s}
+  .clbtn:hover{border-color:var(--cc);color:var(--cc)}
+  .clbtn.on{background:var(--cc);border-color:var(--cc);color:#fff}
+  .clbtn:focus-visible{outline:2px solid var(--cc);outline-offset:2px}
+  .clbtn .cl-n{font:800 11px/1 system-ui;background:rgba(15,23,42,.08);border-radius:999px;
+    padding:3px 7px;color:inherit}
+  .clbtn.on .cl-n{background:rgba(255,255,255,.25)}
+
   /* ---------- selection card ---------- */
   #selcard{display:none}
   #selcard.show{display:block}
@@ -207,6 +219,11 @@
     <div id="body">
       <div class="sec" id="selcard"></div>
       <div class="sec">
+        <div class="sec-lab">Route clusters</div>
+        <div class="cluster-btns" id="clusterBtns"></div>
+        <div class="note">Load a full prefixed-fleet cluster — every service in it at once. Tap again to clear.</div>
+      </div>
+      <div class="sec">
         <div class="sec-lab">Transit network</div>
         <div id="netToggles"></div>
         <div class="sub-lab" id="railSub">Rail lines <span class="hint-txt">tap a line to focus its stations</span></div>
@@ -260,12 +277,19 @@ const AGE_C={youth:'#60a5fa',working:'#1e40af',senior:'#d97706'};
 const CHORO_C=['#eff6ff','#bfdbfe','#60a5fa','#2563eb','#1e3a8a'];
 // distinct colours for multi-route selection (dark enough for white pill text)
 const SELP=['#d97706','#2563eb','#7c3aed','#16a34a','#db2777','#0891b2','#dc2626','#ca8a04'];
+// curated prefixed-fleet clusters (from the bus-routes generator) — one-tap presets
+const CLUSTERS={
+  city :{label:'City',      slug:'city',      color:'#091CA1',
+    routes:['5','107','111','121','132','147']},
+  outer:{label:'City outer',slug:'city-outer',color:'#0E8A6E',
+    routes:['117','21','45','103','102','109','153','157','161','163','168','198']},
+};
 const FEATURES={demographics:false};   // flipped on when planning-area data is present
 
 // ---------------- map ----------------
 const map=L.map('map',{zoomControl:false}).setView([1.352,103.82],12);
 L.control.zoom({position:'bottomright'}).addTo(map);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
+const baseTiles=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
   attribution:'&copy; OpenStreetMap contributors &copy; CARTO',maxZoom:19,
   crossOrigin:'anonymous'}).addTo(map);   // enables canvas export of the basemap
 ['areas','bus','poi'].forEach((p,i)=>{map.createPane(p).style.zIndex=380+i*20;});
@@ -275,7 +299,8 @@ map.createPane('pill').style.zIndex=490;   // route pills sit above their lines
 map.createPane('label').style.zIndex=495;  // hub / station reference labels on top
 map.getPane('label').style.pointerEvents='none';
 const rBus=L.canvas({pane:'bus',padding:.4}), rPoi=L.canvas({pane:'poi',padding:.4}),
-      rRail=L.canvas({pane:'rail',padding:.4});
+      rRail=L.canvas({pane:'rail',padding:.4}),
+      rSel=L.canvas({pane:'sel',padding:.5});   // canvas (not SVG) so image export captures the selection
 
 // ---------------- state ----------------
 const POI=[
@@ -534,9 +559,45 @@ function buildPanel(){
     row.querySelector('.cnt').textContent=S.pois[cfg.key]?S.pois[cfg.key].length:'—';
     pt.appendChild(row);
   });
+  buildClusters();
   buildRanking();
   buildDemographics();
   buildSearch();
+}
+// ---------------- route clusters (curated presets) ----------------
+function buildClusters(){
+  const host=$('clusterBtns');if(!host)return;host.innerHTML='';
+  Object.entries(CLUSTERS).forEach(([k,c])=>{
+    const n=c.routes.filter(x=>S.svcs[x]).length;
+    const btn=document.createElement('button');btn.type='button';btn.className='clbtn';
+    btn.dataset.k=k;btn.style.setProperty('--cc',c.color);
+    btn.setAttribute('aria-pressed','false');
+    btn.title=`${c.label} cluster — ${c.routes.join(', ')}`;
+    btn.innerHTML=`<span class="cl-name">${c.label}</span><span class="cl-n">${n}</span>`;
+    btn.onclick=()=>selectCluster(k);
+    host.appendChild(btn);
+  });
+}
+// which cluster (if any) the current selection exactly equals
+function matchedCluster(){
+  for(const k in CLUSTERS){
+    const r=CLUSTERS[k].routes.filter(n=>S.svcs[n]);
+    if(r.length===S.selected.length&&r.every(n=>S.selected.includes(n)))return k;
+  }
+  return null;
+}
+function updateClusterBtns(){
+  const m=matchedCluster();
+  document.querySelectorAll('.clbtn').forEach(b=>{
+    const on=b.dataset.k===m;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on));});
+}
+function selectCluster(k){
+  const set=CLUSTERS[k].routes.filter(n=>S.svcs[n]);
+  const already=matchedCluster()===k;
+  clearSel();                       // resets selection (and clears any cluster highlight)
+  if(already)return;                // tapping the active cluster just clears
+  set.forEach(n=>S.selected.push(n));
+  renderSelection({fit:true});
 }
 // Scenario 4 — feature-flagged Demographics layer. Disabled until data is present;
 // FEATURES.demographics flips true when planning-area data loads, enabling the overlay.
@@ -781,16 +842,16 @@ function offsetSeg(seg,m){
 // draw one route's path/stops/pill/termini in a colour, offset into its own lane
 function drawRoute(s,color,offM,withDots){
   const segs=s.segs.map(g=>offsetSeg(g,offM)),mls=segs.map(toLL),out=[];
-  out.push(L.polyline(mls,{pane:'sel',color:'#fff',weight:6.5,opacity:.95}));
-  out.push(L.polyline(mls,{pane:'sel',color,weight:3.4,opacity:1}));
+  out.push(L.polyline(mls,{pane:'sel',renderer:rSel,color:'#fff',weight:6.5,opacity:.95}));
+  out.push(L.polyline(mls,{pane:'sel',renderer:rSel,color,weight:3.4,opacity:1}));
   if(s.jumps.length)out.push(L.polyline(s.jumps.map(g=>toLL(offsetSeg(g,offM))),
-    {pane:'sel',color,weight:1.6,opacity:.5,dashArray:'3 8',interactive:false}));
+    {pane:'sel',renderer:rSel,color,weight:1.6,opacity:.5,dashArray:'3 8',interactive:false}));
   if(withDots)out.push(L.layerGroup(s.stops.filter(c=>S.stops[c]).map(c=>{const st=S.stops[c];
-    return L.circleMarker([st[1],st[0]],{pane:'sel',radius:2.4,color:'#fff',weight:1,
+    return L.circleMarker([st[1],st[0]],{pane:'sel',renderer:rSel,radius:2.4,color:'#fff',weight:1,
       fillColor:color,fillOpacity:1}).bindTooltip(`${st[2]} · ${st[3]}`);})));
   const last=segs[segs.length-1],term=[segs[0][0],last[last.length-1]];
   const isLoop=segLen([term[0],term[1]])<0.15;
-  (isLoop?[term[0]]:term).forEach(p=>out.push(L.circleMarker([p[1],p[0]],{pane:'sel',
+  (isLoop?[term[0]]:term).forEach(p=>out.push(L.circleMarker([p[1],p[0]],{pane:'sel',renderer:rSel,
     radius:4.2,color,weight:2.4,fillColor:'#fff',fillOpacity:1})));
   const flat=segs.flat();let half=segs.reduce((a,g)=>a+segLen(g),0)/2,mid=flat[0];
   outer:for(const g of segs){for(let i=1;i<g.length;i++){const d=segLen([g[i-1],g[i]]);
@@ -802,6 +863,7 @@ function drawRoute(s,color,offM,withDots){
 }
 function renderSelection(opt){
   opt=opt||{};
+  updateClusterBtns();   // keep cluster presets in sync with the live selection
   S.selLayers.forEach(l=>map.removeLayer(l));S.selLayers=[];
   const c=$('selcard');
   if(!S.selected.length){   // empty state doubles as onboarding help (heuristic #10)
@@ -964,67 +1026,222 @@ function buildSearch(){
 }
 
 // ---------------- export current map as JPG / PPTX ----------------
-// captures the live map (current layer + segment + route combination) as an image,
-// with the selected factors compiled into a caption / native slide text.
-function currentFactors(){
-  const on=g=>map.hasLayer(g), layers=[];
-  if(on(groups.trunk))layers.push('trunk buses');
-  if(on(groups.hubs))layers.push('bus hubs');
-  if(S.railOn)layers.push(S.activeLine?('rail — '+(RAIL_NAME[S.activeLine]||S.activeLine)):'MRT/LRT lines');
-  POI.forEach(c=>{if(on(groups[c.key]))layers.push(c.label.toLowerCase());});
-  const segCfg=SEG.find(s=>s.key===S.segment), lines=[];
-  if(S.selected.length)lines.push('Routes selected: '+S.selected.join(', '));
-  if(S.segment&&S.segment!=='none')
-    lines.push('Shading: '+(S.segment==='all'?'residents (population)':(segCfg?segCfg.label:S.segment)+' index'));
-  lines.push('Layers: '+(layers.join(', ')||'basemap only'));
-  if(S.selected.length&&FEATURES.demographics){
-    const uc=new Set();S.selected.forEach(n=>S.svcs[n]&&S.svcs[n].stops.forEach(c=>{if(S.stops[c])uc.add(c);}));
-    let imp=0;uc.forEach(c=>{const v=S.stopVol[c];if(v)imp+=v.wd;});
-    if(imp)lines.push('≈ '+fmt(imp)+' modelled daily impressions (all commuters)');
-  }
-  return {title:'Singapore Transit Atlas',lines,
-    source:'Basemap © OpenStreetMap © CARTO · LTA DataMall passenger volume (Jun 2026) · '
-      +'SingStat Census 2020 · figures modelled, not measured'};
+// Re-renders the map into a fixed aspect ratio (square for JPG, 16:9 for PPTX),
+// re-fitting the current selection so the route is framed tight — no dead space —
+// then stamps a Moove-styled title card. Live layout is restored afterwards.
+const MOOVE={pink:'#FF1E5B',blue:'#091CA1',ink:'#1D2733',grey:'#6B7785',line:'#E6E9EE'};
+const SOURCE='LTA DataMall (Jun 2026) · SingStat Census 2020 · Basemap © OpenStreetMap © CARTO · modelled, not measured';
+
+// title/badge/colour for whatever is currently selected
+function titleInfo(){
+  const m=matchedCluster();
+  if(m){const c=CLUSTERS[m],rs=c.routes.filter(n=>S.svcs[n]);
+    return {eyebrow:'Route cluster',badge:String(rs.length),title:c.label+' routes',
+      color:c.color,sub:rs.join(' · ')};}
+  if(S.selected.length===1){const s=S.svcs[S.selected[0]];
+    return {eyebrow:s.feeder?'Feeder route':'Bus route',badge:s.n,title:s.name,
+      color:SELP[0],sub:''};}
+  if(S.selected.length>1)
+    return {eyebrow:'Selected routes',badge:String(S.selected.length),
+      title:S.selected.length+' routes selected',color:SELP[0],sub:S.selected.join(' · ')};
+  return {eyebrow:'Transit network',badge:'',title:'Singapore Transit Atlas',
+    color:'#1e40af',sub:''};
 }
-function captureMap(){
-  if(typeof html2canvas==='undefined')return Promise.reject(new Error('image library not loaded'));
-  return html2canvas(document.getElementById('map'),{useCORS:true,backgroundColor:'#e8ecef',
-    scale:1.6,logging:false,
-    ignoreElements:n=>n.classList&&n.classList.contains('leaflet-control-zoom')});
+function selImpressions(){
+  if(!FEATURES.demographics||!S.selected.length)return null;
+  const uc=new Set();S.selected.forEach(n=>S.svcs[n]&&S.svcs[n].stops.forEach(c=>{if(S.stops[c])uc.add(c);}));
+  let imp=0;uc.forEach(c=>{const v=S.stopVol[c];if(v)imp+=v.wd;});
+  return imp||null;
+}
+function fileBase(){
+  const m=matchedCluster();
+  if(m)return 'transit-'+CLUSTERS[m].slug;
+  if(S.selected.length===1)return 'bus-'+S.selected[0];
+  if(S.selected.length>1)return 'routes-'+S.selected.join('-');
+  return 'transit-atlas';
+}
+// geographic bounds of the current selection (null = keep current view)
+function selectionBounds(){
+  if(!S.selected.length)return null;
+  let b=null;
+  S.selected.forEach(n=>{const s=S.svcs[n];if(!s)return;
+    (s.segs||[]).forEach(g=>g.forEach(([x,y])=>{const ll=L.latLng(y,x);
+      b=b?b.extend(ll):L.latLngBounds(ll,ll);}));});
+  return b;
+}
+// wait until the basemap tiles for the current view have loaded (with a fallback)
+function tilesReady(){
+  return new Promise(res=>{let done=false;const fin=()=>{if(done)return;done=true;res();};
+    baseTiles.once('load',()=>setTimeout(fin,140));
+    setTimeout(fin,1800);});
+}
+// render the map at w×h px, framed on the selection, return a scale-2 canvas
+async function captureFramed(w,h){
+  if(typeof html2canvas==='undefined')throw new Error('image library not loaded');
+  const el=$('map');
+  const view={c:map.getCenter(),z:map.getZoom()};
+  const css={position:el.style.position,left:el.style.left,top:el.style.top,
+    width:el.style.width,height:el.style.height,flex:el.style.flex,zIndex:el.style.zIndex};
+  el.style.position='fixed';el.style.left='0';el.style.top='0';el.style.zIndex='99999';
+  el.style.flex='none';el.style.width=w+'px';el.style.height=h+'px';
+  map.invalidateSize({animate:false});
+  const b=selectionBounds(),pad=Math.round(Math.min(w,h)*0.055);
+  if(b)map.fitBounds(b,{padding:[pad,pad],animate:false});
+  await new Promise(r=>{map.once('moveend',r);setTimeout(r,350);});
+  await tilesReady();
+  let canvas;
+  try{
+    canvas=await html2canvas(el,{useCORS:true,backgroundColor:'#e8ecef',scale:2,logging:false,
+      width:w,height:h,
+      ignoreElements:n=>n.classList&&(n.classList.contains('leaflet-control-zoom')
+        ||n.classList.contains('leaflet-control-attribution'))});
+  }finally{
+    Object.assign(el.style,css);
+    map.invalidateSize({animate:false});
+    map.setView(view.c,view.z,{animate:false});
+  }
+  return canvas;
 }
 function dl(url,name){const a=document.createElement('a');a.href=url;a.download=name;
   document.body.appendChild(a);a.click();a.remove();}
+function roundRect(x,rx,ry,w,h,r){x.beginPath();
+  if(x.roundRect){x.roundRect(rx,ry,w,h,r);return;}
+  x.moveTo(rx+r,ry);x.arcTo(rx+w,ry,rx+w,ry+h,r);x.arcTo(rx+w,ry+h,rx,ry+h,r);
+  x.arcTo(rx,ry+h,rx,ry,r);x.arcTo(rx,ry,rx+w,ry,r);x.closePath();}
+// stamp the Moove-styled title card onto a canvas context. W = canvas width (px).
+function stampCard(x,W){
+  const info=titleInfo(),imp=selImpressions(),u=W/1000;   // scale unit
+  x.textBaseline='alphabetic';
+  const M=28*u, pad=22*u;
+  const eyeF=13*u, badgeF=info.badge.length<=3?34*u:22*u, titleF=20*u, statF=15*u;
+  const badgeH=info.badge?52*u:0;
+  x.font=`800 ${badgeF}px Inter,system-ui,sans-serif`;   // measure badge width
+  const bw=info.badge?Math.max(52*u,x.measureText(info.badge).width+30*u):0;
+  // wrap title to a max width
+  const maxTitleW=Math.min(W*0.5,420*u);
+  x.font=`800 ${titleF}px Inter,system-ui,sans-serif`;
+  const words=info.title.split(' '),tl=[];let cur='';
+  words.forEach(wd=>{const t=cur?cur+' '+wd:wd;
+    if(x.measureText(t).width>maxTitleW&&cur){tl.push(cur);cur=wd;}else cur=t;});
+  if(cur)tl.push(cur);
+  const titleBlockW=Math.max(...tl.map(t=>x.measureText(t).width));
+  x.font=`800 ${eyeF}px Inter,system-ui,sans-serif`;
+  const eyeW=x.measureText(info.eyebrow.toUpperCase()).width+eyeF*2;
+  const rowW=(info.badge?bw+16*u:0)+titleBlockW;
+  const statTxt=imp?'≈ '+fmt(imp)+'  daily impressions':'';
+  x.font=`700 ${statF}px Inter,system-ui,sans-serif`;
+  const statW=imp?x.measureText(statTxt).width:0;
+  const cardW=Math.min(W-2*M,Math.max(eyeW,rowW,statW)+2*pad);
+  const titleLineH=titleF*1.18, badgeRowH=Math.max(badgeH,tl.length*titleLineH);
+  const cardH=pad+eyeF+14*u+badgeRowH+(imp?18*u+statF:0)+pad;
+  // card
+  x.save();
+  x.shadowColor='rgba(15,23,42,.18)';x.shadowBlur=22*u;x.shadowOffsetY=6*u;
+  x.fillStyle='#ffffff';roundRect(x,M,M,cardW,cardH,16*u);x.fill();
+  x.restore();
+  x.strokeStyle=MOOVE.line;x.lineWidth=1*u;roundRect(x,M,M,cardW,cardH,16*u);x.stroke();
+  // pink accent rule
+  x.fillStyle=MOOVE.pink;roundRect(x,M+pad,M+pad,44*u,6*u,3*u);x.fill();
+  let cy=M+pad+6*u;
+  // eyebrow
+  cy+=eyeF+6*u;
+  x.fillStyle=MOOVE.pink;x.font=`800 ${eyeF}px Inter,system-ui,sans-serif`;
+  x.fillText(info.eyebrow.toUpperCase(),M+pad,cy,cardW-2*pad);
+  // badge + title row
+  const rowTop=cy+12*u, rowMidY=rowTop+badgeRowH/2;
+  let tx=M+pad;
+  if(info.badge){
+    x.fillStyle=info.color;roundRect(x,tx,rowTop+(badgeRowH-badgeH)/2,bw,badgeH,12*u);x.fill();
+    x.fillStyle='#ffffff';x.font=`800 ${badgeF}px Inter,system-ui,sans-serif`;
+    x.textAlign='center';x.textBaseline='middle';
+    x.fillText(info.badge,tx+bw/2,rowTop+(badgeRowH-badgeH)/2+badgeH/2);
+    x.textAlign='left';x.textBaseline='alphabetic';
+    tx+=bw+16*u;
+  }
+  x.fillStyle=MOOVE.blue;x.font=`800 ${titleF}px Inter,system-ui,sans-serif`;
+  const titleTop=rowMidY-(tl.length*titleLineH)/2+titleF*0.82;
+  tl.forEach((t,i)=>x.fillText(t,tx,titleTop+i*titleLineH));
+  cy=rowTop+badgeRowH;
+  // impressions stat
+  if(imp){
+    cy+=18*u+statF*0.5;
+    x.font=`800 ${statF}px Inter,system-ui,sans-serif`;x.fillStyle=MOOVE.pink;
+    const lead='≈ '+fmt(imp)+' ';const lw=x.measureText(lead).width;
+    x.fillText(lead,M+pad,cy);
+    x.font=`600 ${statF}px Inter,system-ui,sans-serif`;x.fillStyle=MOOVE.grey;
+    x.fillText('daily impressions',M+pad+lw,cy);
+  }
+}
+// source strip along the bottom (translucent so the map still reads through it)
+function stampSource(x,W,H){
+  const u=W/1000,fs=12*u,pad=16*u;
+  x.font=`500 ${fs}px Inter,system-ui,sans-serif`;
+  const tw=x.measureText(SOURCE).width;
+  x.fillStyle='rgba(255,255,255,.82)';
+  roundRect(x,W-tw-2*pad-M0(u),H-fs-2*pad-M0(u),tw+2*pad,fs+2*pad,8*u);x.fill();
+  x.fillStyle=MOOVE.grey;x.textBaseline='middle';
+  x.fillText(SOURCE,W-tw-pad-M0(u),H-fs/2-pad-M0(u));x.textBaseline='alphabetic';
+}
+function M0(u){return 14*u;}
 async function exportJPG(){
   const b=$('expJpg');b.disabled=true;b.textContent='…';
   try{
-    const mc=await captureMap(),f=currentFactors(),K=2,W=mc.width;
-    const head=52*K, foot=(16+f.lines.length*20+22)*K;
-    const cv=document.createElement('canvas');cv.width=W;cv.height=head+mc.height+foot;
-    const x=cv.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,cv.width,cv.height);
-    x.fillStyle='#0f172a';x.font=`bold ${22*K}px system-ui`;x.fillText(f.title,20*K,34*K);
-    x.drawImage(mc,0,head);
-    x.fillStyle='#334155';x.font=`500 ${14*K}px system-ui`;let yy=head+mc.height+24*K;
-    f.lines.forEach(l=>{x.fillText(l,20*K,yy);yy+=20*K;});
-    x.fillStyle='#94a3b8';x.font=`400 ${11*K}px system-ui`;x.fillText(f.source,20*K,yy+2*K);
-    dl(cv.toDataURL('image/jpeg',0.92),'transit-atlas.jpg');
+    const side=Math.round(Math.max(680,Math.min(window.innerWidth-8,window.innerHeight-8,1080)));
+    const mc=await captureFramed(side,side);
+    const cv=document.createElement('canvas');cv.width=mc.width;cv.height=mc.height;
+    const x=cv.getContext('2d');
+    x.drawImage(mc,0,0);
+    stampCard(x,cv.width);
+    stampSource(x,cv.width,cv.height);
+    dl(cv.toDataURL('image/jpeg',0.95),fileBase()+'.jpg');
   }catch(e){alert('Image export failed: '+e.message);}
   b.disabled=false;b.textContent='JPG';
+}
+// pptxgen card mirrors the JPG card, drawn as native editable shapes/text
+function addMooveCard(s,info,imp){
+  const hex=h=>h.replace('#',''),PINK=hex(MOOVE.pink),BLUE=hex(MOOVE.blue),
+    INK=hex(MOOVE.ink),GREY=hex(MOOVE.grey);
+  const long=info.title.length>26;
+  const cardW=long?6.2:5.0, cardH=imp?1.95:1.55, X=0.35, Y=0.35, P=0.22;
+  s.addShape('roundRect',{x:X,y:Y,w:cardW,h:cardH,fill:{color:'FFFFFF'},
+    line:{color:'E6E9EE',width:1},rectRadius:0.11,shadow:{type:'outer',color:'0F172A',
+      opacity:0.22,blur:9,offset:3,angle:90}});
+  s.addShape('roundRect',{x:X+P,y:Y+P,w:0.5,h:0.07,fill:{color:PINK},line:{type:'none'},rectRadius:0.03});
+  s.addText(info.eyebrow.toUpperCase(),{x:X+P,y:Y+P+0.08,w:cardW-2*P,h:0.28,
+    fontSize:11,bold:true,color:PINK,charSpacing:2,fontFace:'Inter'});
+  const badgeW=info.badge.length<=3?0.95:1.35, badgeY=Y+0.66;
+  if(info.badge){
+    s.addShape('roundRect',{x:X+P,y:badgeY,w:badgeW,h:0.66,fill:{color:hex(info.color)},
+      line:{type:'none'},rectRadius:0.1});
+    s.addText(info.badge,{x:X+P,y:badgeY,w:badgeW,h:0.66,fontSize:info.badge.length<=3?27:19,
+      bold:true,color:'FFFFFF',align:'center',valign:'middle',fontFace:'Inter'});
+  }
+  s.addText(info.title,{x:X+P+(info.badge?badgeW+0.18:0),y:badgeY-0.05,
+    w:cardW-2*P-(info.badge?badgeW+0.18:0),h:0.78,fontSize:long?15:17,bold:true,
+    color:BLUE,valign:'middle',fontFace:'Inter'});
+  if(imp){
+    s.addText([{text:'≈ '+fmt(imp)+' ',options:{bold:true,color:PINK,fontSize:13,fontFace:'Inter'}},
+      {text:'daily impressions · modelled',options:{color:GREY,fontSize:11,fontFace:'Inter'}}],
+      {x:X+P,y:Y+cardH-0.42,w:cardW-2*P,h:0.32,valign:'middle'});
+  }
 }
 async function exportPPT(){
   const b=$('expPpt');b.disabled=true;b.textContent='…';
   try{
     if(typeof PptxGenJS==='undefined')throw new Error('PowerPoint library not loaded');
-    const mc=await captureMap(),img=mc.toDataURL('image/jpeg',0.92),f=currentFactors();
+    const w=Math.round(Math.min(window.innerWidth-8,(window.innerHeight-8)*16/9,1280));
+    const h=Math.round(w*9/16);
+    const mc=await captureFramed(w,h),img=mc.toDataURL('image/jpeg',0.9);
+    const info=titleInfo(),imp=selImpressions();
     const p=new PptxGenJS();p.defineLayout({name:'W',width:13.333,height:7.5});p.layout='W';
     const s=p.addSlide();
-    s.addText(f.title,{x:0.4,y:0.25,w:9,h:0.5,fontSize:24,bold:true,color:'1E293B'});
-    const ar=mc.width/mc.height;let iw=8.7,ih=iw/ar;if(ih>6.0){ih=6.0;iw=ih*ar;}
-    s.addImage({data:img,x:0.4,y:0.95,w:iw,h:ih});
-    s.addText(f.lines.map(l=>({text:l,options:{bullet:true,fontSize:12,color:'334155',breakLine:true}})),
-      {x:9.3,y:0.95,w:3.6,h:4.5,valign:'top'});
-    s.addText(f.source,{x:0.4,y:7.05,w:12.5,h:0.35,fontSize:8,color:'94A3B8'});
-    const cap=new Promise((_,rej)=>setTimeout(()=>rej(new Error('generation stalled — try again')),30000));
-    await Promise.race([p.writeFile({fileName:'transit-atlas.pptx'}),cap]);
+    s.background={color:'FFFFFF'};
+    s.addImage({data:img,x:0,y:0,w:13.333,h:7.5});          // full-bleed map
+    addMooveCard(s,info,imp);
+    s.addText(SOURCE,{x:5.2,y:7.02,w:7.9,h:0.36,fontSize:8,color:'FFFFFF',align:'right',
+      valign:'middle',fontFace:'Inter',outline:{size:0.5,color:'334155'}});
+    const cap=new Promise((_,rej)=>setTimeout(()=>rej(new Error('generation stalled — try again')),45000));
+    await Promise.race([p.writeFile({fileName:fileBase()+'.pptx'}),cap]);
   }catch(e){alert('PowerPoint export failed: '+e.message);}
   b.disabled=false;b.textContent='PPTX';
 }
