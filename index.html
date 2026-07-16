@@ -1096,11 +1096,17 @@ function paintLines(fit){
   const colOf={};S._pillPts=[];S._termPts=[];
   if(!S.selected.length){clearTermini();return colOf;}
   const sel=S.selected.map(n=>S.svcs[n]).filter(Boolean),N=sel.length;
-  // lane offset in px — one line-width apart, capping TOTAL spread so stacks hug the road
-  const LANE_PX=4.2, MAX_SPREAD=10, stepM=N>1?Math.min(LANE_PX,MAX_SPREAD/(N-1))*laneMpp():0;
+  // lane offset in px — one line-width apart, capping TOTAL spread so stacks hug the road.
+  // Also cap the offset in GROUND metres (MAX_LANE_M): at whole-island zoom a px offset is
+  // hundreds of metres, which drags routes off their roads and — for a loop service whose two
+  // carriageways run opposite ways — pushes its strands apart into a fat double line. The cap
+  // keeps lanes ~px-tight when zoomed in and ~0 when zoomed out.
+  const LANE_PX=4.2, MAX_SPREAD=10, MAX_LANE_M=18;
+  const stepM=N>1?Math.min(Math.min(LANE_PX,MAX_SPREAD/(N-1))*laneMpp(),MAX_LANE_M):0;
   const withCasing=map.getZoom()>=Z_CASING;
   sel.forEach((s,i)=>{const color=SELP[i%SELP.length];colOf[s.n]=color;
-    const offM=N>1?(i-(N-1)/2)*stepM:0;
+    // loop services (⟲) trace a single closed path; any offset just doubles them — draw true
+    const offM=(N>1&&!termsOf(s).loop)?(i-(N-1)/2)*stepM:0;
     const r=drawRoute(s,color,offM,N===1,N>1,withCasing);
     r.out.forEach(l=>{l.addTo(map);S.selLayers.push(l);});
     S._pillPts.push(r.mid);r.termini.forEach(t=>S._termPts.push(t));});
