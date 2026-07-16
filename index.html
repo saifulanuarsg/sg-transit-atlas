@@ -19,13 +19,14 @@
   .leaflet-container{font:inherit}
 
   /* ---------- left rail: selected-route list with stop drill-down ---------- */
-  #leftbar{width:288px;flex:none;background:#fff;border-right:1px solid var(--line);
+  #leftbar{width:314px;flex:none;background:#fff;border-right:1px solid var(--line);
     display:flex;flex-direction:column;overflow:hidden}
   #leftbar.closed{display:none}
+  #leftBody{flex:1;overflow-y:auto}
   .lb-head{padding:13px 14px 11px;border-bottom:1px solid var(--line);
     font:700 12px/1 system-ui;display:flex;align-items:center;gap:8px}
   .lb-head .cnt{color:var(--muted);font-weight:600}
-  #lbBody{flex:1;overflow-y:auto}
+  #lbBody{min-height:0}
   .lb-route{display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;
     border-bottom:1px solid #f1f5f9;font:600 12.5px/1.2 system-ui}
   .lb-route:hover{background:var(--bg)}
@@ -292,48 +293,40 @@
   @media(prefers-reduced-motion:reduce){.spin{animation-duration:2s}}
   @media(max-width:760px){
     #app{flex-direction:column;height:auto;overflow:visible}
-    #map{flex:0 0 56vh;height:56vh}
+    #map{flex:0 0 56vh;height:56vh;order:-1}
     #panel{width:auto;border-left:none;border-top:1px solid var(--line)}
-    #body{overflow:visible}
-    #leftbar{width:auto;max-height:38vh;border-right:none;border-bottom:1px solid var(--line)}
+    #body,#leftBody{overflow:visible}
+    #leftbar{width:auto;border-right:none;border-top:1px solid var(--line)}
     .edge-tgl{display:none}
   }
 </style>
 </head>
 <body>
 <div id="app">
-  <aside id="leftbar" class="closed" aria-label="Selected route list">
-    <div class="lb-head">Selected routes <span class="cnt" id="lbCount"></span></div>
-    <div id="lbBody"></div>
-  </aside>
-  <div id="map">
-    <button id="tglLeft" class="edge-tgl left" hidden
-      title="Show / hide the route list" aria-label="Toggle route list">‹</button>
-    <button id="tglRight" class="edge-tgl right"
-      title="Show / hide the control panel" aria-label="Toggle control panel">›</button>
-  </div>
-  <aside id="panel">
+  <aside id="leftbar" aria-label="Routes and selection">
     <div class="p-head">
-      <div class="ph-row">
-        <div><h1>Singapore Transit Atlas</h1>
-          <div class="sub">Trunk bus network &middot; stops &middot; places</div></div>
-        <div class="export">
-          <button id="expJpg" class="exp-btn" title="Download the current map as an image">JPG</button>
-          <button id="expPpt" class="exp-btn" title="Download the current map as a PowerPoint deck">PPTX</button>
-        </div>
-      </div>
-      <div class="sub" style="margin-top:6px" id="expHint">Clean map by default. Choose what to add under
-        <b>Export</b> below.</div>
+      <h1>Singapore Transit Atlas</h1>
+      <div class="sub">Build a selection &middot; read its reach &middot; export</div>
     </div>
     <div class="searchwrap">
       <input id="search" placeholder="Search a bus service…" autocomplete="off"
         aria-label="Search a bus service">
       <div id="results"></div>
     </div>
-    <div id="body">
+    <div id="leftBody">
       <div class="sec" id="selcard"></div>
+      <div class="sec" id="routesSec">
+        <div class="sec-lab">Selected routes <span class="cnt" id="lbCount"></span></div>
+        <div id="lbBody"></div>
+      </div>
       <div class="sec" id="expSec">
-        <div class="sec-lab">Export <span class="hint-txt" style="text-transform:none;letter-spacing:0">what to include — all off by default</span></div>
+        <div class="sec-lab" style="justify-content:space-between">
+          <span>Export <span class="hint-txt" style="text-transform:none;letter-spacing:0">all off by default</span></span>
+          <span class="export">
+            <button id="expJpg" class="exp-btn" title="Download the current map as an image">JPG</button>
+            <button id="expPpt" class="exp-btn" title="Download the current map as a PowerPoint deck">PPTX</button>
+          </span>
+        </div>
         <div class="exp-grp-lab">On the map (JPG &amp; first slide)</div>
         <div id="expMapOpts"></div>
         <div class="exp-grp-lab">Extra PowerPoint slides</div>
@@ -342,12 +335,35 @@
           is always included; everything else is opt-in.</div>
       </div>
       <div class="sec">
-        <div class="sec-lab">Bus products</div>
+        <div class="sec-lab">Bus products <span class="hint-txt" style="text-transform:none;letter-spacing:0">one-tap presets</span></div>
         <div id="clusterBtns"></div>
         <div class="note">Each preset loads a product route set — tap again to clear. Dominance sells as one
           of four fixed 5-bus combis. (GAS) in a preset's tooltip = Go-Ahead Singapore service on the
           multi-route format. Counts are routes drawn; “×2” buses on a route don't change the modelled reach.</div>
       </div>
+      <div class="sec">
+        <div class="sec-lab">Reach ranking</div>
+        <select id="rankSel" aria-label="Rank trunk routes by reach">
+          <option value="">Rank trunk routes by…</option>
+        </select>
+        <div id="rankNote" class="note" style="display:none">
+          Trunk routes ranked by places within 400 m of their stops. Feeders excluded.</div>
+        <div id="rankList"></div>
+      </div>
+    </div>
+  </aside>
+  <div id="map">
+    <button id="tglLeft" class="edge-tgl left"
+      title="Show / hide the routes panel" aria-label="Toggle routes panel">‹</button>
+    <button id="tglRight" class="edge-tgl right"
+      title="Show / hide the map-layers panel" aria-label="Toggle map layers">›</button>
+  </div>
+  <aside id="panel">
+    <div class="p-head">
+      <h1 style="font-size:13px">Map layers</h1>
+      <div class="sub">what's drawn on the map</div>
+    </div>
+    <div id="body">
       <div class="sec">
         <div class="sec-lab">Transit network</div>
         <div id="netToggles"></div>
@@ -362,15 +378,6 @@
         </div>
         <div id="poiToggles"></div>
         <div class="note" id="poiScopeNote" style="display:none"></div>
-      </div>
-      <div class="sec">
-        <div class="sec-lab">Reach ranking</div>
-        <select id="rankSel" aria-label="Rank trunk routes by reach">
-          <option value="">Rank trunk routes by…</option>
-        </select>
-        <div id="rankNote" class="note" style="display:none">
-          Trunk routes ranked by places within 400 m of their stops. Feeders excluded.</div>
-        <div id="rankList"></div>
       </div>
       <div class="sec">
         <div class="sec-lab">Demographics</div>
@@ -1295,10 +1302,9 @@ function wireCard(c){
 // ---------------- left rail: selected routes with stop drill-down ----------------
 S.lbOpen=true;S.lbExpand=new Set();S.lbDir={};
 function lbSync(){
-  const has=S.selected.length>0,open=has&&S.lbOpen;
-  $('tglLeft').hidden=!has;
-  $('tglLeft').textContent=open?'‹':'›';
-  $('leftbar').classList.toggle('closed',!open);
+  // left panel is the always-available workspace; the chevron just collapses it
+  $('tglLeft').textContent=S.lbOpen?'‹':'›';
+  $('leftbar').classList.toggle('closed',!S.lbOpen);
   map.invalidateSize({animate:false});
 }
 function renderLeftbar(){
