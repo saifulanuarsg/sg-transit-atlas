@@ -73,6 +73,25 @@
   .seg button.on{background:var(--primary);color:#fff}
   .seg button:focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
 
+  /* ---------- export options ---------- */
+  .exp-grp-lab{font:700 9.5px/1 system-ui;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.5px;margin:10px 0 6px}
+  .exp-grp-lab:first-of-type{margin-top:2px}
+  .chk{display:flex;align-items:flex-start;gap:9px;padding:5px 0;cursor:pointer;user-select:none;
+    font:600 12.5px/1.35 system-ui}
+  .chk input{appearance:none;-webkit-appearance:none;width:17px;height:17px;flex:none;margin:0;
+    border:1.5px solid #cbd5e1;border-radius:5px;background:#fff;position:relative;cursor:pointer;
+    transition:.12s;top:1px}
+  .chk input:checked{background:var(--primary);border-color:var(--primary)}
+  .chk input:checked::after{content:"";position:absolute;left:5px;top:1.5px;width:4px;height:9px;
+    border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+  .chk input:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+  .chk input:disabled{opacity:.4;cursor:default}
+  .chk .cl{display:flex;flex-direction:column;gap:1px}
+  .chk .ch{font-weight:700}
+  .chk .cd{font:500 10.5px/1.3 system-ui;color:var(--muted)}
+  .chk.dis{opacity:.5;cursor:default}
+
   /* ---------- panel ---------- */
   #panel{width:var(--panel-w);flex:none;background:#fff;border-left:1px solid var(--line);
     display:flex;flex-direction:column;overflow:hidden}
@@ -248,6 +267,7 @@
   .termlab{position:absolute;top:0;transform:translateY(-50%);white-space:nowrap;
     font:700 10.5px/1 system-ui;color:#0f172a;background:rgba(255,255,255,.58);
     padding:3px 6px;border-radius:6px;box-shadow:0 1px 3px rgba(15,23,42,.22)}
+  .termlab.sm{font-size:8.5px;padding:2px 5px;background:rgba(255,255,255,.72)}
   /* impressions-on-export toggle */
   .mini-tgl{display:inline-flex;align-items:center;gap:7px;margin-top:9px;cursor:pointer;
     font:600 11px/1.2 system-ui;color:var(--muted);user-select:none}
@@ -299,11 +319,11 @@
           <div class="sub">Trunk bus network &middot; stops &middot; places</div></div>
         <div class="export">
           <button id="expJpg" class="exp-btn" title="Download the current map as an image">JPG</button>
-          <button id="expPpt" class="exp-btn" title="Download the current map as a PowerPoint slide">PPTX</button>
+          <button id="expPpt" class="exp-btn" title="Download the current map as a PowerPoint deck">PPTX</button>
         </div>
       </div>
-      <label class="mini-tgl" title="Include the modelled daily-impressions figure on the exported image / slide">
-        <input type="checkbox" id="impToggle" checked> Show impressions on exports</label>
+      <div class="sub" style="margin-top:6px" id="expHint">Clean map by default. Choose what to add under
+        <b>Export</b> below.</div>
     </div>
     <div class="searchwrap">
       <input id="search" placeholder="Search a bus service…" autocomplete="off"
@@ -312,6 +332,15 @@
     </div>
     <div id="body">
       <div class="sec" id="selcard"></div>
+      <div class="sec" id="expSec">
+        <div class="sec-lab">Export <span class="hint-txt" style="text-transform:none;letter-spacing:0">what to include — all off by default</span></div>
+        <div class="exp-grp-lab">On the map (JPG &amp; first slide)</div>
+        <div id="expMapOpts"></div>
+        <div class="exp-grp-lab">Extra PowerPoint slides</div>
+        <div id="expSlideOpts"></div>
+        <div class="note" id="expNote">Select routes first, then choose what each export carries. The map image
+          is always included; everything else is opt-in.</div>
+      </div>
       <div class="sec">
         <div class="sec-lab">Bus products</div>
         <div id="clusterBtns"></div>
@@ -1093,24 +1122,26 @@ function paintLines(fit){
 function placeTermini(){
   clearTermini();
   const pts=S._termPts||[];if(!pts.length)return;
+  const exp=S.exportMode;                        // export: smaller text, show every terminus
   const size=map.getSize(),placed=[];
   (S._pillPts||[]).forEach(p=>{const cp=map.latLngToContainerPoint([p.lat,p.lng]);
     placed.push({x0:cp.x-17,y0:cp.y-12,x1:cp.x+17,y1:cp.y+12});});   // reserve pill space
   const seen=new Set(),uniq=[];   // one label per terminus name (several routes may share Woodlands / Toa Payoh)
   pts.forEach(t=>{if(seen.has(t.name))return;seen.add(t.name);uniq.push(t);});
-  const CH=6.6,PADX=7,H=19,GAP=10;
+  const CH=exp?5.4:6.6,PADX=exp?5:7,H=exp?15:19,GAP=exp?8:10;
   uniq.forEach(t=>{
     const cp=map.latLngToContainerPoint([t.lat,t.lng]);
     if(cp.x<-30||cp.y<-30||cp.x>size.x+30||cp.y>size.y+30)return;   // outside the frame
     const w=t.name.length*CH+2*PADX;
     const side=(cp.x+GAP+w>size.x-4)?-1:1;                          // flip left near the right edge
     const x0=side>0?cp.x+GAP:cp.x-GAP-w,rect={x0,y0:cp.y-H/2,x1:x0+w,y1:cp.y+H/2};
-    if(placed.some(r=>!(rect.x1<r.x0||rect.x0>r.x1||rect.y1<r.y0||rect.y0>r.y1)))return;   // collide → drop
+    // live view drops colliding labels for clarity; export keeps them all (user wants every terminus)
+    if(!exp&&placed.some(r=>!(rect.x1<r.x0||rect.x0>r.x1||rect.y1<r.y0||rect.y0>r.y1)))return;
     placed.push(rect);
     const anchorX=side>0?GAP:-(GAP+w);
     const m=L.marker([t.lat,t.lng],{pane:'label',interactive:false,
       icon:L.divIcon({className:'',iconSize:[0,0],
-        html:`<span class="termlab" style="left:${anchorX}px">${t.name}</span>`})});
+        html:`<span class="termlab${exp?' sm':''}" style="left:${anchorX}px">${t.name}</span>`})});
     m.addTo(map);S.termLayers.push(m);
   });
 }
@@ -1130,7 +1161,7 @@ function renderSelection(opt){
     c.classList.add('show');
     c.innerHTML='<div class="sel-empty">Switch on a layer below, or search a bus service, to begin. '
       +'Tap a route for its stops, nearby places and audience — pick several to compare coverage.</div>';
-    renderLeftbar();applyPoiScope();
+    renderLeftbar();applyPoiScope();if(typeof syncExportUI==="function")syncExportUI();
     return;
   }
   const sel=S.selected.map(n=>S.svcs[n]);
@@ -1175,7 +1206,7 @@ function renderSelection(opt){
     <div class="stat-grid">${stopStats}</div>${covNote}${chips}${poi}${demo}`;
   c.classList.add('show');
   wireCard(c);
-  renderLeftbar();applyPoiScope();
+  renderLeftbar();applyPoiScope();if(typeof syncExportUI==="function")syncExportUI();
   $('body').scrollTop=0;
 }
 // stub: wired to overlay demographics relative to the selection once data lands
@@ -1399,23 +1430,64 @@ function buildSearch(){
 // Re-renders the map into a fixed aspect ratio (square for JPG, 16:9 for PPTX),
 // re-fitting the current selection so the route is framed tight — no dead space —
 // then stamps a Moove-styled title card. Live layout is restored afterwards.
-const MOOVE={pink:'#FF1E5B',blue:'#091CA1',ink:'#1D2733',grey:'#6B7785',line:'#E6E9EE'};
+// neutral, un-branded palette for exports (no Moove marks or brand colours)
+const CARD={ink:'#0f172a',sub:'#475569',grey:'#64748b',line:'#e2e8f0',tile:'#f8fafc',hdr:'#1e293b'};
+const TYPE_C={Trunk:{bg:'#dcfce7',fg:'#166534'},Feeder:{bg:'#fef3c7',fg:'#92400e'},
+  Express:{bg:'#e0e7ff',fg:'#3730a3'}};
 const SOURCE='LTA DataMall (Jun 2026) · SingStat Census 2020 · Basemap © OpenStreetMap © CARTO · modelled, not measured';
 
-// title/badge/colour for whatever is currently selected
+// what each export carries — every block opt-in (default off)
+S.exp={legend:false,corridor:false,stops:false,imp:false,summary:false,perRoute:false};
+
+// classify a service by how it runs (jumps = express legs with no stops between)
+function busType(s){if(!s)return 'Trunk';if(s.feeder)return 'Feeder';
+  const jl=(s.jumps||[]).reduce((a,g)=>a+segLen(g),0);return jl>2?'Express':'Trunk';}
+// split a service name "A ⇄ B" / "A ⟲" into {from,to}
+function termsOf(s){const parts=(s.name||'').split(/[⇄⟲→]/).map(t=>t.trim()).filter(Boolean);
+  return {from:parts[0]||s.name,to:parts.length>1?parts[parts.length-1]:parts[0]||s.name,
+    loop:/⟲/.test(s.name||'')};}
+// ordered distinct roads a route runs along (dir 0) — the "corridor". Needs route_stops.
+function routeCorridor(n){
+  const dirs=(S.routeStops||{})[n];if(!dirs||!dirs.length)return [];
+  const roads=[];dirs[0].forEach(c=>{const st=S.stops[c];if(!st)return;
+    const rd=st[3];if(rd&&(!roads.length||roads[roads.length-1]!==rd))roads.push(rd);});
+  return roads;
+}
+// FROM · VIA · VIA · TO row for the summary table (VIAs = corridor at ~1/3 and ~2/3)
+function summaryRow(n){
+  const s=S.svcs[n],t=termsOf(s),roads=routeCorridor(n);
+  const pick=f=>roads.length?roads[Math.min(roads.length-1,Math.max(0,Math.round(roads.length*f)))]:'';
+  let v1=pick(.34),v2=pick(.68);
+  if(v1===t.from)v1=pick(.42);if(v2===t.to||v2===v1)v2=pick(.6);
+  return {n,from:t.from,via1:v1||'—',via2:v2||'—',to:t.to,type:busType(s)};
+}
+// selection aggregates (unique stops, avg per route)
+function selAgg(){
+  const sel=S.selected.map(n=>S.svcs[n]).filter(Boolean);
+  const uc=new Set();sel.forEach(s=>s.stops.forEach(c=>{if(S.stops[c])uc.add(c);}));
+  const total=sel.reduce((a,s)=>a+s.sc,0);
+  return {routes:sel.length,unique:uc.size,total,
+    avg:sel.length?Math.round(total/sel.length):0,
+    km:sel.reduce((a,s)=>a+routeLen(s),0)};
+}
+// load ordered stops if any export block needs them
+function ensureExportData(){
+  return (S.exp.corridor||S.exp.stops||S.exp.summary||S.exp.perRoute)?loadRouteStops():Promise.resolve();
+}
+// title/badge/colour for whatever is selected — route-centric, no "product"
 function titleInfo(){
-  const m=matchedCluster();
-  if(m){const c=CLUSTERS[m],rs=c.routes.filter(n=>S.svcs[n]);
-    return {eyebrow:'Bus product',badge:String(rs.length),title:c.title,
-      color:c.color,sub:rs.join(' · ')};}
-  if(S.selected.length===1){const s=S.svcs[S.selected[0]];
-    return {eyebrow:s.feeder?'Feeder route':'Bus route',badge:s.n,title:s.name,
-      color:SELP[0],sub:''};}
+  const m=matchedCluster(),colOf=S._colOf||{};
+  const routes=S.selected.map(n=>({n,color:colOf[n]||'#334155',type:busType(S.svcs[n])}));
+  const combi=m?CLUSTERS[m].label+' · '+CLUSTERS[m].product.replace(/^DB Portrait · /,'')
+    .replace(/^Dynamic Bus · /,''):'';
+  if(S.selected.length===1){const s=S.svcs[S.selected[0]],t=termsOf(s);
+    return {kind:'single',eyebrow:'Bus route',badge:s.n,color:colOf[s.n]||SELP[0],
+      title:s.name,termini:t.loop?t.from+' ⟲':t.from+'  ⇄  '+t.to,type:busType(s),combi,routes};}
   if(S.selected.length>1)
-    return {eyebrow:'Selected routes',badge:String(S.selected.length),
-      title:S.selected.length+' routes selected',color:SELP[0],sub:S.selected.join(' · ')};
-  return {eyebrow:'Transit network',badge:'',title:'Singapore Transit Atlas',
-    color:'#1e40af',sub:''};
+    return {kind:'multi',eyebrow:'Bus routes',badge:String(S.selected.length),color:'#1e293b',
+      title:S.selected.length+' bus routes',termini:'',type:'',combi,routes};
+  return {kind:'none',eyebrow:'Transit network',badge:'',color:'#1e40af',
+    title:'Singapore Transit Atlas',termini:'',type:'',combi:'',routes:[]};
 }
 function selImpressions(){
   if(!FEATURES.demographics||!S.selected.length)return null;
@@ -1423,13 +1495,14 @@ function selImpressions(){
   let wd=0,we=0;uc.forEach(c=>{const v=S.stopVol[c];if(v){wd+=v.wd;we+=(v.we!=null?v.we:v.wd);}});
   return wd?{wd,w12:Math.round((5*wd+2*we)*12)}:null;   // 12 weeks = (5×wd + 2×we) × 12
 }
-// gated by the "Show impressions on exports" toggle
-function impForExport(){return S.showImp?selImpressions():null;}
+// gated by the Impressions export toggle
+function impForExport(){return S.exp.imp?selImpressions():null;}
 function fileBase(){
   const m=matchedCluster();
-  if(m)return 'transit-'+CLUSTERS[m].slug;
-  if(S.selected.length===1)return 'bus-'+S.selected[0];
-  if(S.selected.length>1)return 'routes-'+S.selected.join('-');
+  if(m)return 'bus-routes-'+CLUSTERS[m].slug;
+  if(S.selected.length===1)return 'bus-route-'+S.selected[0];
+  if(S.selected.length>1)return 'bus-routes-'+S.selected.slice(0,6).join('-')
+    +(S.selected.length>6?'-plus':'');
   return 'transit-atlas';
 }
 // geographic bounds of the current selection (null = keep current view)
@@ -1459,9 +1532,11 @@ async function captureFramed(w,h){
   const savedMin=map.getMinZoom();   // relax the SG zoom/pan limits so island-wide framing isn't clipped
   map.setMaxBounds(null);map.setMinZoom(8);
   map.invalidateSize({animate:false});
+  S.exportMode=true;                 // termini: show every one, at a smaller size
   const b=selectionBounds(),pad=Math.round(Math.min(w,h)*0.055);
   if(b)map.fitBounds(b,{padding:[pad,pad],animate:false});
   await new Promise(r=>{map.once('moveend',r);setTimeout(r,350);});
+  if(S.selected.length)placeTermini();   // re-lay the termini at export sizing for this frame
   await tilesReady();
   let canvas;
   try{
@@ -1472,10 +1547,12 @@ async function captureFramed(w,h){
         ||n.classList.contains('edge-tgl')
         ||n.classList.contains('leaflet-control-attribution'))});
   }finally{
+    S.exportMode=false;
     Object.assign(el.style,css);
     map.setMinZoom(savedMin);map.setMaxBounds(SG_BOUNDS);   // restore the SG limits
     map.invalidateSize({animate:false});
     map.setView(view.c,view.z,{animate:false});
+    if(S.selected.length)placeTermini();   // restore normal (deduped) termini for the live view
   }
   return canvas;
 }
@@ -1485,91 +1562,119 @@ function roundRect(x,rx,ry,w,h,r){x.beginPath();
   if(x.roundRect){x.roundRect(rx,ry,w,h,r);return;}
   x.moveTo(rx+r,ry);x.arcTo(rx+w,ry,rx+w,ry+h,r);x.arcTo(rx+w,ry+h,rx,ry+h,r);
   x.arcTo(rx,ry+h,rx,ry,r);x.arcTo(rx,ry,rx+w,ry,r);x.closePath();}
-// stamp the Moove-styled title card onto a canvas context. W = canvas width (px).
-function stampCard(x,W){
-  const info=titleInfo(),imp=impForExport(),u=W/1000;   // scale unit
-  x.textBaseline='alphabetic';
-  const M=28*u, pad=22*u;
-  const eyeF=13*u, badgeF=info.badge.length<=3?34*u:22*u, titleF=20*u, statF=15*u;
-  const badgeH=info.badge?52*u:0;
-  x.font=`800 ${badgeF}px Inter,system-ui,sans-serif`;   // measure badge width
-  const bw=info.badge?Math.max(52*u,x.measureText(info.badge).width+30*u):0;
-  // wrap title to a max width
-  const maxTitleW=Math.min(W*0.5,420*u);
-  x.font=`800 ${titleF}px Inter,system-ui,sans-serif`;
-  const words=info.title.split(' '),tl=[];let cur='';
-  words.forEach(wd=>{const t=cur?cur+' '+wd:wd;
-    if(x.measureText(t).width>maxTitleW&&cur){tl.push(cur);cur=wd;}else cur=t;});
-  if(cur)tl.push(cur);
-  const titleBlockW=Math.max(...tl.map(t=>x.measureText(t).width));
-  x.font=`800 ${eyeF}px Inter,system-ui,sans-serif`;
-  const eyeW=x.measureText(info.eyebrow.toUpperCase()).width+eyeF*2;
-  const rowW=(info.badge?bw+16*u:0)+titleBlockW;
-  x.font=`700 ${statF}px Inter,system-ui,sans-serif`;
-  const statW=imp?Math.max(
-    x.measureText('≈ '+fmt(imp.wd)+'  daily impressions').width,
-    x.measureText('≈ '+cf(imp.w12)+'  impressions · 12 weeks').width):0;
-  const cardW=Math.min(W-2*M,Math.max(eyeW,rowW,statW)+2*pad);
-  const titleLineH=titleF*1.18, badgeRowH=Math.max(badgeH,tl.length*titleLineH);
-  const cardH=pad+eyeF+14*u+badgeRowH+(imp?18*u+statF+9*u+statF:0)+pad;
-  // card
-  x.save();
-  x.shadowColor='rgba(15,23,42,.18)';x.shadowBlur=22*u;x.shadowOffsetY=6*u;
-  x.fillStyle='#ffffff';roundRect(x,M,M,cardW,cardH,16*u);x.fill();
-  x.restore();
-  x.strokeStyle=MOOVE.line;x.lineWidth=1*u;roundRect(x,M,M,cardW,cardH,16*u);x.stroke();
-  // pink accent rule
-  x.fillStyle=MOOVE.pink;roundRect(x,M+pad,M+pad,44*u,6*u,3*u);x.fill();
-  let cy=M+pad+6*u;
-  // eyebrow
-  cy+=eyeF+6*u;
-  x.fillStyle=MOOVE.pink;x.font=`800 ${eyeF}px Inter,system-ui,sans-serif`;
-  x.fillText(info.eyebrow.toUpperCase(),M+pad,cy,cardW-2*pad);
-  // badge + title row
-  const rowTop=cy+12*u, rowMidY=rowTop+badgeRowH/2;
-  let tx=M+pad;
-  if(info.badge){
-    x.fillStyle=info.color;roundRect(x,tx,rowTop+(badgeRowH-badgeH)/2,bw,badgeH,12*u);x.fill();
-    x.fillStyle='#ffffff';x.font=`800 ${badgeF}px Inter,system-ui,sans-serif`;
-    x.textAlign='center';x.textBaseline='middle';
-    x.fillText(info.badge,tx+bw/2,rowTop+(badgeRowH-badgeH)/2+badgeH/2);
-    x.textAlign='left';x.textBaseline='alphabetic';
-    tx+=bw+16*u;
-  }
-  x.fillStyle=MOOVE.blue;x.font=`800 ${titleF}px Inter,system-ui,sans-serif`;
-  const titleTop=rowMidY-(tl.length*titleLineH)/2+titleF*0.82;
-  tl.forEach((t,i)=>x.fillText(t,tx,titleTop+i*titleLineH));
-  cy=rowTop+badgeRowH;
-  // impressions stats — daily + 12-week campaign figure
-  if(imp){
-    cy+=18*u+statF*0.5;
-    x.font=`800 ${statF}px Inter,system-ui,sans-serif`;x.fillStyle=MOOVE.pink;
-    const lead='≈ '+fmt(imp.wd)+' ';const lw=x.measureText(lead).width;
-    x.fillText(lead,M+pad,cy);
-    x.font=`600 ${statF}px Inter,system-ui,sans-serif`;x.fillStyle=MOOVE.grey;
-    x.fillText('daily impressions',M+pad+lw,cy);
-    cy+=statF+9*u;
-    x.font=`800 ${statF}px Inter,system-ui,sans-serif`;x.fillStyle=MOOVE.blue;
-    const lead2='≈ '+cf(imp.w12)+' ';const lw2=x.measureText(lead2).width;
-    x.fillText(lead2,M+pad,cy);
-    x.font=`600 ${statF}px Inter,system-ui,sans-serif`;x.fillStyle=MOOVE.grey;
-    x.fillText('impressions · 12 weeks',M+pad+lw2,cy);
-  }
+// ---- canvas helpers (shared by the map title card) ----
+function wrapLines(x,text,font,maxW){x.font=font;const words=(text||'').split(' ');
+  const lines=[];let cur='';
+  words.forEach(w=>{const t=cur?cur+' '+w:w;
+    if(x.measureText(t).width>maxW&&cur){lines.push(cur);cur=w;}else cur=t;});
+  if(cur)lines.push(cur);return lines.length?lines:[''];}
+// measure (draw=false) or render (draw=true) a row of route-number pills; returns height
+function pillBlock(x,routes,xL,cyTop,maxW,u,draw){
+  const h=20*u,padX=9*u,gapX=6*u,gapY=6*u,f=`800 ${12*u}px Inter,system-ui,sans-serif`;
+  x.font=f;let rx=xL,ry=cyTop,rows=1;
+  routes.forEach(r=>{const pw=Math.max(h,x.measureText(r.n).width+2*padX);
+    if(rx>xL&&rx+pw>xL+maxW){rx=xL;ry+=h+gapY;rows++;}
+    if(draw){x.fillStyle=r.color;roundRect(x,rx,ry,pw,h,h/2);x.fill();
+      x.fillStyle='#fff';x.textAlign='center';x.textBaseline='middle';x.font=f;
+      x.fillText(r.n,rx+pw/2,ry+h/2);x.textAlign='left';x.textBaseline='alphabetic';}
+    rx+=pw+gapX;});
+  return rows*h+(rows-1)*gapY;
 }
-// source strip along the bottom (translucent so the map still reads through it)
+// stamp the un-branded title card. Blocks beyond the title are opt-in (S.exp.*).
+function stampCard(x,W){
+  const info=titleInfo(),imp=impForExport(),u=W/1000,single=info.kind==='single';
+  x.textBaseline='alphabetic';
+  const M=26*u,pad=20*u,cardW=Math.min(W-2*M,510*u),inW=cardW-2*pad;
+  const eyeF=12*u,badgeF=info.badge.length<=2?32*u:(info.badge.length<=3?26*u:20*u),
+    mainF=single?17*u:20*u,chipF=11*u,labF=10*u,bodyF=12.5*u,statF=15*u;
+  const badgeH=info.badge?46*u:0;
+  x.font=`800 ${badgeF}px Inter,system-ui,sans-serif`;
+  const badgeW=info.badge?Math.max(46*u,x.measureText(info.badge).width+26*u):0;
+  const mainText=single?info.termini:info.title;
+  const mainMaxW=inW-(info.badge?badgeW+12*u:0);
+  const mainLines=wrapLines(x,mainText,`800 ${mainF}px Inter,system-ui,sans-serif`,mainMaxW);
+  const headH=Math.max(badgeH,mainLines.length*mainF*1.16);
+  // assemble optional blocks as {h, draw(cyTop)}
+  const G=11*u,blocks=[];
+  if(single&&info.type){const label=info.type.toUpperCase();
+    x.font=`800 ${chipF}px Inter,system-ui,sans-serif`;const cw=x.measureText(label).width+16*u;
+    blocks.push({h:19*u,draw:cy=>{const tc=TYPE_C[info.type]||TYPE_C.Trunk;
+      x.fillStyle=tc.bg;roundRect(x,M+pad,cy,cw,19*u,6*u);x.fill();
+      x.fillStyle=tc.fg;x.font=`800 ${chipF}px Inter,system-ui,sans-serif`;x.textBaseline='middle';
+      x.fillText(label,M+pad+8*u,cy+9.5*u);x.textBaseline='alphabetic';}});}
+  if(info.combi){blocks.push({h:bodyF*1.2,draw:cy=>{x.fillStyle=CARD.grey;
+    x.font=`600 ${bodyF*0.92}px Inter,system-ui,sans-serif`;
+    x.fillText(info.combi,M+pad,cy+bodyF);}});}
+  if(S.exp.legend&&info.routes.length>1){
+    const lh=pillBlock(x,info.routes,M+pad,0,inW,u,false);
+    blocks.push({h:labF+7*u+lh,draw:cy=>{x.fillStyle=CARD.grey;
+      x.font=`700 ${labF}px Inter,system-ui,sans-serif`;
+      x.fillText('ROUTES',M+pad,cy+labF);
+      pillBlock(x,info.routes,M+pad,cy+labF+7*u,inW,u,true);}});}
+  if(S.exp.corridor&&single){const roads=routeCorridor(info.badge);
+    if(roads.length){const txt=roads.join('  ·  ');
+      let lines=wrapLines(x,txt,`600 ${bodyF}px Inter,system-ui,sans-serif`,inW);
+      if(lines.length>5){lines=lines.slice(0,5);lines[4]+=' …';}
+      blocks.push({h:labF+6*u+lines.length*bodyF*1.32,draw:cy=>{x.fillStyle=CARD.grey;
+        x.font=`700 ${labF}px Inter,system-ui,sans-serif`;
+        x.fillText('CORRIDOR · '+roads.length+' ROADS',M+pad,cy+labF);
+        x.fillStyle=CARD.sub;x.font=`600 ${bodyF}px Inter,system-ui,sans-serif`;
+        lines.forEach((l,i)=>x.fillText(l,M+pad,cy+labF+6*u+(i+1)*bodyF*1.32-bodyF*0.3));}});}}
+  if(S.exp.stops){const ag=selAgg();
+    let txt;if(single){const s=S.svcs[info.badge],t=termsOf(s);
+      txt=s.sc+' stops · '+t.from+' → '+t.to;}
+    else txt=ag.unique.toLocaleString('en-SG')+' unique stops · '+ag.total.toLocaleString('en-SG')+' with overlap';
+    const lines=wrapLines(x,txt,`600 ${bodyF}px Inter,system-ui,sans-serif`,inW);
+    blocks.push({h:labF+6*u+lines.length*bodyF*1.3,draw:cy=>{x.fillStyle=CARD.grey;
+      x.font=`700 ${labF}px Inter,system-ui,sans-serif`;x.fillText('STOPS',M+pad,cy+labF);
+      x.fillStyle=CARD.sub;x.font=`600 ${bodyF}px Inter,system-ui,sans-serif`;
+      lines.forEach((l,i)=>x.fillText(l,M+pad,cy+labF+6*u+(i+1)*bodyF*1.3-bodyF*0.3));}});}
+  if(imp){blocks.push({h:statF*2+9*u,draw:cy=>{
+    x.font=`800 ${statF}px Inter,system-ui,sans-serif`;x.fillStyle=CARD.ink;
+    const l1='≈ '+fmt(imp.wd)+' ',w1=x.measureText(l1).width;x.fillText(l1,M+pad,cy+statF);
+    x.font=`600 ${statF}px Inter,system-ui,sans-serif`;x.fillStyle=CARD.grey;
+    x.fillText('daily impressions',M+pad+w1,cy+statF);
+    x.font=`800 ${statF}px Inter,system-ui,sans-serif`;x.fillStyle=CARD.ink;
+    const l2='≈ '+cf(imp.w12)+' ',w2=x.measureText(l2).width;x.fillText(l2,M+pad,cy+statF*2+9*u);
+    x.font=`600 ${statF}px Inter,system-ui,sans-serif`;x.fillStyle=CARD.grey;
+    x.fillText('impressions · 12 weeks',M+pad+w2,cy+statF*2+9*u);}});}
+  const cardH=pad+eyeF+10*u+headH+blocks.reduce((a,b)=>a+G+b.h,0)+pad;
+  // card background
+  x.save();x.shadowColor='rgba(15,23,42,.16)';x.shadowBlur=20*u;x.shadowOffsetY=5*u;
+  x.fillStyle='#ffffff';roundRect(x,M,M,cardW,cardH,15*u);x.fill();x.restore();
+  x.strokeStyle=CARD.line;x.lineWidth=1*u;roundRect(x,M,M,cardW,cardH,15*u);x.stroke();
+  let cy=M+pad;
+  // eyebrow
+  x.fillStyle=CARD.grey;x.font=`800 ${eyeF}px Inter,system-ui,sans-serif`;
+  x.fillText(info.eyebrow.toUpperCase(),M+pad,cy+eyeF);cy+=eyeF+10*u;
+  // header: badge + main text
+  let tx=M+pad;
+  if(info.badge){x.fillStyle=info.color;
+    roundRect(x,tx,cy+(headH-badgeH)/2,badgeW,badgeH,11*u);x.fill();
+    x.fillStyle='#fff';x.font=`800 ${badgeF}px Inter,system-ui,sans-serif`;
+    x.textAlign='center';x.textBaseline='middle';
+    x.fillText(info.badge,tx+badgeW/2,cy+headH/2);x.textAlign='left';x.textBaseline='alphabetic';
+    tx+=badgeW+12*u;}
+  x.fillStyle=CARD.ink;x.font=`800 ${mainF}px Inter,system-ui,sans-serif`;
+  const mTop=cy+headH/2-(mainLines.length*mainF*1.16)/2+mainF*0.82;
+  mainLines.forEach((l,i)=>x.fillText(l,tx,mTop+i*mainF*1.16));
+  cy+=headH;
+  blocks.forEach(bl=>{cy+=G;bl.draw(cy);cy+=bl.h;});
+}
+// source strip along the bottom (data attribution — not branding; stays)
 function stampSource(x,W,H){
-  const u=W/1000,fs=12*u,pad=16*u;
+  const u=W/1000,fs=12*u,pad=16*u,m=14*u;
   x.font=`500 ${fs}px Inter,system-ui,sans-serif`;
   const tw=x.measureText(SOURCE).width;
   x.fillStyle='rgba(255,255,255,.82)';
-  roundRect(x,W-tw-2*pad-M0(u),H-fs-2*pad-M0(u),tw+2*pad,fs+2*pad,8*u);x.fill();
-  x.fillStyle=MOOVE.grey;x.textBaseline='middle';
-  x.fillText(SOURCE,W-tw-pad-M0(u),H-fs/2-pad-M0(u));x.textBaseline='alphabetic';
+  roundRect(x,W-tw-2*pad-m,H-fs-2*pad-m,tw+2*pad,fs+2*pad,8*u);x.fill();
+  x.fillStyle=CARD.grey;x.textBaseline='middle';
+  x.fillText(SOURCE,W-tw-pad-m,H-fs/2-pad-m);x.textBaseline='alphabetic';
 }
-function M0(u){return 14*u;}
 async function exportJPG(){
   const b=$('expJpg');b.disabled=true;b.textContent='…';
   try{
+    await ensureExportData();
     const side=Math.round(Math.max(680,Math.min(window.innerWidth-8,window.innerHeight-8,1080)));
     const mc=await captureFramed(side,side);
     const cv=document.createElement('canvas');cv.width=mc.width;cv.height=mc.height;
@@ -1581,59 +1686,215 @@ async function exportJPG(){
   }catch(e){alert('Image export failed: '+e.message);}
   b.disabled=false;b.textContent='JPG';
 }
-// pptxgen card mirrors the JPG card, drawn as native editable shapes/text
-function addMooveCard(s,info,imp){
-  const hex=h=>h.replace('#',''),PINK=hex(MOOVE.pink),BLUE=hex(MOOVE.blue),
-    INK=hex(MOOVE.ink),GREY=hex(MOOVE.grey);
-  const long=info.title.length>26;
-  const cardW=long?6.2:5.0, cardH=imp?2.28:1.55, X=0.35, Y=0.35, P=0.22;
-  s.addShape('roundRect',{x:X,y:Y,w:cardW,h:cardH,fill:{color:'FFFFFF'},
-    line:{color:'E6E9EE',width:1},rectRadius:0.11,shadow:{type:'outer',color:'0F172A',
-      opacity:0.22,blur:9,offset:3,angle:90}});
-  s.addShape('roundRect',{x:X+P,y:Y+P,w:0.5,h:0.07,fill:{color:PINK},line:{type:'none'},rectRadius:0.03});
-  s.addText(info.eyebrow.toUpperCase(),{x:X+P,y:Y+P+0.08,w:cardW-2*P,h:0.28,
-    fontSize:11,bold:true,color:PINK,charSpacing:2,fontFace:'Inter'});
-  const badgeW=info.badge.length<=3?0.95:1.35, badgeY=Y+0.66;
-  if(info.badge){
-    s.addShape('roundRect',{x:X+P,y:badgeY,w:badgeW,h:0.66,fill:{color:hex(info.color)},
-      line:{type:'none'},rectRadius:0.1});
-    s.addText(info.badge,{x:X+P,y:badgeY,w:badgeW,h:0.66,fontSize:info.badge.length<=3?27:19,
-      bold:true,color:'FFFFFF',align:'center',valign:'middle',fontFace:'Inter'});
-  }
-  s.addText(info.title,{x:X+P+(info.badge?badgeW+0.18:0),y:badgeY-0.05,
-    w:cardW-2*P-(info.badge?badgeW+0.18:0),h:0.78,fontSize:long?15:17,bold:true,
-    color:BLUE,valign:'middle',fontFace:'Inter'});
-  if(imp){
-    s.addText([{text:'≈ '+fmt(imp.wd)+' ',options:{bold:true,color:PINK,fontSize:13,fontFace:'Inter'}},
-      {text:'daily impressions · modelled',options:{color:GREY,fontSize:11,fontFace:'Inter'}}],
-      {x:X+P,y:Y+cardH-0.74,w:cardW-2*P,h:0.32,valign:'middle'});
-    s.addText([{text:'≈ '+cf(imp.w12)+' ',options:{bold:true,color:BLUE,fontSize:13,fontFace:'Inter'}},
+
+// ================= PPTX =================
+const hx=h=>h.replace('#','');
+// map-slide title card as native editable shapes (mirrors the JPG card, un-branded)
+function addCard(s,info,imp){
+  const INK=hx(CARD.ink),SUB=hx(CARD.sub),GREY=hx(CARD.grey);
+  const single=info.kind==='single';
+  const X=0.35,Y=0.35,P=0.22,W=single?5.4:4.6,badgeW=info.badge.length<=3?0.9:1.3;
+  // pre-measure legend rows so the card height fits
+  const legend=S.exp.legend&&info.routes.length>1;
+  const pillPos=[];let py=0;
+  if(legend){let px=0,row=0;const maxW=W-2*P;
+    info.routes.forEach(r=>{const w=Math.max(0.42,0.085*(''+r.n).length+0.22);
+      if(px>0&&px+w>maxW){px=0;row++;}pillPos.push({x:px,row,w,color:r.color,n:r.n});px+=w+0.08;});
+    py=(row+1)*0.36;}
+  const corridorRoads=(S.exp.corridor&&single)?routeCorridor(info.badge):[];
+  const hasCorr=corridorRoads.length>0;
+  const hasStops=S.exp.stops;
+  // tally height
+  let H=P+0.24+0.66;                                   // pad+eyebrow+header
+  if(single&&info.type)H+=0.30;
+  if(info.combi)H+=0.24;
+  if(legend)H+=0.22+py;
+  if(hasCorr)H+=0.20+0.5;
+  if(hasStops)H+=0.20+0.24;
+  if(imp)H+=0.66;
+  H+=P;
+  s.addShape('roundRect',{x:X,y:Y,w:W,h:H,fill:{color:'FFFFFF'},line:{color:hx(CARD.line),width:1},
+    rectRadius:0.10,shadow:{type:'outer',color:'0F172A',opacity:0.18,blur:9,offset:3,angle:90}});
+  let yy=Y+P;
+  s.addText(info.eyebrow.toUpperCase(),{x:X+P,y:yy,w:W-2*P,h:0.2,fontSize:10,bold:true,
+    color:GREY,charSpacing:2,fontFace:'Inter'});yy+=0.24;
+  if(info.badge){s.addShape('roundRect',{x:X+P,y:yy,w:badgeW,h:0.6,fill:{color:hx(info.color)},
+    line:{type:'none'},rectRadius:0.1});
+    s.addText(info.badge,{x:X+P,y:yy,w:badgeW,h:0.6,fontSize:info.badge.length<=3?25:18,bold:true,
+      color:'FFFFFF',align:'center',valign:'middle',fontFace:'Inter'});}
+  s.addText(single?info.termini:info.title,{x:X+P+(info.badge?badgeW+0.16:0),y:yy,
+    w:W-2*P-(info.badge?badgeW+0.16:0),h:0.6,fontSize:single?15:18,bold:true,color:INK,
+    valign:'middle',fontFace:'Inter'});yy+=0.66;
+  if(single&&info.type){const tc=TYPE_C[info.type]||TYPE_C.Trunk;
+    s.addShape('roundRect',{x:X+P,y:yy,w:1.0,h:0.24,fill:{color:hx(tc.bg)},line:{type:'none'},rectRadius:0.06});
+    s.addText(info.type.toUpperCase(),{x:X+P,y:yy,w:1.0,h:0.24,fontSize:9,bold:true,color:hx(tc.fg),
+      align:'center',valign:'middle',fontFace:'Inter'});yy+=0.30;}
+  if(info.combi){s.addText(info.combi,{x:X+P,y:yy,w:W-2*P,h:0.22,fontSize:10.5,color:GREY,
+    fontFace:'Inter'});yy+=0.24;}
+  if(legend){s.addText('ROUTES',{x:X+P,y:yy,w:W-2*P,h:0.18,fontSize:9,bold:true,color:GREY,
+    charSpacing:1.5,fontFace:'Inter'});yy+=0.22;
+    pillPos.forEach(pp=>{s.addShape('roundRect',{x:X+P+pp.x,y:yy+pp.row*0.36,w:pp.w,h:0.28,
+      fill:{color:hx(pp.color)},line:{type:'none'},rectRadius:0.14});
+      s.addText(pp.n,{x:X+P+pp.x,y:yy+pp.row*0.36,w:pp.w,h:0.28,fontSize:11,bold:true,color:'FFFFFF',
+        align:'center',valign:'middle',fontFace:'Inter'});});yy+=py;}
+  if(hasCorr){s.addText('CORRIDOR · '+corridorRoads.length+' ROADS',{x:X+P,y:yy,w:W-2*P,h:0.18,
+    fontSize:9,bold:true,color:GREY,charSpacing:1.5,fontFace:'Inter'});yy+=0.20;
+    s.addText(corridorRoads.join('  ·  '),{x:X+P,y:yy,w:W-2*P,h:0.5,fontSize:9.5,color:SUB,
+      fontFace:'Inter',valign:'top'});yy+=0.5;}
+  if(hasStops){const ag=selAgg();
+    const txt=single?(S.svcs[info.badge].sc+' stops'):(ag.unique.toLocaleString('en-SG')+' unique · '
+      +ag.total.toLocaleString('en-SG')+' with overlap');
+    s.addText('STOPS',{x:X+P,y:yy,w:W-2*P,h:0.18,fontSize:9,bold:true,color:GREY,charSpacing:1.5,
+      fontFace:'Inter'});yy+=0.20;
+    s.addText(txt,{x:X+P,y:yy,w:W-2*P,h:0.24,fontSize:11,color:SUB,fontFace:'Inter'});yy+=0.24;}
+  if(imp){s.addText([{text:'≈ '+fmt(imp.wd)+' ',options:{bold:true,color:INK,fontSize:13,fontFace:'Inter'}},
+    {text:'daily impressions',options:{color:GREY,fontSize:11,fontFace:'Inter'}}],
+    {x:X+P,y:yy,w:W-2*P,h:0.3,valign:'middle'});yy+=0.32;
+    s.addText([{text:'≈ '+cf(imp.w12)+' ',options:{bold:true,color:INK,fontSize:13,fontFace:'Inter'}},
       {text:'impressions · 12 weeks',options:{color:GREY,fontSize:11,fontFace:'Inter'}}],
-      {x:X+P,y:Y+cardH-0.42,w:cardW-2*P,h:0.32,valign:'middle'});
-  }
+      {x:X+P,y:yy,w:W-2*P,h:0.3,valign:'middle'});}
+}
+// SUMMARY slide — aggregate tiles + a ROUTE/FROM/VIA/VIA/TO table + total impressions
+function addSummarySlide(p,info,imp){
+  const INK=hx(CARD.ink),SUB=hx(CARD.sub),GREY=hx(CARD.grey),LINE=hx(CARD.line),TILE=hx(CARD.tile);
+  const s=p.addSlide();s.background={color:'FFFFFF'};
+  const ag=selAgg();
+  s.addText('Route summary',{x:0.55,y:0.4,w:8,h:0.5,fontSize:26,bold:true,color:INK,fontFace:'Inter'});
+  s.addText(info.combi||(ag.routes+' bus routes selected'),{x:0.56,y:0.92,w:9,h:0.3,fontSize:13,
+    color:GREY,fontFace:'Inter'});
+  // stat tiles across the top
+  const tiles=[['Unique bus stops',ag.unique.toLocaleString('en-SG')],
+    ['Avg stops / route',String(ag.avg)],
+    ['Routes',String(ag.routes)],
+    ['Combined length',ag.km.toFixed(1)+' km']];
+  if(imp)tiles.push(['Est. impressions · 12 wks',cf(imp.w12)]);
+  const tw=(12.23-(tiles.length-1)*0.2)/tiles.length;
+  tiles.forEach((t,i)=>{const tx=0.55+i*(tw+0.2);
+    s.addShape('roundRect',{x:tx,y:1.4,w:tw,h:1.05,fill:{color:TILE},line:{color:LINE,width:1},rectRadius:0.08});
+    s.addText(t[1],{x:tx+0.15,y:1.52,w:tw-0.3,h:0.5,fontSize:22,bold:true,color:INK,fontFace:'Inter'});
+    s.addText(t[0].toUpperCase(),{x:tx+0.15,y:2.05,w:tw-0.3,h:0.32,fontSize:9,bold:true,color:GREY,
+      charSpacing:0.6,fontFace:'Inter'});});
+  // route table
+  const rows=[[
+    {text:'ROUTE',options:{bold:true,color:'FFFFFF',fill:{color:hx(CARD.hdr)},fontSize:11,fontFace:'Inter'}},
+    {text:'FROM',options:{bold:true,color:'FFFFFF',fill:{color:hx(CARD.hdr)},fontSize:11,fontFace:'Inter'}},
+    {text:'VIA',options:{bold:true,color:'FFFFFF',fill:{color:hx(CARD.hdr)},fontSize:11,fontFace:'Inter'}},
+    {text:'VIA',options:{bold:true,color:'FFFFFF',fill:{color:hx(CARD.hdr)},fontSize:11,fontFace:'Inter'}},
+    {text:'TO',options:{bold:true,color:'FFFFFF',fill:{color:hx(CARD.hdr)},fontSize:11,fontFace:'Inter'}}]];
+  S.selected.forEach((n,i)=>{const r=summaryRow(n),colr=(S._colOf||{})[n]||'#334155',shade=i%2?'FFFFFF':'F1F5F9';
+    rows.push([
+      {text:r.n,options:{bold:true,color:hx(colr),fill:{color:shade},fontSize:12,fontFace:'Inter'}},
+      {text:r.from,options:{color:INK,fill:{color:shade},fontSize:10.5,fontFace:'Inter'}},
+      {text:r.via1,options:{color:SUB,fill:{color:shade},fontSize:10.5,fontFace:'Inter'}},
+      {text:r.via2,options:{color:SUB,fill:{color:shade},fontSize:10.5,fontFace:'Inter'}},
+      {text:r.to,options:{color:INK,fill:{color:shade},fontSize:10.5,fontFace:'Inter'}}]);});
+  // fit every row on one slide — shrink row height as the list grows (no autoPage → no loop)
+  const rh=Math.max(0.2,Math.min(0.32,(7.4-2.7)/rows.length));
+  s.addTable(rows,{x:0.55,y:2.7,w:12.23,colW:[1.1,2.78,2.78,2.79,2.78],
+    border:{type:'solid',color:LINE,pt:1},rowH:rh,valign:'middle',margin:0.04,fontSize:10.5});
+  s.addText([{text:'Routes are prefixed and fixed for the campaign period.  ',options:{color:GREY,fontSize:9}},
+    {text:imp?('Est. '+fmt(imp.w12)+' impressions over 12 weeks · modelled.'):'',options:{bold:true,color:INK,fontSize:9}}],
+    {x:0.55,y:7.05,w:9,h:0.3,fontFace:'Inter',valign:'middle'});
+  s.addText(SOURCE,{x:9.4,y:7.05,w:3.5,h:0.3,fontSize:7.5,color:GREY,align:'right',valign:'middle',fontFace:'Inter'});
+}
+// PER-ROUTE detail slide — badge, termini, type, corridor, full ordered stop list
+function addRouteSlide(p,n){
+  const INK=hx(CARD.ink),SUB=hx(CARD.sub),GREY=hx(CARD.grey),LINE=hx(CARD.line);
+  const s=p.addSlide();s.background={color:'FFFFFF'};
+  const svc=S.svcs[n],t=termsOf(svc),type=busType(svc),color=(S._colOf||{})[n]||'#334155';
+  const roads=routeCorridor(n),dirs=(S.routeStops||{})[n]||[],stops=dirs[0]||svc.stops;
+  const imp=(()=>{let wd=0;const uc=new Set(svc.stops);uc.forEach(c=>{const v=S.stopVol[c];if(v)wd+=v.wd;});return wd;})();
+  // header band
+  s.addShape('rect',{x:0,y:0,w:13.333,h:1.5,fill:{color:'F8FAFC'},line:{type:'none'}});
+  s.addShape('roundRect',{x:0.55,y:0.42,w:1.0,h:0.66,fill:{color:hx(color)},line:{type:'none'},rectRadius:0.1});
+  s.addText(n,{x:0.55,y:0.42,w:1.0,h:0.66,fontSize:26,bold:true,color:'FFFFFF',align:'center',valign:'middle',fontFace:'Inter'});
+  s.addText(t.loop?t.from+' ⟲':t.from+'   ⇄   '+t.to,{x:1.75,y:0.4,w:9.5,h:0.5,fontSize:21,bold:true,color:INK,valign:'middle',fontFace:'Inter'});
+  const tc=TYPE_C[type]||TYPE_C.Trunk;
+  s.addShape('roundRect',{x:1.78,y:0.94,w:1.0,h:0.26,fill:{color:hx(tc.bg)},line:{type:'none'},rectRadius:0.06});
+  s.addText(type.toUpperCase(),{x:1.78,y:0.94,w:1.0,h:0.26,fontSize:9.5,bold:true,color:hx(tc.fg),align:'center',valign:'middle',fontFace:'Inter'});
+  const eachWay=stops.length;
+  s.addText(roads.length+' roads · '+eachWay+' stops each way · '+svc.sc+' unique · '
+    +routeLen(svc).toFixed(1)+' km'+(imp?'  ·  ≈ '+fmt(imp)+' daily impressions':''),
+    {x:2.95,y:0.94,w:9.8,h:0.26,fontSize:11,color:SUB,valign:'middle',fontFace:'Inter'});
+  // corridor
+  let y=1.75;
+  if(roads.length){s.addText('CORRIDOR',{x:0.55,y,w:12,h:0.2,fontSize:9,bold:true,color:GREY,charSpacing:1.5,fontFace:'Inter'});
+    s.addText(roads.join('    ›    '),{x:0.55,y:y+0.22,w:12.2,h:0.7,fontSize:10.5,color:SUB,fontFace:'Inter',valign:'top'});
+    y+=1.05;}
+  // stops, numbered, in up to 4 columns
+  s.addText('STOPS IN TRAVEL ORDER'+(dirs.length>1?'  ('+t.from+' → '+t.to+')':''),
+    {x:0.55,y,w:12,h:0.2,fontSize:9,bold:true,color:GREY,charSpacing:1.5,fontFace:'Inter'});
+  y+=0.24;
+  const names=stops.map((c,i)=>({i:i+1,nm:(S.stops[c]?S.stops[c][2]:c)}));
+  const cols=4,per=Math.ceil(names.length/cols),colW=12.23/cols;
+  for(let c=0;c<cols;c++){const chunk=names.slice(c*per,(c+1)*per);if(!chunk.length)continue;
+    const runs=chunk.map(o=>[{text:(o.i+'  '),options:{color:GREY,fontSize:8,fontFace:'Inter'}},
+      {text:o.nm+'\n',options:{color:INK,fontSize:8.5,fontFace:'Inter'}}]).flat();
+    s.addText(runs,{x:0.55+c*colW,y,w:colW-0.15,h:7.4-y,valign:'top',lineSpacingMultiple:1.02,fontFace:'Inter'});}
+  s.addText(SOURCE,{x:9.4,y:7.12,w:3.5,h:0.3,fontSize:7.5,color:GREY,align:'right',valign:'middle',fontFace:'Inter'});
 }
 async function exportPPT(){
   const b=$('expPpt');b.disabled=true;b.textContent='…';
   try{
     if(typeof PptxGenJS==='undefined')throw new Error('PowerPoint library not loaded');
+    await ensureExportData();
     const w=Math.round(Math.min(window.innerWidth-8,(window.innerHeight-8)*16/9,1280));
     const h=Math.round(w*9/16);
     const mc=await captureFramed(w,h),img=mc.toDataURL('image/jpeg',0.9);
     const info=titleInfo(),imp=impForExport();
     const p=new PptxGenJS();p.defineLayout({name:'W',width:13.333,height:7.5});p.layout='W';
-    const s=p.addSlide();
-    s.background={color:'FFFFFF'};
-    s.addImage({data:img,x:0,y:0,w:13.333,h:7.5});          // full-bleed map
-    addMooveCard(s,info,imp);
+    // slide 1 — the framed map with its title card
+    const s=p.addSlide();s.background={color:'FFFFFF'};
+    s.addImage({data:img,x:0,y:0,w:13.333,h:7.5});
+    addCard(s,info,imp);
     s.addText(SOURCE,{x:5.2,y:7.02,w:7.9,h:0.36,fontSize:8,color:'FFFFFF',align:'right',
       valign:'middle',fontFace:'Inter',outline:{size:0.5,color:'334155'}});
-    const cap=new Promise((_,rej)=>setTimeout(()=>rej(new Error('generation stalled — try again')),45000));
-    await Promise.race([p.writeFile({fileName:fileBase()+'.pptx'}),cap]);
+    // optional extra slides
+    if(S.exp.summary&&S.selected.length)addSummarySlide(p,info,imp);
+    if(S.exp.perRoute)S.selected.forEach(n=>addRouteSlide(p,n));
+    // serialise to a blob and download it ourselves (more reliable than pptxgen's writeFile,
+    // and lets a stall surface a message instead of wedging the button)
+    const cap=new Promise((_,rej)=>setTimeout(()=>rej(new Error('generation stalled — try again')),60000));
+    const blob=await Promise.race([p.write('blob'),cap]);
+    const url=URL.createObjectURL(blob);dl(url,fileBase()+'.pptx');
+    setTimeout(()=>URL.revokeObjectURL(url),4000);
   }catch(e){alert('PowerPoint export failed: '+e.message);}
   b.disabled=false;b.textContent='PPTX';
 }
+
+// ---- export options UI (all off by default) ----
+const EXP_MAP=[
+  {k:'legend',h:'Route legend',d:'Colour-coded route-number pills'},
+  {k:'corridor',h:'Corridor',d:'The roads each route runs along'},
+  {k:'stops',h:'Stops',d:'Stop counts for the selection'},
+  {k:'imp',h:'Impressions',d:'Modelled daily + 12-week figures'}];
+const EXP_SLIDE=[
+  {k:'summary',h:'Routes summary slide',d:'One slide: stat tiles + a From/Via/To table'},
+  {k:'perRoute',h:'One detail slide per route',d:'Full corridor + every stop, per route'}];
+function chkRow(cfg){
+  const l=document.createElement('label');l.className='chk';
+  l.innerHTML=`<input type="checkbox" data-k="${cfg.k}"><span class="cl">`
+    +`<span class="ch">${cfg.h}</span><span class="cd">${cfg.d}</span></span>`;
+  l.querySelector('input').checked=!!S.exp[cfg.k];
+  l.querySelector('input').onchange=e=>{S.exp[cfg.k]=e.target.checked;syncExportUI();};
+  return l;
+}
+function buildExportOpts(){
+  const a=$('expMapOpts'),b=$('expSlideOpts');if(!a||!b)return;
+  a.innerHTML='';b.innerHTML='';
+  EXP_MAP.forEach(c=>a.appendChild(chkRow(c)));
+  EXP_SLIDE.forEach(c=>b.appendChild(chkRow(c)));
+  syncExportUI();
+}
+function syncExportUI(){
+  const has=S.selected.length>0;
+  const note=$('expNote');
+  if(note)note.textContent=has
+    ?'The map image is always included. Extra slides need a selection.'
+    :'Select routes first, then choose what each export carries.';
+}
 $('expJpg').onclick=exportJPG;$('expPpt').onclick=exportPPT;
-$('impToggle').onchange=e=>{S.showImp=e.target.checked;};
+buildExportOpts();
 </script>
 </body>
 </html>
