@@ -507,8 +507,10 @@ function buildHubs(){
   for(const c in S.stops){const st=S.stops[c],nm=st[2];
     const m=/^(?!Opp |Aft |Bef |Bet |B4 )(.+? (?:Int|Ter))$/.exec(nm);
     if(m){(acc[m[1]]=acc[m[1]]||[]).push([st[0],st[1]]);}}
+  S.hubXY={};   // interchange/terminal name -> centroid, used to name route termini by geography
   Object.entries(acc).forEach(([nm,pts])=>{
     const lng=pts.reduce((a,p)=>a+p[0],0)/pts.length, lat=pts.reduce((a,p)=>a+p[1],0)/pts.length;
+    S.hubXY[nm]={lat,lng};
     const label=nm.replace(/ Int$/,'').replace(/ Ter$/,'');
     groups.hubs.addLayer(L.circleMarker([lat,lng],{pane:'label',radius:3.4,color:'#1e3a8a',
       weight:2,fillColor:'#fff',fillOpacity:1}));
@@ -882,6 +884,23 @@ function offsetSeg(seg,m){
   }
   return out;
 }
+// nearest interchange/terminal name to a point (within maxKm), else null
+function nearestHub(lat,lng,maxKm){
+  let best=null,bd=Infinity;
+  for(const nm in (S.hubXY||{})){const h=S.hubXY[nm];
+    const dx=(h.lng-lng)*Math.cos(lat*.01745),dy=h.lat-lat,d=dx*dx+dy*dy;
+    if(d<bd){bd=d;best=nm;}}
+  return best&&Math.sqrt(bd)*111.32<=maxKm?best:null;
+}
+const cleanTerm=n=>(n||'').replace(/^(Opp|Aft|Bef|Bet|B4) /,'').replace(/\s*(→|\/).*$/,'').trim();
+// label a route terminus by the interchange it sits at; fall back to the nearest stop's name
+function termLabel(lat,lng,s){
+  const h=nearestHub(lat,lng,0.8);if(h)return h;
+  let bn='',bd=Infinity;
+  (s.stops||[]).forEach(c=>{const st=S.stops[c];if(!st)return;
+    const dx=(st[0]-lng)*.9997,dy=st[1]-lat,d=dx*dx+dy*dy;if(d<bd){bd=d;bn=st[2];}});
+  return cleanTerm(bn);
+}
 // draw one route's path/stops/pill in a colour, offset into its own lane.
 // returns {out: layers, mid:{lat,lng} (pill point), termini:[{lat,lng,name,color}]}
 function drawRoute(s,color,offM,withDots,multi){
@@ -907,13 +926,11 @@ function drawRoute(s,color,offM,withDots,multi){
   if(!isFinite(mid[0])||!isFinite(mid[1]))mid=flat[Math.floor(flat.length/2)];
   out.push(L.marker([mid[1],mid[0]],{pane:'pill',interactive:false,   // pill above the line
     icon:L.divIcon({className:'',html:`<span class="rpill" style="background:${color}">${s.n}</span>`,iconSize:[0,0]})}));
-  // terminus label positions (true stop location) + names (from the route name's two ends)
-  const termini=[],codes=s.stops.filter(c=>S.stops[c]),parts=s.name.split(/[⇄⟲]/).map(t=>t.trim());
-  if(codes.length){
-    const o=S.stops[codes[0]],d=S.stops[codes[codes.length-1]];
-    termini.push({lat:o[1],lng:o[0],name:parts[0]||o[2],color});
-    if(!isLoop&&parts[1])termini.push({lat:d[1],lng:d[0],name:parts[1],color});
-  }
+  // terminus labels: name each physical route end by the interchange it sits at (geography,
+  // not name/stop order — those disagree). Positions use raw (unoffset) geometry ends.
+  const rf=s.segs[0][0],rlg=s.segs[s.segs.length-1],rl=rlg[rlg.length-1];
+  const termini=[{lat:rf[1],lng:rf[0],name:termLabel(rf[1],rf[0],s),color}];
+  if(!isLoop)termini.push({lat:rl[1],lng:rl[0],name:termLabel(rl[1],rl[0],s),color});
   return {out,mid:{lat:mid[1],lng:mid[0]},termini};
 }
 // ground metres per screen pixel at the current view — turns pixel lane spacing into metres
