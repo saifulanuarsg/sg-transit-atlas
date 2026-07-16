@@ -204,6 +204,11 @@
   .mini-tgl input:checked::after{transform:translateX(14px)}
   .mini-tgl input:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
 
+  /* distance scale — sits with the zoom buttons, styled to match the app chrome */
+  .leaflet-control-scale{margin-bottom:12px!important;margin-right:11px!important}
+  .leaflet-control-scale-line{background:rgba(255,255,255,.85);border:1.5px solid #64748b;
+    border-top:none;color:#334155;font:600 10px/1.7 system-ui;
+    box-shadow:0 1px 3px rgba(15,23,42,.18);border-radius:0 0 4px 4px}
   #loading{position:absolute;inset:0;z-index:2000;background:rgba(248,250,252,.9);
     display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px}
   .spin{width:30px;height:30px;border:3px solid var(--line);border-top-color:var(--primary);
@@ -343,6 +348,8 @@ const SG_BOUNDS=L.latLngBounds([1.06,103.40],[1.60,104.30]);
 const map=L.map('map',{zoomControl:false,minZoom:10,maxBounds:SG_BOUNDS,maxBoundsViscosity:.6})
   .setView([1.352,103.82],12);   // maxBounds adaptively stops zoom-out at ~whole-island
 L.control.zoom({position:'bottomright'}).addTo(map);
+// distance scale beside the zoom buttons (metric only; tracks the zoom level live)
+L.control.scale({position:'bottomright',imperial:false,maxWidth:120}).addTo(map);
 const baseTiles=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
   attribution:'&copy; OpenStreetMap contributors &copy; CARTO',maxZoom:19,
   crossOrigin:'anonymous'}).addTo(map);   // enables canvas export of the basemap
@@ -1250,6 +1257,7 @@ async function captureFramed(w,h){
     canvas=await html2canvas(el,{useCORS:true,backgroundColor:'#e8ecef',scale:2,logging:false,
       width:w,height:h,
       ignoreElements:n=>n.classList&&(n.classList.contains('leaflet-control-zoom')
+        ||n.classList.contains('leaflet-control-scale')
         ||n.classList.contains('leaflet-control-attribution'))});
   }finally{
     Object.assign(el.style,css);
