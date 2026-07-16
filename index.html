@@ -1146,15 +1146,28 @@ function placeTermini(){
     const cp=map.latLngToContainerPoint([t.lat,t.lng]);
     if(cp.x<-30||cp.y<-30||cp.x>size.x+30||cp.y>size.y+30)return;   // outside the frame
     const w=t.name.length*CH+2*PADX;
-    const side=(cp.x+GAP+w>size.x-4)?-1:1;                          // flip left near the right edge
-    const x0=side>0?cp.x+GAP:cp.x-GAP-w,rect={x0,y0:cp.y-H/2,x1:x0+w,y1:cp.y+H/2};
-    // live view drops colliding labels for clarity; export keeps them all (user wants every terminus)
-    if(!exp&&placed.some(r=>!(rect.x1<r.x0||rect.x0>r.x1||rect.y1<r.y0||rect.y0>r.y1)))return;
-    placed.push(rect);
-    const anchorX=side>0?GAP:-(GAP+w);
+    const hit=(a,b)=>!(a.x1<b.x0||a.x0>b.x1||a.y1<b.y0||a.y0>b.y1);
+    // Try the label on the right of the terminus, then the left, each at the same height then
+    // nudged up/down. Two clashing termini (e.g. Kampong Bahru Ter vs Shenton Way Ter) end up
+    // on opposite sides so both stay readable, instead of one covering the other.
+    const rightFits=cp.x+GAP+w<=size.x-4, leftFits=cp.x-GAP-w>=4;
+    const sides=[]; if(rightFits)sides.push(1); if(leftFits)sides.push(-1);
+    if(!sides.length)sides.push(1);
+    const step=H+3, nudges=[0,-step,step,-2*step,2*step];
+    let chosen=null;
+    for(const ny of nudges){for(const side of sides){
+      const x0=side>0?cp.x+GAP:cp.x-GAP-w;
+      const rect={x0,y0:cp.y-H/2+ny,x1:x0+w,y1:cp.y+H/2+ny};
+      if(!placed.some(r=>hit(rect,r))){chosen={rect,side,ny};break;}
+    } if(chosen)break;}
+    // live view drops a label that can't be placed clear; export forces it (show every terminus)
+    if(!chosen){if(!exp)return;
+      chosen={rect:{x0:cp.x+GAP,y0:cp.y-H/2,x1:cp.x+GAP+w,y1:cp.y+H/2},side:1,ny:0};}
+    placed.push(chosen.rect);
+    const anchorX=chosen.side>0?GAP:-(GAP+w);
     const m=L.marker([t.lat,t.lng],{pane:'label',interactive:false,
       icon:L.divIcon({className:'',iconSize:[0,0],
-        html:`<span class="termlab${exp?' sm':''}" style="left:${anchorX}px">${t.name}</span>`})});
+        html:`<span class="termlab${exp?' sm':''}" style="left:${anchorX}px;top:${chosen.ny}px">${t.name}</span>`})});
     m.addTo(map);S.termLayers.push(m);
   });
 }
@@ -1590,7 +1603,8 @@ function pillBlock(x,routes,xL,cyTop,maxW,u,draw){
   return rows*h+(rows-1)*gapY;
 }
 // stamp the un-branded title card. Blocks beyond the title are opt-in (S.exp.*).
-function stampCard(x,W){
+function stampCard(x,W,H){
+  H=H||W;   // JPG is square; card anchors to the bottom-left corner (over the sea, off the routes)
   const info=titleInfo(),imp=impForExport(),u=W/1000,single=info.kind==='single';
   x.textBaseline='alphabetic';
   const M=26*u,pad=20*u,cardW=Math.min(W-2*M,510*u),inW=cardW-2*pad;
@@ -1648,11 +1662,12 @@ function stampCard(x,W){
     x.font=`600 ${statF}px Inter,system-ui,sans-serif`;x.fillStyle=CARD.grey;
     x.fillText('impressions · 12 weeks',M+pad+w2,cy+statF*2+9*u);}});}
   const cardH=pad+eyeF+10*u+headH+blocks.reduce((a,b)=>a+G+b.h,0)+pad;
+  const topY=H-cardH-M;   // bottom-left corner
   // card background
   x.save();x.shadowColor='rgba(15,23,42,.16)';x.shadowBlur=20*u;x.shadowOffsetY=5*u;
-  x.fillStyle='#ffffff';roundRect(x,M,M,cardW,cardH,15*u);x.fill();x.restore();
-  x.strokeStyle=CARD.line;x.lineWidth=1*u;roundRect(x,M,M,cardW,cardH,15*u);x.stroke();
-  let cy=M+pad;
+  x.fillStyle='#ffffff';roundRect(x,M,topY,cardW,cardH,15*u);x.fill();x.restore();
+  x.strokeStyle=CARD.line;x.lineWidth=1*u;roundRect(x,M,topY,cardW,cardH,15*u);x.stroke();
+  let cy=topY+pad;
   // eyebrow
   x.fillStyle=CARD.grey;x.font=`800 ${eyeF}px Inter,system-ui,sans-serif`;
   x.fillText(info.eyebrow.toUpperCase(),M+pad,cy+eyeF);cy+=eyeF+10*u;
@@ -1689,7 +1704,7 @@ async function exportJPG(){
     const cv=document.createElement('canvas');cv.width=mc.width;cv.height=mc.height;
     const x=cv.getContext('2d');
     x.drawImage(mc,0,0);
-    stampCard(x,cv.width);
+    stampCard(x,cv.width,cv.height);
     stampSource(x,cv.width,cv.height);
     dl(cv.toDataURL('image/jpeg',0.95),fileBase()+'.jpg');
   }catch(e){alert('Image export failed: '+e.message);}
@@ -1702,7 +1717,7 @@ const hx=h=>h.replace('#','');
 function addCard(s,info,imp){
   const INK=hx(CARD.ink),SUB=hx(CARD.sub),GREY=hx(CARD.grey);
   const single=info.kind==='single';
-  const X=0.35,Y=0.35,P=0.22,W=single?5.4:4.6,badgeW=info.badge.length<=3?0.9:1.3;
+  const X=0.35,P=0.22,W=single?5.4:4.6,badgeW=info.badge.length<=3?0.9:1.3;
   // pre-measure legend rows so the card height fits
   const legend=S.exp.legend&&info.routes.length>1;
   const pillPos=[];let py=0;
@@ -1722,6 +1737,8 @@ function addCard(s,info,imp){
   if(hasStops)H+=0.20+0.24;
   if(imp)H+=0.66;
   H+=P;
+  // bottom-left corner — sits over Jurong Island / the sea (no buses), so it rarely covers routes
+  const Y=7.5-H-0.32;
   s.addShape('roundRect',{x:X,y:Y,w:W,h:H,fill:{color:'FFFFFF'},line:{color:hx(CARD.line),width:1},
     rectRadius:0.10,shadow:{type:'outer',color:'0F172A',opacity:0.18,blur:9,offset:3,angle:90}});
   let yy=Y+P;
@@ -1825,22 +1842,37 @@ function addRouteSlide(p,n){
   s.addText(roads.length+' roads · '+eachWay+' stops each way · '+svc.sc+' unique · '
     +routeLen(svc).toFixed(1)+' km'+(imp?'  ·  ≈ '+fmt(imp)+' daily impressions':''),
     {x:2.95,y:0.94,w:9.8,h:0.26,fontSize:11,color:SUB,valign:'middle',fontFace:'Inter'});
-  // corridor
-  let y=1.75;
-  if(roads.length){s.addText('CORRIDOR',{x:0.55,y,w:12,h:0.2,fontSize:9,bold:true,color:GREY,charSpacing:1.5,fontFace:'Inter'});
-    s.addText(roads.join('    ›    '),{x:0.55,y:y+0.22,w:12.2,h:0.7,fontSize:10.5,color:SUB,fontFace:'Inter',valign:'top'});
-    y+=1.05;}
-  // stops, numbered, in up to 4 columns
-  s.addText('STOPS IN TRAVEL ORDER'+(dirs.length>1?'  ('+t.from+' → '+t.to+')':''),
-    {x:0.55,y,w:12,h:0.2,fontSize:9,bold:true,color:GREY,charSpacing:1.5,fontFace:'Inter'});
-  y+=0.24;
-  const names=stops.map((c,i)=>({i:i+1,nm:(S.stops[c]?S.stops[c][2]:c)}));
-  const cols=4,per=Math.ceil(names.length/cols),colW=12.23/cols;
-  for(let c=0;c<cols;c++){const chunk=names.slice(c*per,(c+1)*per);if(!chunk.length)continue;
-    const runs=chunk.map(o=>[{text:(o.i+'  '),options:{color:GREY,fontSize:8,fontFace:'Inter'}},
-      {text:o.nm+'\n',options:{color:INK,fontSize:8.5,fontFace:'Inter'}}]).flat();
-    s.addText(runs,{x:0.55+c*colW,y,w:colW-0.15,h:7.4-y,valign:'top',lineSpacingMultiple:1.02,fontFace:'Inter'});}
-  s.addText(SOURCE,{x:9.4,y:7.12,w:3.5,h:0.3,fontSize:7.5,color:GREY,align:'right',valign:'middle',fontFace:'Inter'});
+  // stops grouped under the road they sit on, in travel order — road = section header
+  // (route colour, caps), its stops nested beneath. This ties each road to its stops so the
+  // reader sees "which stops are on which road", with a clear two-level hierarchy.
+  let y=1.68;
+  s.addText('STOPS BY ROAD, IN TRAVEL ORDER'+(dirs.length>1?'  ·  '+t.from+' → '+t.to:''),
+    {x:0.55,y,w:12.2,h:0.2,fontSize:9,bold:true,color:GREY,charSpacing:1.2,fontFace:'Inter'});
+  y+=0.26;
+  const groups=[];
+  stops.forEach((c,i)=>{const st=S.stops[c],road=st?(st[3]||'—'):'—';
+    if(!groups.length||groups[groups.length-1].road!==road)groups.push({road,items:[]});
+    groups[groups.length-1].items.push({i:i+1,nm:st?st[2]:c});});
+  const totalLines=groups.reduce((a,g)=>a+1+g.items.length,0);
+  const cols=totalLines>96?4:3, colW=12.23/cols;
+  const fs=totalLines>120?6.8:totalLines>82?7.4:8.2;   // shrink to fit longer routes
+  // pack whole road-groups into columns, balancing line counts (groups never split mid-road)
+  const target=Math.ceil(totalLines/cols), columns=[[]]; let used=0;
+  groups.forEach(g=>{const gl=1+g.items.length;
+    if(used>0&&used+gl>target&&columns.length<cols){columns.push([]);used=0;}
+    columns[columns.length-1].push(g);used+=gl;});
+  columns.forEach((col,ci)=>{
+    const runs=[];
+    col.forEach((g,gi)=>{
+      if(gi>0)runs.push({text:'\n',options:{fontSize:3}});                 // gap between roads
+      runs.push({text:g.road.toUpperCase()+'\n',options:{bold:true,color:hx(color),
+        fontSize:fs,charSpacing:0.3,fontFace:'Inter'}});
+      g.items.forEach(o=>{
+        runs.push({text:'  '+o.i+'  ',options:{color:GREY,fontSize:fs-0.6,fontFace:'Inter'}});
+        runs.push({text:o.nm+'\n',options:{color:INK,fontSize:fs,fontFace:'Inter'}});});});
+    s.addText(runs,{x:0.55+ci*colW,y,w:colW-0.18,h:7.28-y,valign:'top',
+      lineSpacingMultiple:1.05,fontFace:'Inter'});});
+  s.addText(SOURCE,{x:9.4,y:7.16,w:3.5,h:0.28,fontSize:7.5,color:GREY,align:'right',valign:'middle',fontFace:'Inter'});
 }
 async function exportPPT(){
   const b=$('expPpt');b.disabled=true;b.textContent='…';
