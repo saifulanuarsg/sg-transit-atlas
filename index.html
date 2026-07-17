@@ -1647,14 +1647,22 @@ function stampCard(x,W,H){
         x.fillStyle=CARD.sub;x.font=`600 ${bodyF}px Inter,system-ui,sans-serif`;
         lines.forEach((l,i)=>x.fillText(l,M+pad,cy+labF+6*u+(i+1)*bodyF*1.32-bodyF*0.3));}});}}
   if(S.exp.stops){const ag=selAgg();
-    let txt;if(single){const s=S.svcs[info.badge],t=termsOf(s);
-      txt=s.sc+' stops · '+t.from+' → '+t.to;}
-    else txt=ag.unique.toLocaleString('en-SG')+' unique stops · '+ag.total.toLocaleString('en-SG')+' with overlap';
-    const lines=wrapLines(x,txt,`600 ${bodyF}px Inter,system-ui,sans-serif`,inW);
-    blocks.push({h:labF+6*u+lines.length*bodyF*1.3,draw:cy=>{x.fillStyle=CARD.grey;
-      x.font=`700 ${labF}px Inter,system-ui,sans-serif`;x.fillText('STOPS',M+pad,cy+labF);
-      x.fillStyle=CARD.sub;x.font=`600 ${bodyF}px Inter,system-ui,sans-serif`;
-      lines.forEach((l,i)=>x.fillText(l,M+pad,cy+labF+6*u+(i+1)*bodyF*1.3-bodyF*0.3));}});}
+    // the three coverage stats: unique stops, stops covered/day (× 2 dirs × 7 trips), avg per route
+    const uni=single?S.svcs[info.badge].sc:ag.unique, cov=uni*DIRS*TRIPS_DAY, avg=single?uni:ag.avg;
+    const rows=[['Unique bus stops',fmt(uni)],['Stops covered / day',fmt(cov)]];
+    if(!single)rows.push(['Avg stops / route',fmt(avg)]);
+    const rowH=bodyF*1.55, noteF=bodyF*0.82;
+    blocks.push({h:labF+8*u+rows.length*rowH+noteF*1.4,draw:cy=>{
+      x.fillStyle=CARD.grey;x.font=`700 ${labF}px Inter,system-ui,sans-serif`;
+      x.fillText('STOPS & COVERAGE',M+pad,cy+labF);
+      let ry=cy+labF+8*u;
+      rows.forEach(r=>{ry+=rowH;
+        x.fillStyle=CARD.sub;x.font=`600 ${bodyF}px Inter,system-ui,sans-serif`;
+        x.fillText(r[0],M+pad,ry);
+        x.fillStyle=CARD.ink;x.font=`800 ${bodyF}px Inter,system-ui,sans-serif`;
+        x.textAlign='right';x.fillText(r[1],M+pad+inW,ry);x.textAlign='left';});
+      ry+=noteF*1.4;x.fillStyle=CARD.grey;x.font=`500 ${noteF}px Inter,system-ui,sans-serif`;
+      x.fillText('Covered / day = unique × '+DIRS+' directions × '+TRIPS_DAY+' trips.',M+pad,ry);}});}
   if(imp){blocks.push({h:statF*2+9*u,draw:cy=>{
     x.font=`800 ${statF}px Inter,system-ui,sans-serif`;x.fillStyle=CARD.ink;
     const l1='≈ '+fmt(imp.wd)+' ',w1=x.measureText(l1).width;x.fillText(l1,M+pad,cy+statF);
@@ -1737,7 +1745,7 @@ function addCard(s,info,imp){
   if(info.combi)H+=0.24;
   if(legend)H+=0.22+py;
   if(hasCorr)H+=0.20+0.5;
-  if(hasStops)H+=0.20+0.24;
+  if(hasStops)H+=0.20+0.56+0.2;   // label + tile row + formula note
   if(imp)H+=0.66;
   H+=P;
   // bottom-left corner — sits over Jurong Island / the sea (no buses), so it rarely covers routes
@@ -1771,11 +1779,19 @@ function addCard(s,info,imp){
     s.addText(corridorRoads.join('  ·  '),{x:X+P,y:yy,w:W-2*P,h:0.5,fontSize:9.5,color:SUB,
       fontFace:'Inter',valign:'top'});yy+=0.5;}
   if(hasStops){const ag=selAgg();
-    const txt=single?(S.svcs[info.badge].sc+' stops'):(ag.unique.toLocaleString('en-SG')+' unique · '
-      +ag.total.toLocaleString('en-SG')+' with overlap');
-    s.addText('STOPS',{x:X+P,y:yy,w:W-2*P,h:0.18,fontSize:9,bold:true,color:GREY,charSpacing:1.5,
-      fontFace:'Inter'});yy+=0.20;
-    s.addText(txt,{x:X+P,y:yy,w:W-2*P,h:0.24,fontSize:11,color:SUB,fontFace:'Inter'});yy+=0.24;}
+    // the three coverage stats as a mini tile row: unique · covered/day (×2×7) · avg per route
+    const uni=single?S.svcs[info.badge].sc:ag.unique, cov=uni*DIRS*TRIPS_DAY, avg=single?uni:ag.avg;
+    const cells=[['Unique bus stops',fmt(uni)],['Stops covered / day',fmt(cov)]];
+    if(!single)cells.push(['Avg stops / route',fmt(avg)]);
+    s.addText('STOPS & COVERAGE',{x:X+P,y:yy,w:W-2*P,h:0.18,fontSize:9,bold:true,color:GREY,
+      charSpacing:1.5,fontFace:'Inter'});yy+=0.20;
+    const cw=(W-2*P)/cells.length;
+    cells.forEach((c,i)=>{s.addText(c[1],{x:X+P+i*cw,y:yy,w:cw,h:0.3,fontSize:16,bold:true,color:INK,
+        fontFace:'Inter'});
+      s.addText(c[0].toUpperCase(),{x:X+P+i*cw,y:yy+0.3,w:cw,h:0.2,fontSize:7,bold:true,color:GREY,
+        charSpacing:0.2,fontFace:'Inter'});});yy+=0.56;
+    s.addText('Covered / day = unique × '+DIRS+' directions × '+TRIPS_DAY+' trips.',
+      {x:X+P,y:yy,w:W-2*P,h:0.16,fontSize:7.5,italic:true,color:GREY,fontFace:'Inter'});yy+=0.2;}
   if(imp){s.addText([{text:'≈ '+fmt(imp.wd)+' ',options:{bold:true,color:INK,fontSize:13,fontFace:'Inter'}},
     {text:'daily impressions',options:{color:GREY,fontSize:11,fontFace:'Inter'}}],
     {x:X+P,y:yy,w:W-2*P,h:0.3,valign:'middle'});yy+=0.32;
