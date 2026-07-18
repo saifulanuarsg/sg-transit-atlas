@@ -1,0 +1,136 @@
+{
+ "window": "2025-08..2026-07",
+ "source": "HDB resale (data.gov.sg)",
+ "towns": {
+  "ANG MO KIO": {
+   "pa": "Ang Mo Kio",
+   "volume": 858,
+   "median_price": 515900
+  },
+  "BEDOK": {
+   "pa": "Bedok",
+   "volume": 1153,
+   "median_price": 545000
+  },
+  "BISHAN": {
+   "pa": "Bishan",
+   "volume": 369,
+   "median_price": 840888
+  },
+  "BUKIT BATOK": {
+   "pa": "Bukit Batok",
+   "volume": 1273,
+   "median_price": 620000
+  },
+  "BUKIT MERAH": {
+   "pa": "Bukit Merah",
+   "volume": 868,
+   "median_price": 790000
+  },
+  "BUKIT PANJANG": {
+   "pa": "Bukit Panjang",
+   "volume": 737,
+   "median_price": 608000
+  },
+  "BUKIT TIMAH": {
+   "pa": "Bukit Timah",
+   "volume": 56,
+   "median_price": 980000
+  },
+  "CENTRAL AREA": {
+   "pa": "Outram",
+   "volume": 166,
+   "median_price": 727500
+  },
+  "CHOA CHU KANG": {
+   "pa": "Choa Chu Kang",
+   "volume": 954,
+   "median_price": 590888
+  },
+  "CLEMENTI": {
+   "pa": "Clementi",
+   "volume": 507,
+   "median_price": 610000
+  },
+  "GEYLANG": {
+   "pa": "Geylang",
+   "volume": 641,
+   "median_price": 585000
+  },
+  "HOUGANG": {
+   "pa": "Hougang",
+   "volume": 1183,
+   "median_price": 625000
+  },
+  "JURONG EAST": {
+   "pa": "Jurong East",
+   "volume": 444,
+   "median_price": 520000
+  },
+  "JURONG WEST": {
+   "pa": "Jurong West",
+   "volume": 1406,
+   "median_price": 565944
+  },
+  "KALLANG/WHAMPOA": {
+   "pa": "Kallang",
+   "volume": 684,
+   "median_price": 722500
+  },
+  "MARINE PARADE": {
+   "pa": "Marine Parade",
+   "volume": 127,
+   "median_price": 560000
+  },
+  "PASIR RIS": {
+   "pa": "Pasir Ris",
+   "volume": 675,
+   "median_price": 720000
+  },
+  "PUNGGOL": {
+   "pa": "Punggol",
+   "volume": 1488,
+   "median_price": 675000
+  },
+  "QUEENSTOWN": {
+   "pa": "Queenstown",
+   "volume": 665,
+   "median_price": 838000
+  },
+  "SEMBAWANG": {
+   "pa": "Sembawang",
+   "volume": 841,
+   "median_price": 600000
+  },
+  "SENGKANG": {
+   "pa": "Sengkang",
+   "volume": 1650,
+   "median_price": 660000
+  },
+  "SERANGOON": {
+   "pa": "Serangoon",
+   "volume": 352,
+   "median_price": 660000
+  },
+  "TAMPINES": {
+   "pa": "Tampines",
+   "volume": 1793,
+   "median_price": 710000
+  },
+  "TOA PAYOH": {
+   "pa": "Toa Payoh",
+   "volume": 960,
+   "median_price": 780000
+  },
+  "WOODLANDS": {
+   "pa": "Woodlands",
+   "volume": 1709,
+   "median_price": 590000
+  },
+  "YISHUN": {
+   "pa": "Yishun",
+   "volume": 1475,
+   "median_price": 540000
+  }
+ }
+}

@@ -1,0 +1,15 @@
+{
+ "note": "National context \u2014 not route-specific. Narrative backdrop only; never sliced per route.",
+ "source": "data.gov.sg (Singapore Open Data Licence). Some series (Retail Sales Index, F&B Services Index) pending re-source \u2014 dataset IDs re-issued and the discovery API is access-gated.",
+ "indices": [
+  {
+   "key": "mobile_pen",
+   "label": "Mobile penetration rate",
+   "value": 154.1,
+   "unit": "%",
+   "as_of": "2019-05",
+   "source": "IMDA via data.gov.sg (d_5fb7ffda\u2026)",
+   "read": "Above 150% \u2014 the O2O / mobile-retarget rationale for pairing transit OOH with mobile."
+  }
+ ]
+}

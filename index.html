@@ -144,6 +144,85 @@
   .legend div{flex:1;height:10px}
   .legend-lab{display:flex;justify-content:space-between;font:500 10px/1 system-ui;
     color:var(--muted);margin-top:4px}
+  /* collapsible groups (POI categories + rail lines) — progressive disclosure to save space */
+  details.poi-cat{border-top:1px solid var(--line)}
+  details.poi-cat:first-of-type{border-top:none}
+  .poi-cat>summary,.rail-acc>summary{list-style:none;cursor:pointer;display:flex;align-items:center;
+    gap:7px;user-select:none}
+  .poi-cat>summary::-webkit-details-marker,.rail-acc>summary::-webkit-details-marker{display:none}
+  .poi-cat>summary{padding:9px 0;font:600 12.5px/1 system-ui;color:var(--ink)}
+  .poi-cat>summary::before,.rail-acc>summary::before{content:"›";color:#94a3b8;font:700 13px/1 system-ui;
+    transition:transform .15s;display:inline-block;width:9px}
+  .poi-cat[open]>summary::before,.rail-acc[open]>summary::before{transform:rotate(90deg)}
+  .poi-cat>summary:hover{color:var(--primary)}
+  .poi-cat .cat-name{flex:1}
+  .poi-cat .cat-badge{font:700 10px/1 system-ui;color:var(--muted)}
+  .poi-cat .cat-badge.act{color:var(--primary)}
+  .poi-cat .cat-body{padding:1px 0 7px 16px}
+  .poi-cat .cat-body .row{padding:4px 0;font-size:12.5px}
+  .rail-acc{margin-top:9px}
+  .rail-acc>summary{margin-bottom:0}
+  .rail-acc[open]>summary{margin-bottom:8px}
+  /* v2 badge next to the app title */
+  .ver{font:800 9px/1 system-ui;letter-spacing:.5px;color:#fff;background:var(--accent);
+    padding:2px 5px;border-radius:5px;vertical-align:middle;position:relative;top:-2px;margin-left:3px}
+  /* Reset button in the Selected routes header (labelled control, not a lone ✕) */
+  .reset-btn{font:700 10px/1 system-ui;text-transform:uppercase;letter-spacing:.4px;
+    color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:6px;
+    padding:5px 10px;cursor:pointer}
+  .reset-btn:hover{border-color:var(--destructive,#dc2626);color:var(--destructive,#dc2626)}
+  /* Export call-to-action — opens the export modal */
+  .cta-export{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+    font:800 13px/1 system-ui;color:#fff;background:var(--primary);border:none;border-radius:10px;
+    padding:12px;cursor:pointer;box-shadow:0 2px 6px rgba(30,64,175,.28)}
+  .cta-export:hover{background:#1b3aa0}
+  .cta-export .ce-ico{font-size:15px;line-height:1}
+  /* Export modal (print-dialog pattern) */
+  .modal-back{position:fixed;inset:0;z-index:3000;background:rgba(15,23,42,.45);
+    display:flex;align-items:center;justify-content:center;padding:20px}
+  .modal-back[hidden]{display:none}
+  .modal{background:#fff;border-radius:14px;width:min(440px,100%);max-height:90vh;overflow:auto;
+    box-shadow:0 20px 60px rgba(15,23,42,.35)}
+  .modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+    padding:16px 18px 12px;border-bottom:1px solid var(--line)}
+  .modal-head h2{margin:0;font:800 16px/1.2 system-ui}
+  .modal-sub{font:500 11.5px/1.4 system-ui;color:var(--muted);margin-top:3px}
+  .modal-x{border:none;background:none;font-size:15px;color:var(--muted);cursor:pointer;line-height:1;padding:2px 4px}
+  .modal-x:hover{color:var(--ink)}
+  .modal-body{padding:14px 18px}
+  .modal-foot{display:flex;gap:10px;padding:12px 18px 16px;border-top:1px solid var(--line)}
+  .exp-dl{flex:1;font:600 13px/1 system-ui;color:var(--ink);background:#fff;
+    border:1.5px solid var(--line);border-radius:9px;padding:12px;cursor:pointer}
+  .exp-dl b{font-weight:800}
+  .exp-dl:hover{border-color:var(--primary);color:var(--primary)}
+  .exp-dl.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+  .exp-dl.primary:hover{background:#1b3aa0;color:#fff}
+  .exp-dl:disabled{opacity:.6;cursor:progress}
+  /* Bus products — highlighted section (like the Howards request block) + cleaner preset buttons */
+  .sec-prod{background:linear-gradient(180deg,#eef4ff,#fff 62%);box-shadow:inset 3px 0 0 var(--primary)}
+  .sec-prod .sec-lab{color:var(--primary)}
+  /* place-layer chips (POI dropdown picks) */
+  .poi-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+  .poi-empty{font:500 11px/1.4 system-ui;color:var(--muted);margin-top:9px}
+  .poi-chip{display:inline-flex;align-items:center;gap:6px;font:600 12px/1 system-ui;
+    background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:5px 9px}
+  .poi-chip .pc-n{font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums}
+  .poi-chip .pc-x{border:none;background:none;color:#94a3b8;cursor:pointer;font-size:10px;padding:0}
+  .poi-chip .pc-x:hover{color:var(--destructive,#dc2626)}
+  /* audience — collapsible catchment detail */
+  .aud-more{margin-top:6px}
+  .aud-more>summary{list-style:none;cursor:pointer;font:700 10px/1 system-ui;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:6px;padding:6px 0}
+  .aud-more>summary::-webkit-details-marker{display:none}
+  .aud-more>summary::before{content:"›";color:#94a3b8;font-weight:700;transition:transform .15s;display:inline-block}
+  .aud-more[open]>summary::before{transform:rotate(90deg)}
+  .sh-hint{font:500 9.5px/1 system-ui;color:#94a3b8;text-transform:none;letter-spacing:0}
+  /* property-heatmaps section — own tint + accent so it reads apart from the blue transit layers */
+  .sec-prop{background:linear-gradient(180deg,#fff6f9,#fff 64%);
+    box-shadow:inset 3px 0 0 #e11d48}
+  .sec-prop .sec-lab{color:#9f1239}
+  #propHeat select{margin-bottom:2px}
+  #mopLegend:empty,#txLegend:empty{display:none}
 
   /* ---------- bus products (route presets) ---------- */
   .prod-lab{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:13px 0 6px}
@@ -206,6 +285,13 @@
   details.more summary{cursor:pointer;font:600 11.5px/1 system-ui;color:var(--primary)}
   .placeholder{color:var(--muted);font-size:12px;line-height:1.5;padding:2px 0}
   .sel-empty{font:500 12px/1.5 system-ui;color:var(--muted);padding:2px 0}
+  /* internal-feed stubs — clearly non-data placeholders (rate card / MooveSMART) */
+  .stub{border:1px dashed var(--border,#cbd5e1);border-radius:8px;padding:9px 10px;margin:7px 0 0;
+    background:repeating-linear-gradient(135deg,transparent,transparent 8px,rgba(148,163,184,.06) 8px,rgba(148,163,184,.06) 16px)}
+  .stub .st-top{display:flex;align-items:center;gap:8px;font:700 12px/1.2 system-ui}
+  .stub .st-tag{margin-left:auto;font:700 8.5px/1 system-ui;letter-spacing:.5px;text-transform:uppercase;
+    color:#b45309;background:#fef3c7;border:1px solid #fde68a;border-radius:4px;padding:3px 5px;white-space:nowrap}
+  .stub .st-body{font:500 11.5px/1.5 system-ui;color:var(--muted);margin-top:5px}
 
   /* ---------- rail line legend (per-line focus) ---------- */
   .sub-lab{font:700 10px/1 system-ui;color:var(--muted);text-transform:uppercase;
@@ -264,6 +350,10 @@
   .stnlab{position:absolute;transform:translate(6px,-50%);white-space:nowrap;
     font:600 10px/1 system-ui;color:#0f766e;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff;
     transition:opacity .1s}
+  /* planning-area names on a shaded choropleth — pill so they read on colour and survive export */
+  .arealab{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;
+    font:700 10.5px/1 system-ui;color:#0f172a;background:rgba(255,255,255,.82);
+    padding:2px 5px;border-radius:4px;box-shadow:0 0 0 .5px rgba(15,23,42,.1)}
   /* termini labels for the selected routes (chip so they survive image export) */
   .termlab{position:absolute;top:0;transform:translateY(-50%);white-space:nowrap;
     font:700 10.5px/1 system-ui;color:#0f172a;background:rgba(255,255,255,.58);
@@ -305,7 +395,7 @@
 <div id="app">
   <aside id="leftbar" aria-label="Routes and selection">
     <div class="p-head">
-      <h1>Singapore Transit Atlas</h1>
+      <h1>Singapore Transit Atlas <span class="ver">v2</span></h1>
       <div class="sub">Build a selection &middot; read its reach &middot; export</div>
     </div>
     <div class="searchwrap">
@@ -314,40 +404,32 @@
       <div id="results"></div>
     </div>
     <div id="leftBody">
-      <div class="sec" id="selcard"></div>
-      <div class="sec" id="routesSec">
-        <div class="sec-lab">Selected routes <span class="cnt" id="lbCount"></span></div>
+      <div class="sec" id="routesSec" hidden>
+        <div class="sec-lab" style="justify-content:space-between;align-items:center">
+          <span>Selected routes <span class="cnt" id="lbCount"></span></span>
+          <button id="resetSel" class="reset-btn" title="Clear all selected routes">Reset</button>
+        </div>
         <div id="lbBody"></div>
       </div>
-      <div class="sec" id="expSec">
-        <div class="sec-lab" style="justify-content:space-between">
-          <span>Export <span class="hint-txt" style="text-transform:none;letter-spacing:0">all off by default</span></span>
-          <span class="export">
-            <button id="expJpg" class="exp-btn" title="Download the current map as an image">JPG</button>
-            <button id="expPpt" class="exp-btn" title="Download the current map as a PowerPoint deck">PPTX</button>
-          </span>
-        </div>
-        <div class="exp-grp-lab">On the map (JPG &amp; first slide)</div>
-        <div id="expMapOpts"></div>
-        <div class="exp-grp-lab">Extra PowerPoint slides</div>
-        <div id="expSlideOpts"></div>
-        <div class="note" id="expNote">Select routes first, then choose what each export carries. The map image
-          is always included; everything else is opt-in.</div>
+      <div class="sec" id="exportCta" hidden>
+        <button id="openExport" class="cta-export" title="Open export options">
+          <span class="ce-ico">⭳</span> Export map…</button>
       </div>
-      <div class="sec">
-        <div class="sec-lab">Bus products <span class="hint-txt" style="text-transform:none;letter-spacing:0">one-tap presets</span></div>
+      <div class="sec" id="selcard"></div>
+      <div class="sec sec-prod" id="prodSec">
+        <div class="sec-lab">Dynamic Bus products <span class="hint-txt" style="text-transform:none;letter-spacing:0">one-tap presets</span></div>
         <div id="clusterBtns"></div>
         <div class="note">Each preset loads a product route set — tap again to clear. Dominance sells as one
           of four fixed 5-bus combis. (GAS) in a preset's tooltip = Go-Ahead Singapore service on the
           multi-route format. Counts are routes drawn; “×2” buses on a route don't change the modelled reach.</div>
       </div>
       <div class="sec">
-        <div class="sec-lab">Reach ranking</div>
-        <select id="rankSel" aria-label="Rank trunk routes by reach">
-          <option value="">Rank trunk routes by…</option>
+        <div class="sec-lab">Reach ranking <span class="hint-txt" style="text-transform:none;letter-spacing:0">ranks your selection</span></div>
+        <select id="rankSel" aria-label="Rank selected routes by reach">
+          <option value="">Rank selected routes by…</option>
         </select>
         <div id="rankNote" class="note" style="display:none">
-          Trunk routes ranked by places within 400 m of their stops. Feeders excluded.</div>
+          Your selected routes, ranked by places within 400 m of their stops.</div>
         <div id="rankList"></div>
       </div>
     </div>
@@ -367,8 +449,10 @@
       <div class="sec">
         <div class="sec-lab">Transit network</div>
         <div id="netToggles"></div>
-        <div class="sub-lab" id="railSub">Rail lines <span class="hint-txt">tap a line to focus its stations</span></div>
-        <div id="railLegend"></div>
+        <details class="rail-acc" id="railAcc">
+          <summary class="sub-lab" id="railSub">Rail lines <span class="hint-txt">tap a line to focus its stations</span></summary>
+          <div id="railLegend"></div>
+        </details>
       </div>
       <div class="sec">
         <div class="sec-lab">Places &amp; landmarks</div>
@@ -378,6 +462,10 @@
         </div>
         <div id="poiToggles"></div>
         <div class="note" id="poiScopeNote" style="display:none"></div>
+      </div>
+      <div class="sec sec-prop">
+        <div class="sec-lab">Howards request <span class="hint-txt">agent audience · v1</span></div>
+        <div id="propHeat"></div>
       </div>
       <div class="sec">
         <div class="sec-lab">Demographics</div>
@@ -401,6 +489,25 @@
     </details>
   </aside>
 </div>
+<div id="expModal" class="modal-back" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Export map">
+    <div class="modal-head">
+      <div><h2>Export map</h2><div class="modal-sub">The map image is always included; everything else is opt-in.</div></div>
+      <button id="expClose" class="modal-x" aria-label="Close export">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="exp-grp-lab">On the map (JPG &amp; first slide)</div>
+      <div id="expMapOpts"></div>
+      <div class="exp-grp-lab">Extra PowerPoint slides</div>
+      <div id="expSlideOpts"></div>
+      <div class="note" id="expNote">Select routes first, then choose what each export carries.</div>
+    </div>
+    <div class="modal-foot">
+      <button id="expJpg" class="exp-dl" title="Download the current map as an image"><b>JPG</b> image</button>
+      <button id="expPpt" class="exp-dl primary" title="Download the current map as a PowerPoint deck"><b>PPTX</b> deck</button>
+    </div>
+  </div>
+</div>
 <div id="loading"><div class="spin"></div><div style="font:600 13px system-ui;color:#475569">Loading network…</div></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -420,7 +527,18 @@ const CHORO_R={
   affluent:['#f5f3ff','#ddd6fe','#a78bfa','#7c3aed','#4c1d95'],        // violets
   family:  ['#fff7ed','#fed7aa','#fb923c','#ea580c','#7c2d12'],        // oranges
   senior:  ['#f0fdfa','#99f6e4','#2dd4bf','#0d9488','#134e4a'],        // teals
-  youth:   ['#fdf2f8','#fbcfe8','#f472b6','#db2777','#831843']};       // pinks
+  youth:   ['#fdf2f8','#fbcfe8','#f472b6','#db2777','#831843'],        // pinks
+  daytime: ['#fffbeb','#fde68a','#f59e0b','#b45309','#78350f'],        // ambers (workplace pop)
+  transit: ['#ecfeff','#a5f3fc','#22d3ee','#0e7490','#164e63'],        // cyans (commute mode)
+  movers:  ['#f0fdf4','#bbf7d0','#4ade80','#16a34a','#14532d'],        // greens (HDB resale movers)
+  // property-heatmap ramps (own section) — kept apart from the demographic families above
+  mop_recent:['#fff1f2','#fecdd3','#fb7185','#e11d48','#881337'],      // rose  — HDB flats recently MOP
+  mop_soon:  ['#fff1f2','#fecdd3','#fb7185','#e11d48','#881337'],
+  mop_all:   ['#fff1f2','#fecdd3','#fb7185','#e11d48','#881337'],
+  tx_hdb_vol:['#eef2ff','#c7d2fe','#818cf8','#4f46e5','#312e81'],      // indigo — HDB resale transactions
+  tx_hdb_val:['#eef2ff','#c7d2fe','#818cf8','#4f46e5','#312e81'],
+  tx_priv_vol:['#fdf4ff','#f5d0fe','#e879f9','#c026d3','#701a75'],     // fuchsia — private transactions
+  tx_priv_val:['#fdf4ff','#f5d0fe','#e879f9','#c026d3','#701a75']};
 // distinct colours for multi-route selection (dark enough for white pill text).
 // 16 unique — covers the largest product set with no repeats; consecutive entries
 // are far apart in hue so overlapping lanes stay tellable-apart.
@@ -475,15 +593,38 @@ map.createPane('label').style.zIndex=495;  // hub / station reference labels on 
 map.getPane('label').style.pointerEvents='none';
 const rBus=L.canvas({pane:'bus',padding:.4}), rPoi=L.canvas({pane:'poi',padding:.4}),
       rRail=L.canvas({pane:'rail',padding:.4}),
+      rAreas=L.canvas({pane:'areas',padding:.5}),   // canvas (not default SVG) so choropleth exports aligned
       rSel=L.canvas({pane:'sel',padding:.5});   // canvas (not SVG) so image export captures the selection
 
 // ---------------- state ----------------
+// POI categories — the 19 layers group under these 5 collapsible headers to save panel space
+const POI_CATS=[
+  {key:'edu',   label:'Education'},
+  {key:'retail',label:'Retail & dining'},
+  {key:'health',label:'Health & care'},
+  {key:'civic', label:'Civic & community'},
+  {key:'life',  label:'Lifestyle & services'},
+];
 const POI=[
-  {key:'schools',label:'Schools',color:'#7c3aed',file:'data/poi_schools.json'},
-  {key:'ihl',label:'IHLs (universities, polys, ITE)',color:'#0891b2',file:'data/poi_ihl.json'},
-  {key:'malls',label:'Shopping malls',color:'#db2777',file:'data/poi_malls.json'},
-  {key:'supermarkets',label:'Supermarkets',color:'#16a34a',file:'data/poi_supermarkets.json'},
-  {key:'police',label:'Police (stations & posts)',color:'#2563eb',file:'data/poi_police.json'},
+  {key:'schools',label:'Schools',color:'#7c3aed',file:'data/poi_schools.json',cat:'edu'},
+  {key:'ihl',label:'IHLs (universities, polys, ITE)',color:'#0891b2',file:'data/poi_ihl.json',cat:'edu'},
+  {key:'pei',label:'Private education (PEI)',color:'#6366f1',file:'data/poi_pei.json',cat:'edu'},
+  {key:'studentcare',label:'Student care',color:'#f59e0b',file:'data/poi_studentcare.json',cat:'edu'},
+  {key:'malls',label:'Shopping malls',color:'#db2777',file:'data/poi_malls.json',cat:'retail'},
+  {key:'supermarkets',label:'Supermarkets',color:'#16a34a',file:'data/poi_supermarkets.json',cat:'retail'},
+  {key:'fnb',label:'F&B (healthier eateries)',color:'#ea580c',file:'data/poi_fnb.json',cat:'retail'},
+  {key:'sephora',label:'Sephora outlets',color:'#171717',file:'data/poi_sephora.json',cat:'retail'},
+  {key:'hospitals',label:'Hospitals',color:'#dc2626',file:'data/poi_hospitals.json',cat:'health'},
+  {key:'polyclinics',label:'Polyclinics',color:'#0369a1',file:'data/poi_polyclinics.json',cat:'health'},
+  {key:'pharmacies',label:'Pharmacies',color:'#0d9488',file:'data/poi_pharmacies.json',cat:'health'},
+  {key:'eldercare',label:'Eldercare',color:'#be185d',file:'data/poi_eldercare.json',cat:'health'},
+  {key:'police',label:'Police (stations & posts)',color:'#2563eb',file:'data/poi_police.json',cat:'civic'},
+  {key:'cc',label:'Community clubs',color:'#ca8a04',file:'data/poi_cc.json',cat:'civic'},
+  {key:'libraries',label:'Libraries',color:'#4f46e5',file:'data/poi_libraries.json',cat:'civic'},
+  {key:'sport',label:'SportSG facilities',color:'#65a30d',file:'data/poi_sport.json',cat:'civic'},
+  {key:'hotels',label:'Hotels',color:'#b45309',file:'data/poi_hotels.json',cat:'life'},
+  {key:'tourism',label:'Tourist attractions',color:'#c026d3',file:'data/poi_tourism.json',cat:'life'},
+  {key:'remittance',label:'Remittance & money transfer',color:'#9333ea',file:'data/poi_remittance.json',cat:'life'},
 ];
 const S={svcs:{},stops:{},areas:null,pois:{},
   stopArea:{},areaStats:{},selected:[],selLayers:[],termLayers:[],_areaLayer:null,
@@ -502,11 +643,11 @@ const get=u=>fetch(u,{cache:'no-cache'}).then(r=>r.ok?r.json():Promise.reject(u)
 Promise.all([
   get('data/network.json'),get('data/stops.json'),get('data/rail_stations.json'),
   get('data/rail_lines.json'),get('data/planning_areas.geojson'),
-  get('data/stop_area.json'),get('data/stop_volume.json'),
+  get('data/stop_area.json'),get('data/stop_volume.json'),get('data/context_indices.json'),
   ...POI.map(p=>get(p.file))
-]).then(([net,stops,stations,railLines,areas,stopArea,stopVol,...pois])=>{
+]).then(([net,stops,stations,railLines,areas,stopArea,stopVol,context,...pois])=>{
   S.stops=stops||{};S.stations=stations||[];S.railLines=railLines||[];
-  S.areas=areas;S.stopArea=stopArea||{};S.stopVol=stopVol||{};
+  S.areas=areas;S.stopArea=stopArea||{};S.stopVol=stopVol||{};S.context=context||null;
   if(areas){FEATURES.demographics=true;
     S.areaProps={};areas.features.forEach(f=>S.areaProps[f.properties.name]=f.properties);
     S.baseline=(areas.meta||{}).baseline||{};}
@@ -528,6 +669,8 @@ const SEG=[
   {key:'youth',   label:'Students & youth (15–24)',prop:'share_youth'},
 ];
 S.segment='none';   // active choropleth segment (none = no shading by default)
+S.regionFilter='all';  // property-heatmap region filter (MOP layer); 'all' = whole island
+S.txSeg='hdb';         // property-transactions segment: 'hdb' (resale) | 'priv' (private)
 
 // ---------------- bus network (trunk services only; feeders stay searchable) --
 const toLL=seg=>seg.map(p=>[p[1],p[0]]);
@@ -636,6 +779,7 @@ function setRailVisible(on){
     S.activeLine=null;updateRailLegend();}
   const host=$('railLegend');if(host)host.classList.toggle('rail-off',!on);
   const sub=document.getElementById('railSub');if(sub)sub.classList.toggle('rail-off',!on);
+  const acc=$('railAcc');if(acc)acc.open=on;   // reveal the line list when rail turns on, tuck it away when off
 }
 
 // ---------------- reference labels: bus hubs + rail stations ----------------
@@ -697,6 +841,13 @@ function toggleRow(label,group,on,extra){
   }else{d.setAttribute('aria-disabled','true');}
   return d;
 }
+// reflect how many layers in a collapsed POI category are switched on (visibility of status)
+function updateCatBadge(catKey){
+  const det=document.querySelector(`.poi-cat[data-cat="${catKey}"]`);if(!det)return;
+  const on=det.querySelectorAll('.cat-body .row.on').length;
+  const badge=det.querySelector('.cat-badge');if(!badge)return;
+  badge.textContent=on?on+' on':'';badge.classList.toggle('act',on>0);
+}
 function buildPanel(){
   const nt=$('netToggles');
   const all=Object.values(S.svcs);
@@ -731,14 +882,21 @@ function buildPanel(){
     const rs=$('railSub');if(rs)rs.classList.add('rail-off');}
   map.whenReady(gateLabels);
 
-  const pt=$('poiToggles');
-  POI.forEach(cfg=>{
-    const row=toggleRow(cfg.label,S.pois[cfg.key]?groups[cfg.key]:null,false,
-      `<span class="dot" style="background:${cfg.color}"></span>`);
-    cfg._cntEl=row.querySelector('.cnt');
-    cfg._cntEl.textContent=S.pois[cfg.key]?S.pois[cfg.key].length:'—';
-    pt.appendChild(row);
-  });
+  const pt=$('poiToggles');pt.innerHTML='';
+  // POIs are picked from a category-grouped dropdown and shown as chips — a layer appears on the map
+  // only once chosen, so the panel stays compact ("dropdown all POIs, clicked then appear").
+  const add=document.createElement('select');add.id='poiAdd';
+  add.setAttribute('aria-label','Add a place layer to the map');
+  add.innerHTML='<option value="">＋ Add a place layer…</option>'+POI_CATS.map(cat=>{
+    const opts=POI.filter(c=>c.cat===cat.key&&S.pois[c.key]).map(cfg=>{
+      const n=S.pois[cfg.key].length;
+      return `<option value="${cfg.key}">${cfg.label}${n?` · ${n}`:''}</option>`;}).join('');
+    return opts?`<optgroup label="${cat.label}">${opts}</optgroup>`:'';}).join('');
+  pt.appendChild(add);
+  const chips=document.createElement('div');chips.id='poiChips';chips.className='poi-chips';
+  pt.appendChild(chips);
+  add.onchange=()=>{if(add.value){poiSetOn(add.value,true);add.value='';}};
+  renderPoiChips();
   document.querySelectorAll('#poiScopeSeg button').forEach(b=>b.onclick=()=>{
     S.poiScope=b.dataset.s;
     document.querySelectorAll('#poiScopeSeg button').forEach(x=>x.classList.toggle('on',x===b));
@@ -746,6 +904,7 @@ function buildPanel(){
   });
   buildClusters();
   buildRanking();
+  buildPropertyHeatmaps();
   buildDemographics();
   buildSearch();
 }
@@ -800,7 +959,7 @@ function buildAreas(){
   // planning-area polygons: boundaries hidden by default (opacity 0) so they don't clutter the
   // map or exports; they only appear when a demographic segment is shaded. Fill stays present
   // (transparent) so the areas remain clickable for the area drill-down.
-  S._areaLayer=L.geoJSON(S.areas,{pane:'areas',
+  S._areaLayer=L.geoJSON(S.areas,{pane:'areas',renderer:rAreas,
     style:{color:'#94a3b8',weight:1,opacity:0,fillColor:'#000',fillOpacity:0},
     onEachFeature:(f,ly)=>{const p=f.properties;
       ly.bindTooltip(p.name,{sticky:true});
@@ -813,42 +972,139 @@ function buildAreas(){
 function areaMetric(p,seg){
   if(seg==='none')return null;
   if(seg==='all')return p.population||null;
+  if(seg==='daytime')return p.daytime_pop||null;              // absolute daytime workforce
+  if(seg==='movers')return p.mover_vol||null;                 // HDB resale moves, trailing 12 mo
+  if(seg==='mop_recent')return p.mop_recent||null;            // property heatmaps ↓
+  if(seg==='mop_soon')return p.mop_soon||null;
+  if(seg==='mop_all')return p.mop_all||null;
+  if(seg==='tx_hdb_vol')return p.mover_vol||null;             // HDB resale volume (12 mo)
+  if(seg==='tx_hdb_val')return p.mover_price||null;           // HDB resale median price
+  if(seg==='tx_priv_vol')return p.priv_vol||null;             // private volume (FY)
+  if(seg==='tx_priv_val')return p.priv_val||null;             // private median price
+  if(seg==='transit')return (p.transit_share!=null&&S.baseline.transit)?p.transit_share/S.baseline.transit:null;
   const cfg=SEG.find(s=>s.key===seg),b=S.baseline[seg];
   return (cfg&&p[cfg.prop]!=null&&b) ? p[cfg.prop]/b : null;   // index vs national avg
 }
 function paintChoro(seg){
-  const lg=$('choroLegend');if(lg)lg.innerHTML='';
+  // each shading source keeps its own legend so the three dropdowns don't overwrite each other
+  ['choroLegend','mopLegend','txLegend'].forEach(id=>{const e=$(id);if(e)e.innerHTML='';});
+  clearAreaLabels();
   if(!S._areaLayer)return;
   if(seg==='none'){S._areaLayer.setStyle({fillOpacity:0,opacity:0});return;}   // hide boundaries
+  // region filter applies to the MOP layer only (its dropdown); 'all' elsewhere
+  const isMop=seg.indexOf('mop_')===0;
+  const inRegion=p=>(!isMop||S.regionFilter==='all'||p.region===S.regionFilter);
   const ramp=CHORO_R[seg]||CHORO_C;
-  const vals=[];S._areaLayer.eachLayer(l=>{const v=areaMetric(l.feature.properties,seg);
-    if(v!=null&&isFinite(v))vals.push(v);});
+  const vals=[];S._areaLayer.eachLayer(l=>{const p=l.feature.properties,v=areaMetric(p,seg);
+    if(v!=null&&isFinite(v)&&inRegion(p))vals.push(v);});
   if(!vals.length)return;
   vals.sort((a,b)=>a-b);
   const q=i=>vals[Math.min(vals.length-1,Math.floor(i*vals.length/5))],br=[q(1),q(2),q(3),q(4)];
-  S._areaLayer.eachLayer(l=>{const v=areaMetric(l.feature.properties,seg);
-    if(v==null||!isFinite(v)){l.setStyle({fillOpacity:0});return;}
+  S._areaLayer.eachLayer(l=>{const p=l.feature.properties,v=areaMetric(p,seg);
+    if(v==null||!isFinite(v)||!inRegion(p)){l.setStyle({fillOpacity:0});return;}
     let i=0;while(i<4&&v>=br[i])i++;
     l.setStyle({fillColor:ramp[i],fillOpacity:.55,color:'#64748b',weight:1,opacity:.4});});
-  if(lg){const f=seg==='all'?(v=>Math.round(v/1000)+'k'):(v=>v.toFixed(1)+'×');
-    lg.innerHTML='<div class="legend">'+ramp.map(c=>`<div style="background:${c}"></div>`).join('')+'</div>'
-      +`<div class="legend-lab"><span>${f(vals[0])}</span><span>${seg==='all'?'residents':'index'}</span><span>${f(vals[vals.length-1])}</span></div>`;}
+  // legend: pick the host + number format for this segment family
+  const lgId=isMop?'mopLegend':seg.indexOf('tx_')===0?'txLegend':'choroLegend';
+  const lg=$(lgId);if(!lg)return;
+  const isPrice=(seg==='tx_hdb_val'||seg==='tx_priv_val');
+  const isCount=(seg==='all'||seg==='daytime'||seg==='movers'||isMop
+    ||seg==='tx_hdb_vol'||seg==='tx_priv_vol');
+  const f=isPrice?(v=>'$'+cf(v)):isCount?(v=>fmt(Math.round(v))):(v=>v.toFixed(1)+'×');
+  const unit=seg==='all'?'residents':seg==='daytime'?'workforce':seg==='movers'?'resale moves / yr'
+    :isMop?'flats · MOP':seg==='tx_hdb_vol'?'HDB deals / yr':seg==='tx_priv_vol'?'private deals / yr'
+    :isPrice?'median price':'index';
+  lg.innerHTML='<div class="legend">'+ramp.map(c=>`<div style="background:${c}"></div>`).join('')+'</div>'
+    +`<div class="legend-lab"><span>${f(vals[0])}</span><span>${unit}</span><span>${f(vals[vals.length-1])}</span></div>`;
+  renderAreaLabels(seg,inRegion);   // name the shaded areas so the heatmap is readable (live + export)
+}
+// planning-area name labels for the shaded areas of the active choropleth
+function clearAreaLabels(){if(S._areaLabels){map.removeLayer(S._areaLabels);S._areaLabels=null;}}
+function renderAreaLabels(seg,inRegion){
+  clearAreaLabels();
+  if(!S._areaLayer||seg==='none')return;
+  const grp=L.layerGroup();
+  S._areaLayer.eachLayer(l=>{const p=l.feature.properties,v=areaMetric(p,seg);
+    if(v==null||!isFinite(v)||(inRegion&&!inRegion(p)))return;
+    let c;try{c=l.getCenter();}catch(e){c=l.getBounds().getCenter();}
+    grp.addLayer(labelMarker(c.lat,c.lng,p.name,'arealab'));});
+  grp.addTo(map);S._areaLabels=grp;
 }
 function buildDemographics(){
   const host=$('demoToggle');host.innerHTML='';
   if(!FEATURES.demographics||!S.areas){
     const n=document.createElement('div');n.className='note';n.textContent='Demographic data not loaded.';
     host.appendChild(n);return;}
-  const sel=document.createElement('select');sel.setAttribute('aria-label','Shade map by audience segment');
-  [['none','Shade areas by…'],['all','Residents (population)'],['affluent','Affluent index'],
+  const sel=document.createElement('select');sel.id='demoSel';sel.setAttribute('aria-label','Shade map by audience segment');
+  [['none','Shade areas by…'],['all','Residents (population)'],['daytime','Daytime workforce'],
+   ['transit','Public-transit commute index'],['movers','New-mover intensity (HDB resale)'],
+   ['affluent','Affluent index'],
    ['family','Families index'],['senior','Seniors index'],['youth','Students & youth index']]
    .forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;sel.appendChild(o);});
-  sel.onchange=()=>{S.segment=sel.value;paintChoro(S.segment);if(S.selected.length)renderSelection();};
+  sel.onchange=()=>{S.segment=sel.value;if(sel.value!=='none')clearShades('demo');
+    paintChoro(S.segment);if(S.selected.length)renderSelection();};
   host.appendChild(sel);
   const lg=document.createElement('div');lg.id='choroLegend';host.appendChild(lg);
   const note=document.createElement('div');note.className='note';
   note.textContent='Modelled opportunities-to-see: LTA passenger taps (Jun 2026) × Census 2020 '
     +'catchment share. Aggregate and modelled, not panel-measured.';
+  host.appendChild(note);
+}
+// only one choropleth shades the map at a time — reset the other two dropdowns
+function clearShades(keep){
+  if(keep!=='demo'){const d=$('demoSel');if(d)d.value='none';}
+  if(keep!=='mop'){const m=$('mopSel');if(m)m.value='';
+    S.regionFilter='all';const r=$('mopRegionSel');if(r)r.value='all';}
+  if(keep!=='tx'){const t=$('txMetricSel');if(t)t.value='';}
+}
+// property-agent heatmaps: HDB MOP watch (+region filter) and transactions (HDB vs private)
+function buildPropertyHeatmaps(){
+  const host=$('propHeat');if(!host)return;host.innerHTML='';
+  if(!FEATURES.demographics||!S.areas){
+    const n=document.createElement('div');n.className='note';n.textContent='Property data not loaded.';
+    host.appendChild(n);return;}
+  // Block A — HDB flats reaching MOP (recently reached / approaching), filterable by region
+  host.insertAdjacentHTML('beforeend',
+    '<div class="sub-lab">HDB flats reaching MOP <span class="hint-txt">new resale supply</span></div>');
+  const mop=document.createElement('select');mop.id='mopSel';
+  mop.setAttribute('aria-label','Shade areas by HDB MOP status');
+  [['','Shade by MOP status…'],['mop_recent','Recently reached MOP · past 12 mo'],
+   ['mop_soon','Approaching MOP · this year'],['mop_all','Combined MOP pressure']]
+   .forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;mop.appendChild(o);});
+  host.appendChild(mop);
+  const reg=document.createElement('select');reg.id='mopRegionSel';reg.style.marginTop='7px';
+  reg.setAttribute('aria-label','Filter MOP heatmap by region');
+  [['all','All regions'],['Central Region','Central'],['East Region','East'],
+   ['North Region','North'],['North-East Region','North-East'],['West Region','West']]
+   .forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;reg.appendChild(o);});
+  host.appendChild(reg);
+  host.insertAdjacentHTML('beforeend','<div id="mopLegend"></div>');
+  mop.onchange=()=>{if(mop.value){clearShades('mop');S.segment=mop.value;}else S.segment='none';
+    paintChoro(S.segment);};
+  reg.onchange=()=>{S.regionFilter=reg.value;if(S.segment.indexOf('mop_')===0)paintChoro(S.segment);};
+  // Block B — property transactions: HDB resale vs private, by volume or value
+  host.insertAdjacentHTML('beforeend',
+    '<div class="sub-lab" style="margin-top:14px">Property transactions <span class="hint-txt">deal density</span></div>'
+    +'<div class="seg" id="txSegSeg" role="group" aria-label="Housing type">'
+    +'<button type="button" data-s="hdb" class="on">HDB resale</button>'
+    +'<button type="button" data-s="priv">Private</button></div>');
+  const met=document.createElement('select');met.id='txMetricSel';
+  met.setAttribute('aria-label','Shade areas by transaction metric');
+  [['','Shade by metric…'],['vol','Volume — no. of transactions'],['val','Value — median price']]
+   .forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;met.appendChild(o);});
+  host.appendChild(met);
+  host.insertAdjacentHTML('beforeend','<div id="txLegend"></div>');
+  const applyTx=()=>{if(met.value){clearShades('tx');S.segment='tx_'+S.txSeg+'_'+met.value;}else S.segment='none';
+    paintChoro(S.segment);};
+  host.querySelectorAll('#txSegSeg button').forEach(b=>b.onclick=()=>{
+    S.txSeg=b.dataset.s;host.querySelectorAll('#txSegSeg button').forEach(x=>x.classList.toggle('on',x===b));
+    if(met.value)applyTx();});
+  met.onchange=applyTx;
+  const note=document.createElement('div');note.className='note';
+  note.innerHTML='<b>Volume</b> = agent opportunity — more deals means more listings and buyers; '
+    +'switch to <b>Value</b> for median-price context. '
+    +'MOP: HDB/URA totals (2025: 6,973 flats · 2026: 13,484), town split from PropNex / EdgeProp / OrangeTee. '
+    +'HDB resale: data.gov.sg, 12 mo. Private: URA 2025 (26,492 units) by market segment — illustrative v1.';
   host.appendChild(note);
 }
 
@@ -922,10 +1178,13 @@ function rankBy(key){
   list.innerHTML='';
   if(!key){note.style.display='none';return;}
   note.style.display='';
+  if(!S.selected.length){   // ranking now reflects the on-screen selection, not all 293 trunk routes
+    list.innerHTML='<div class="placeholder">Pick one or more routes first — this ranks the routes you\'ve selected.</div>';
+    return;}
   list.innerHTML='<div class="placeholder">Ranking…</div>';
   const cfg=POI.find(c=>c.key===key);
   setTimeout(()=>{
-    const scored=computeRank(key);
+    const scored=computeRank(key).filter(r=>isSel(r.s.n));   // only the selected routes
     const max=scored.length?Math.max(1,scored[0].n):1;
     list.innerHTML='';
     scored.slice(0,20).forEach((r,i)=>{
@@ -1229,7 +1488,7 @@ function renderSelection(opt){
     : `<div class="subhead">Demographics</div><div class="placeholder">Demographic layer not loaded yet — will overlay for the selection once data is available.</div>`;
   c.innerHTML=`<div class="card-top">${header}
       <button class="xbtn" aria-label="Clear selection">&#10005;</button></div>
-    <div class="stat-grid">${stopStats}</div>${covNote}${poi}${demo}`;
+    <div class="stat-grid">${stopStats}</div>${covNote}${poi}${demo}${renderInternalStubs()}`;
   c.classList.add('show');
   wireCard(c);
   renderLeftbar();applyPoiScope();if(typeof syncExportUI==="function")syncExportUI();
@@ -1246,10 +1505,21 @@ function renderDemographics(sel,uCodes){
   // catchment profile: sum age/income over served planning areas
   const served=new Set();codes.forEach(c=>{const a=S.stopArea[c];if(a)served.add(a);});
   let ch=0,y=0,w=0,sr=0,incW=0,incP=0,servedWithData=0;
+  let dayPop=0,trW=0,carW=0,trP=0,moveVol=0;   // daytime workforce + commute mode + HDB movers
   served.forEach(a=>{const p=S.areaProps[a];if(!p||!p.population)return;servedWithData++;
     ch+=p.a0_14;y+=p.a15_24;w+=p.a25_64;sr+=p.a65p;
-    if(p.income_median){incW+=p.income_median*p.population;incP+=p.population;}});
+    if(p.income_median){incW+=p.income_median*p.population;incP+=p.population;}
+    if(p.daytime_pop)dayPop+=p.daytime_pop;
+    if(p.mover_vol)moveVol+=p.mover_vol;
+    if(p.transit_share!=null){trW+=p.transit_share*p.population;carW+=p.car_share*p.population;trP+=p.population;}});
   const medInc=incP?Math.round(incW/incP):null;
+  const transitPct=trP?trW/trP:null, carPct=trP?carW/trP:null;
+  const bTr=(S.baseline||{}).transit, bCar=(S.baseline||{}).car;
+  // "who is reached here" — daytime workforce (workplace-based) + how residents commute
+  const reachBlock=(dayPop||transitPct!=null)?`<div class="subhead">Who is reached here — daytime + commute</div>
+    ${dayPop?`<div class="poirow" title="Employed residents whose workplace is in the areas this route serves (Census 2020). A daytime-population proxy — it fixes the CBD/industrial under-read that resident-only counts cause. Modelled context, not measured reach."><span class="dot" style="background:#b45309"></span>Daytime workforce · areas served<span class="n">${fmt(dayPop)}</span></div>`:''}
+    ${transitPct!=null?`<div class="poirow" title="Population-weighted share of working residents in the served areas whose usual commute mode is public bus or MRT (Census 2020). The audience-quality signal for a transit buy: these corridors' residents already ride."><span class="dot" style="background:#0e7490"></span>Public-transit commuters<span class="n">${(transitPct*100).toFixed(0)}%${bTr?`<small> vs ${(bTr*100).toFixed(0)}% natl</small>`:''}</span></div>`:''}
+    ${carPct!=null?`<div class="poirow" title="Population-weighted share commuting by private car only (Census 2020) — the harder-to-reach-by-transit slice, for context."><span class="dot" style="background:#94a3b8"></span>Car-only commuters<span class="n">${(carPct*100).toFixed(0)}%${bCar?`<small> vs ${(bCar*100).toFixed(0)}% natl</small>`:''}</span></div>`:''}`:'';
   // active-segment impressions + index vs national
   const seg=SEG.find(s=>s.key===S.segment&&s.prop);let segBlock='';
   if(seg){
@@ -1260,7 +1530,16 @@ function renderDemographics(sel,uCodes){
       <div class="stat"><div class="v">${fmt(segImp)}</div><div class="k">${seg.label} · daily OTS</div></div>
       <div class="stat"><div class="v" style="color:${idx>=110?'#16a34a':idx<=90?'#d97706':'var(--primary)'}">${idx!=null?idx:'–'}</div><div class="k">index vs national (100 = avg)</div></div></div>`;
   }
-  return `<div class="subhead">Audience — modelled OTS</div>
+  // headline OTS stays up top; the who-lives-there detail folds away so the card reads at a glance
+  const detail=(servedWithData||reachBlock)?`<details class="aud-more">
+      <summary>Catchment profile${servedWithData?` · ${servedWithData} area${servedWithData===1?'':'s'}`:''}</summary>
+      <div class="aud-more-body">
+      ${servedWithData?`${ageBar(ch,y+w,sr)}
+        ${medInc?`<div class="poirow" title="Population-weighted average of the median monthly household income (from work, Census 2020) across the planning areas this route serves"><span class="dot" style="background:#1e3a8a"></span>Median household income · areas served<span class="n">$${fmt(medInc)}<small>/mo</small></span></div>`:''}
+        ${moveVol?`<div class="poirow" title="HDB resale transactions in the served areas over the trailing 12 months — a new-mover / first-home / renovation audience proxy (the BTO-mover segment). Modelled context, not measured reach."><span class="dot" style="background:#16a34a"></span>Recent home-movers · HDB resale, 12 mo<span class="n">${fmt(moveVol)}</span></div>`:''}`:''}
+      ${reachBlock}
+      </div></details>`:'';
+  return `<div class="subhead">Audience — modelled OTS <span class="sh-hint">how many see this buy</span></div>
     <div class="stat-grid" style="margin:0 0 4px">
       <div class="stat"><div class="v">${fmt(allImp)}</div>
         <div class="k">daily impressions · all commuters (avg weekday)</div></div>
@@ -1268,10 +1547,21 @@ function renderDemographics(sel,uCodes){
         <div class="v">${cf(w12)}</div><div class="k">impressions · 12 weeks (84 days)</div></div>
     </div>
     ${segBlock}
-    ${servedWithData?`<div class="subhead">Catchment profile — ${servedWithData} area${servedWithData===1?'':'s'}</div>
-      ${ageBar(ch,y+w,sr)}
-      ${medInc?`<div class="poirow" title="Population-weighted average of the median monthly household income (from work, Census 2020) across the planning areas this route serves"><span class="dot" style="background:#1e3a8a"></span>Median household income · areas served<span class="n">$${fmt(medInc)}<small>/mo</small></span></div>`:''}`:''}
-    <div class="note">Modelled OTS = LTA taps (Jun 2026) × Census 2020 catchment share. Aggregate, not measured.</div>`;
+    ${detail}
+    <div class="note">Modelled OTS = LTA taps (Jun 2026) × Census 2020 catchment share. Aggregate, not measured.
+      <b>V3</b> will profile who is reached <b>by time of day</b> — the media-planning cut this card is missing.</div>`;
+}
+// Internal-feed stubs (DATA-SYNTHESIS-PLAN §6). Clearly-labelled placeholders — the two
+// dependencies that aren't public data. No fabricated rates or attribution numbers.
+function renderInternalStubs(){
+  return `<div class="stub">
+      <div class="st-top">Commercial — rate &amp; availability<span class="st-tag">internal feed · pending ad-ops</span></div>
+      <div class="st-body">CPM / rate, availability by cycle and format spec (screen size, SOV, loop length) attach here per preset once Moove's rate card lands. Until then the atlas shortlists but cannot quote.</div>
+    </div>
+    <div class="stub">
+      <div class="st-top">MooveSMART — footfall attribution<span class="st-tag">internal feed · pending ad-ops</span></div>
+      <div class="st-body">O2O footfall, 16 personas and dayparting — the "beyond impressions" outcome story — surface here from the MooveSMART export. The map currently models opportunities-to-see and stops there.</div>
+    </div>`;
 }
 // back-compat: some callers still name single selection
 function selectRoute(n){ clearSel(); toggleRoute(n); }
@@ -1292,9 +1582,11 @@ function selectArea(name){
   const demo=p.population?`
     <div class="stat-grid">
       <div class="stat"><div class="v">${fmt(p.population)}</div><div class="k">residents${p.pop_year?' ('+p.pop_year+')':''}</div></div>
-      <div class="stat"><div class="v">${st.stops}</div><div class="k">bus stops in area</div></div>
-      ${p.income!=null?`<div class="stat"><div class="v">$${fmt(p.income)}</div><div class="k">median household income</div></div>`:''}
-    </div>${ageBar(p.age_youth||0,p.age_working||0,p.age_senior||0)}`
+      ${p.daytime_pop?`<div class="stat" title="Employed residents whose workplace is in this area (Census 2020) — a daytime-population proxy."><div class="v">${fmt(p.daytime_pop)}</div><div class="k">daytime workforce</div></div>`:`<div class="stat"><div class="v">${st.stops}</div><div class="k">bus stops in area</div></div>`}
+      ${p.income_median!=null?`<div class="stat"><div class="v">$${fmt(p.income_median)}</div><div class="k">median household income</div></div>`:''}
+      ${p.transit_share!=null?`<div class="stat" title="Working residents whose usual commute is public bus or MRT (Census 2020)."><div class="v">${(p.transit_share*100).toFixed(0)}%</div><div class="k">commute by public transit</div></div>`:''}
+      ${p.mover_vol?`<div class="stat" title="HDB resale transactions in the trailing 12 months (data.gov.sg) — new-mover intensity.${p.mover_price?' Median resale $'+fmt(p.mover_price)+'.':''}"><div class="v">${fmt(p.mover_vol)}</div><div class="k">HDB resale moves / yr</div></div>`:''}
+    </div>${ageBar(p.a0_14||0,(p.a15_24||0)+(p.a25_64||0),p.a65p||0)}`
     :`<div class="stat-grid"><div class="stat"><div class="v">${st.stops}</div><div class="k">bus stops in area</div></div></div>`;
   const c=$('selcard');
   c.innerHTML=`
@@ -1329,6 +1621,10 @@ function lbSync(){
 function renderLeftbar(){
   const body=$('lbBody');
   $('lbCount').textContent=S.selected.length?'('+S.selected.length+')':'';
+  // Selected routes + Export only make sense with a selection — hide them otherwise (heuristic #8)
+  const has=S.selected.length>0;
+  $('routesSec').hidden=!has;$('exportCta').hidden=!has;
+  if(!has){const m=$('expModal');if(m)m.hidden=true;}
   body.innerHTML='';
   S.lbExpand.forEach(n=>{if(!S.selected.includes(n))S.lbExpand.delete(n);});
   S.selected.forEach(n=>{
@@ -1355,6 +1651,7 @@ function renderLeftbar(){
     }
   });
   lbSync();
+  const rk=$('rankSel');if(rk&&rk.value)rankBy(rk.value);   // keep the ranking in step with the selection
 }
 function loadRouteStops(){   // ordered per-direction stop codes, fetched once on demand
   if(S.routeStops)return Promise.resolve();
@@ -1418,6 +1715,32 @@ function applyPoiScope(){
       ?'Showing only places within 400 m of a stop on the selected routes.'
       :'Select routes first — showing all places until then.';}
   else note.style.display='none';
+  renderPoiChips();   // keep chip counts in step with the scope
+}
+// add / remove a place layer, then refresh scope + chips
+function poiSetOn(key,on){
+  const g=groups[key];if(!g)return;
+  const isOn=map.hasLayer(g);
+  if(on&&!isOn)g.addTo(map);
+  else if(!on&&isOn)map.removeLayer(g);
+  applyPoiScope();
+}
+// chips for the place layers currently on the map (removable) — visible status when the list is a dropdown
+function renderPoiChips(){
+  const host=$('poiChips');if(!host)return;host.innerHTML='';
+  const on=POI.filter(cfg=>groups[cfg.key]&&map.hasLayer(groups[cfg.key]));
+  if(!on.length){host.innerHTML='<div class="poi-empty">No places on the map yet — add one above.</div>';return;}
+  const near=(S.poiScope==='near'&&S.selected.length>0);
+  on.forEach(cfg=>{
+    const total=S.pois[cfg.key]?S.pois[cfg.key].length:0;
+    const shown=groups[cfg.key].getLayers().length;
+    const chip=document.createElement('span');chip.className='poi-chip';
+    chip.innerHTML=`<span class="dot" style="background:${cfg.color}"></span>`
+      +`<span class="pc-l">${cfg.label}</span>`
+      +`<span class="pc-n">${near?shown+' / '+total:total}</span>`
+      +`<button class="pc-x" aria-label="Remove ${cfg.label}" title="Remove">&#10005;</button>`;
+    chip.querySelector('.pc-x').onclick=()=>poiSetOn(cfg.key,false);
+    host.appendChild(chip);});
 }
 
 // ---------------- search ----------------
@@ -1448,7 +1771,9 @@ function buildSearch(){
         if(!map.hasLayer(groups.stations))groups.stations.addTo(map);}}
   });
   document.addEventListener('click',e=>{if(!e.target.closest('.searchwrap'))res.style.display='none';});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape')clearSel();});
+  document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;
+    const m=$('expModal');if(m&&!m.hidden){m.hidden=true;return;}   // Esc closes the export modal first
+    clearSel();});
 }
 
 // ---------------- export current map as JPG / PPTX ----------------
@@ -1718,8 +2043,9 @@ async function exportJPG(){
     stampCard(x,cv.width,cv.height);
     stampSource(x,cv.width,cv.height);
     dl(cv.toDataURL('image/jpeg',0.95),fileBase()+'.jpg');
+    if(typeof closeExport==='function')closeExport();
   }catch(e){alert('Image export failed: '+e.message);}
-  b.disabled=false;b.textContent='JPG';
+  b.disabled=false;b.innerHTML='<b>JPG</b> image';
 }
 
 // ================= PPTX =================
@@ -1842,6 +2168,23 @@ function addSummarySlide(p,info,imp){
     {x:0.55,y:7.05,w:9,h:0.3,fontFace:'Inter',valign:'middle'});
   s.addText(SOURCE,{x:9.4,y:7.05,w:3.5,h:0.3,fontSize:7.5,color:GREY,align:'right',valign:'middle',fontFace:'Inter'});
 }
+// MARKET CONTEXT slide — national indices, deck-only, never sliced per route (DATA-SYNTHESIS-PLAN §4.5/§5).
+function addContextSlide(p){
+  const INK=hx(CARD.ink),GREY=hx(CARD.grey),LINE=hx(CARD.line),TILE=hx(CARD.tile);
+  const s=p.addSlide();s.background={color:'FFFFFF'};
+  const idx=S.context.indices||[];
+  s.addText('Market context — national',{x:0.55,y:0.4,w:11,h:0.5,fontSize:26,bold:true,color:INK,fontFace:'Inter'});
+  s.addText('Backdrop for the narrative — not route-specific. These indices frame category demand and '
+    +'media behaviour; they are never sliced per route.',{x:0.56,y:0.98,w:11.5,h:0.5,fontSize:12,color:GREY,fontFace:'Inter'});
+  const tw=Math.min(3.6,(12.23-(idx.length-1)*0.25)/Math.max(1,idx.length));
+  idx.forEach((m,i)=>{const tx=0.55+i*(tw+0.25);
+    s.addShape('roundRect',{x:tx,y:1.9,w:tw,h:1.7,fill:{color:TILE},line:{color:LINE,width:1},rectRadius:0.08});
+    s.addText(m.value.toLocaleString('en-SG')+(m.unit||''),{x:tx+0.18,y:2.06,w:tw-0.36,h:0.6,fontSize:30,bold:true,color:INK,fontFace:'Inter'});
+    s.addText(m.label.toUpperCase(),{x:tx+0.18,y:2.72,w:tw-0.36,h:0.32,fontSize:10,bold:true,color:GREY,charSpacing:0.5,fontFace:'Inter'});
+    s.addText((m.read||'')+(m.as_of?'  ('+m.as_of+')':''),{x:tx+0.18,y:3.02,w:tw-0.36,h:0.5,fontSize:8.5,color:GREY,fontFace:'Inter'});});
+  s.addText(S.context.note||'',{x:0.55,y:6.7,w:8,h:0.3,fontSize:9,italic:true,color:GREY,fontFace:'Inter',valign:'middle'});
+  s.addText((S.context.source||'')+' · modelled/context, not measured',{x:0.55,y:7.05,w:12.2,h:0.3,fontSize:7.5,color:GREY,fontFace:'Inter',valign:'middle'});
+}
 // PER-ROUTE detail slide — badge, termini, type, corridor, full ordered stop list
 function addRouteSlide(p,n){
   const INK=hx(CARD.ink),SUB=hx(CARD.sub),GREY=hx(CARD.grey),LINE=hx(CARD.line);
@@ -1912,14 +2255,16 @@ async function exportPPT(){
     // optional extra slides
     if(S.exp.summary&&S.selected.length)addSummarySlide(p,info,imp);
     if(S.exp.perRoute)S.selected.forEach(n=>addRouteSlide(p,n));
+    if(S.exp.context&&S.context&&(S.context.indices||[]).length)addContextSlide(p);
     // serialise to a blob and download it ourselves (more reliable than pptxgen's writeFile,
     // and lets a stall surface a message instead of wedging the button)
     const cap=new Promise((_,rej)=>setTimeout(()=>rej(new Error('generation stalled — try again')),60000));
     const blob=await Promise.race([p.write('blob'),cap]);
     const url=URL.createObjectURL(blob);dl(url,fileBase()+'.pptx');
     setTimeout(()=>URL.revokeObjectURL(url),4000);
+    if(typeof closeExport==='function')closeExport();
   }catch(e){alert('PowerPoint export failed: '+e.message);}
-  b.disabled=false;b.textContent='PPTX';
+  b.disabled=false;b.innerHTML='<b>PPTX</b> deck';
 }
 
 // ---- export options UI (all off by default) ----
@@ -1930,7 +2275,8 @@ const EXP_MAP=[
   {k:'imp',h:'Impressions',d:'Modelled daily + 12-week figures'}];
 const EXP_SLIDE=[
   {k:'summary',h:'Routes summary slide',d:'One slide: stat tiles + a From/Via/To table'},
-  {k:'perRoute',h:'One detail slide per route',d:'Full corridor + every stop, per route'}];
+  {k:'perRoute',h:'One detail slide per route',d:'Full corridor + every stop, per route'},
+  {k:'context',h:'Market context slide',d:'National indices — deck-only, never per route'}];
 function chkRow(cfg){
   const l=document.createElement('label');l.className='chk';
   l.innerHTML=`<input type="checkbox" data-k="${cfg.k}"><span class="cl">`
@@ -1955,6 +2301,15 @@ function syncExportUI(){
 }
 $('expJpg').onclick=exportJPG;$('expPpt').onclick=exportPPT;
 buildExportOpts();
+// export as a modal (print-dialog pattern) — opens on the sidebar CTA, closes on ✕ / backdrop / Esc
+const expModal=$('expModal');
+function openExport(){syncExportUI();expModal.hidden=false;}
+function closeExport(){expModal.hidden=true;}
+$('openExport').onclick=openExport;
+$('expClose').onclick=closeExport;
+expModal.onclick=e=>{if(e.target===expModal)closeExport();};
+// reset = clear the whole selection (labelled control instead of a lone ✕)
+$('resetSel').onclick=clearSel;
 </script>
 </body>
 </html>
