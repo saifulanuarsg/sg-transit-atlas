@@ -1000,6 +1000,7 @@ function areaMetric(p,seg){
   return (cfg&&p[cfg.prop]!=null&&b) ? p[cfg.prop]/b : null;   // index vs national avg
 }
 function paintChoro(seg){
+  updateExportCta();   // a shaded area is exportable on its own, even with no route selected
   // each shading source keeps its own legend so the three dropdowns don't overwrite each other
   ['choroLegend','mopLegend','txLegend'].forEach(id=>{const e=$(id);if(e)e.innerHTML='';});
   clearAreaLabels();
@@ -1635,10 +1636,11 @@ function lbSync(){
 function renderLeftbar(){
   const body=$('lbBody');
   $('lbCount').textContent=S.selected.length?'('+S.selected.length+')':'';
-  // Selected routes + Export only make sense with a selection — hide them otherwise (heuristic #8)
+  // Selected-routes list only makes sense with a selection (heuristic #8); export doesn't —
+  // a POI layer or an area shading is exportable on its own (see updateExportCta)
   const has=S.selected.length>0;
-  $('routesSec').hidden=!has;$('exportCta').hidden=!has;
-  if(!has){const m=$('expModal');if(m)m.hidden=true;}
+  $('routesSec').hidden=!has;
+  updateExportCta();
   body.innerHTML='';
   S.lbExpand.forEach(n=>{if(!S.selected.includes(n))S.lbExpand.delete(n);});
   S.selected.forEach(n=>{
@@ -1738,6 +1740,19 @@ function poiSetOn(key,on){
   if(on&&!isOn)g.addTo(map);
   else if(!on&&isOn)map.removeLayer(g);
   applyPoiScope();
+  updateExportCta();
+}
+// export is available once there's anything worth capturing — a route selection, an active
+// place layer (e.g. a brand-outlet map), or an area shading — not only a bus-route selection
+function anyMapContent(){
+  return S.selected.length>0
+    || POI.some(cfg=>groups[cfg.key]&&map.hasLayer(groups[cfg.key]))
+    || (S.segment&&S.segment!=='none');
+}
+function updateExportCta(){
+  const has=anyMapContent();
+  $('exportCta').hidden=!has;
+  if(!has){const m=$('expModal');if(m)m.hidden=true;}
 }
 // chips for the place layers currently on the map (removable) — visible status when the list is a dropdown
 function renderPoiChips(){
@@ -2311,7 +2326,7 @@ function syncExportUI(){
   const note=$('expNote');
   if(note)note.textContent=has
     ?'The map image is always included. Extra slides need a selection.'
-    :'Select routes first, then choose what each export carries.';
+    :'The map image is always included. Route-specific extras need a selection.';
 }
 $('expJpg').onclick=exportJPG;$('expPpt').onclick=exportPPT;
 buildExportOpts();
