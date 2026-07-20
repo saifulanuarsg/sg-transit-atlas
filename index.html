@@ -354,6 +354,10 @@
   .arealab{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;
     font:700 10.5px/1 system-ui;color:#0f172a;background:rgba(255,255,255,.82);
     padding:2px 5px;border-radius:4px;box-shadow:0 0 0 .5px rgba(15,23,42,.1)}
+  /* brand-outlet letter badges — fixed pixel size so the initial stays legible at any zoom */
+  .poi-letter{position:absolute;transform:translate(-50%,-50%);display:flex;
+    align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;
+    font:800 10px/1 system-ui;border:1.5px solid #fff;box-shadow:0 1px 3px rgba(15,23,42,.4)}
   /* termini labels for the selected routes (chip so they survive image export) */
   .termlab{position:absolute;top:0;transform:translateY(-50%);white-space:nowrap;
     font:700 10.5px/1 system-ui;color:#0f172a;background:rgba(255,255,255,.58);
@@ -614,10 +618,10 @@ const POI=[
   {key:'supermarkets',label:'Supermarkets',color:'#16a34a',file:'data/poi_supermarkets.json',cat:'retail'},
   {key:'fnb',label:'F&B (healthier eateries)',color:'#ea580c',file:'data/poi_fnb.json',cat:'retail'},
   {key:'sephora',label:'Sephora outlets',color:'#171717',file:'data/poi_sephora.json',cat:'retail'},
-  {key:'mcdonalds',label:"McDonald's outlets",color:'#FFC72C',file:'data/poi_mcdonalds.json',cat:'retail'},
-  {key:'kfc',label:'KFC outlets',color:'#8B0000',file:'data/poi_kfc.json',cat:'retail'},
-  {key:'burgerking',label:'Burger King outlets',color:'#EE7623',file:'data/poi_burgerking.json',cat:'retail'},
-  {key:'jollibee',label:'Jollibee outlets',color:'#E31837',file:'data/poi_jollibee.json',cat:'retail'},
+  {key:'mcdonalds',label:"McDonald's outlets",color:'#FFC72C',file:'data/poi_mcdonalds.json',cat:'retail',letter:'M',letterFg:'#1a1a1a'},
+  {key:'kfc',label:'KFC outlets',color:'#8B0000',file:'data/poi_kfc.json',cat:'retail',letter:'K',letterFg:'#fff'},
+  {key:'burgerking',label:'Burger King outlets',color:'#EE7623',file:'data/poi_burgerking.json',cat:'retail',letter:'B',letterFg:'#fff'},
+  {key:'jollibee',label:'Jollibee outlets',color:'#E31837',file:'data/poi_jollibee.json',cat:'retail',letter:'J',letterFg:'#fff'},
   {key:'hospitals',label:'Hospitals',color:'#dc2626',file:'data/poi_hospitals.json',cat:'health'},
   {key:'polyclinics',label:'Polyclinics',color:'#0369a1',file:'data/poi_polyclinics.json',cat:'health'},
   {key:'pharmacies',label:'Pharmacies',color:'#0d9488',file:'data/poi_pharmacies.json',cat:'health'},
@@ -699,12 +703,18 @@ function buildBus(){
 
 // ---------------- POIs (footprint polygon where OSM has one, else a dot) -----
 function poiTip(p){return p.kind?`<b>${p.name}</b> · ${p.kind}`:p.name;}
-function poiLayer(p,color){
+function poiLayer(p,color,letter,letterFg){
   const tip=poiTip(p);
   if(p.poly&&p.poly.length){
     const shells=p.poly.map(r=>[r.map(c=>[c[1],c[0]])]); // each ring its own shell
     return L.polygon(shells,{renderer:rPoi,color:color,weight:1.2,opacity:.9,
       fillColor:color,fillOpacity:.28}).bindTooltip(tip);
+  }
+  if(letter){ // brand-outlet layers: a fixed-pixel letter badge reads at any zoom, unlike a 3px dot
+    return L.marker([p.lat,p.lng],{pane:'label',
+      icon:L.divIcon({className:'',iconSize:[0,0],
+        html:`<span class="poi-letter" style="background:${color};color:${letterFg||'#fff'}">${letter}</span>`})})
+      .bindTooltip(tip);
   }
   return L.circleMarker([p.lat,p.lng],{renderer:rPoi,radius:3,color:'#fff',weight:1,
     fillColor:color,fillOpacity:.92}).bindTooltip(tip);
@@ -712,7 +722,7 @@ function poiLayer(p,color){
 function buildPois(){
   S.poiItems={};   // keep poi↔layer pairs so the 400 m scope filter can rebuild groups
   POI.forEach(cfg=>{
-    S.poiItems[cfg.key]=(S.pois[cfg.key]||[]).map(p=>({p,layer:poiLayer(p,cfg.color)}));
+    S.poiItems[cfg.key]=(S.pois[cfg.key]||[]).map(p=>({p,layer:poiLayer(p,cfg.color,cfg.letter,cfg.letterFg)}));
     S.poiItems[cfg.key].forEach(it=>groups[cfg.key].addLayer(it.layer));
   });
 }
