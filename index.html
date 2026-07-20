@@ -206,7 +206,31 @@
   .poi-empty{font:500 11px/1.4 system-ui;color:var(--muted);margin-top:9px}
   .poi-chip{display:inline-flex;align-items:center;gap:6px;font:600 12px/1 system-ui;
     background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:5px 9px}
+  .poi-chip .pc-badge{display:inline-flex;align-items:center;justify-content:center;width:15px;
+    height:15px;border-radius:50%;font:800 9px/1 system-ui;flex:none}
   .poi-chip .pc-n{font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums}
+  /* McDonald's section — outlet toggles + competitive density */
+  .mcd-sub{font:700 11px/1 system-ui;color:var(--muted);margin:11px 0 7px;display:flex;
+    align-items:baseline;gap:7px}
+  .mcd-sub:first-of-type{margin-top:4px}
+  .mcd-sub .hint-txt{font-weight:500}
+  .mcd-outlets{display:flex;flex-wrap:wrap;gap:6px}
+  .mcd-tgl{display:inline-flex;align-items:center;gap:6px;font:600 12px/1 system-ui;cursor:pointer;
+    background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:5px 10px 5px 5px;
+    color:var(--muted);opacity:.7;transition:opacity .1s,border-color .1s}
+  .mcd-tgl.on{opacity:1;border-color:#c7ccd1;color:var(--ink,#0f172a)}
+  .mcd-tgl .mcd-b{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;
+    border-radius:50%;font:800 9px/1 system-ui;flex:none}
+  .mcd-tgl .mcd-n{font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums}
+  /* competitive-density controls */
+  .cd-params{margin-top:9px;display:flex;flex-direction:column;gap:9px}
+  .cd-row{display:flex;align-items:center;gap:9px;justify-content:space-between}
+  .cd-row .cd-k{font:700 11px/1 system-ui;color:var(--muted);flex:none}
+  .cd-mode button,.cd-rad button{white-space:nowrap}
+  .cd-decay{flex:1;font:600 12px/1 system-ui;padding:6px 8px;border:1px solid var(--line);
+    border-radius:8px;background:var(--bg);color:var(--ink,#0f172a);cursor:pointer}
+  .cd-bar{height:12px;border-radius:6px;border:1px solid rgba(15,23,42,.12)}
+  .cd-bl{display:flex;justify-content:space-between;font:600 9.5px/1.2 system-ui;color:var(--muted);margin-top:4px}
   .poi-chip .pc-x{border:none;background:none;color:#94a3b8;cursor:pointer;font-size:10px;padding:0}
   .poi-chip .pc-x:hover{color:var(--destructive,#dc2626)}
   /* audience — collapsible catchment detail */
@@ -467,6 +491,13 @@
         <div id="poiToggles"></div>
         <div class="note" id="poiScopeNote" style="display:none"></div>
       </div>
+      <div class="sec sec-mcd">
+        <div class="sec-lab">McDonald's <span class="hint-txt">outlets &amp; competitive density</span></div>
+        <div class="mcd-sub">Outlets <span class="hint-txt">tap to show — overlays the heat</span></div>
+        <div id="mcdOutlets" class="mcd-outlets"></div>
+        <div class="mcd-sub">Competitive density <span class="hint-txt">McDonald's vs BK · KFC · Jollibee</span></div>
+        <div id="compDens"></div>
+      </div>
       <div class="sec sec-prop">
         <div class="sec-lab">Howards request <span class="hint-txt">agent audience · v1</span></div>
         <div id="propHeat"></div>
@@ -590,6 +621,8 @@ const baseTiles=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}
   attribution:'&copy; OpenStreetMap contributors &copy; CARTO',maxZoom:19,
   crossOrigin:'anonymous'}).addTo(map);   // enables canvas export of the basemap
 ['areas','bus','poi'].forEach((p,i)=>{map.createPane(p).style.zIndex=380+i*20;});
+map.createPane('heat').style.zIndex=385;   // competitive-density surface: over areas, under rail/POI/labels
+map.getPane('heat').style.pointerEvents='none';
 map.createPane('rail').style.zIndex=410;   // coloured rail lines over the grey bus base
 map.createPane('sel').style.zIndex=470;
 map.createPane('pill').style.zIndex=490;   // route pills sit above their lines
@@ -618,10 +651,10 @@ const POI=[
   {key:'supermarkets',label:'Supermarkets',color:'#16a34a',file:'data/poi_supermarkets.json',cat:'retail'},
   {key:'fnb',label:'F&B (healthier eateries)',color:'#ea580c',file:'data/poi_fnb.json',cat:'retail'},
   {key:'sephora',label:'Sephora outlets',color:'#171717',file:'data/poi_sephora.json',cat:'retail'},
-  {key:'mcdonalds',label:"McDonald's outlets",color:'#FFC72C',file:'data/poi_mcdonalds.json',cat:'retail',letter:'M',letterFg:'#1a1a1a'},
-  {key:'kfc',label:'KFC outlets',color:'#8B0000',file:'data/poi_kfc.json',cat:'retail',letter:'K',letterFg:'#fff'},
-  {key:'burgerking',label:'Burger King outlets',color:'#EE7623',file:'data/poi_burgerking.json',cat:'retail',letter:'B',letterFg:'#fff'},
-  {key:'jollibee',label:'Jollibee outlets',color:'#E31837',file:'data/poi_jollibee.json',cat:'retail',letter:'J',letterFg:'#fff'},
+  {key:'mcdonalds',label:"McDonald's outlets",color:'#FFC72C',file:'data/poi_mcdonalds.json',cat:'retail',letter:'M',letterFg:'#1a1a1a',mcd:true},
+  {key:'kfc',label:'KFC outlets',color:'#8B0000',file:'data/poi_kfc.json',cat:'retail',letter:'K',letterFg:'#fff',mcd:true},
+  {key:'burgerking',label:'Burger King outlets',color:'#EE7623',file:'data/poi_burgerking.json',cat:'retail',letter:'B',letterFg:'#fff',mcd:true},
+  {key:'jollibee',label:'Jollibee outlets',color:'#E31837',file:'data/poi_jollibee.json',cat:'retail',letter:'J',letterFg:'#fff',mcd:true},
   {key:'hospitals',label:'Hospitals',color:'#dc2626',file:'data/poi_hospitals.json',cat:'health'},
   {key:'polyclinics',label:'Polyclinics',color:'#0369a1',file:'data/poi_polyclinics.json',cat:'health'},
   {key:'pharmacies',label:'Pharmacies',color:'#0d9488',file:'data/poi_pharmacies.json',cat:'health'},
@@ -703,7 +736,7 @@ function buildBus(){
 
 // ---------------- POIs (footprint polygon where OSM has one, else a dot) -----
 function poiTip(p){return p.kind?`<b>${p.name}</b> · ${p.kind}`:p.name;}
-function poiLayer(p,color,letter,letterFg){
+function poiLayer(p,color,letter,letterFg,off){
   const tip=poiTip(p);
   if(p.poly&&p.poly.length){
     const shells=p.poly.map(r=>[r.map(c=>[c[1],c[0]])]); // each ring its own shell
@@ -711,20 +744,48 @@ function poiLayer(p,color,letter,letterFg){
       fillColor:color,fillOpacity:.28}).bindTooltip(tip);
   }
   if(letter){ // brand-outlet layers: a fixed-pixel letter badge reads at any zoom, unlike a 3px dot
+    // off = [dx,dy] px nudge so co-located outlets (shared postal code) fan out instead of stacking
+    const dx=off?off[0]:0,dy=off?off[1]:0;
+    const tf=`translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
     return L.marker([p.lat,p.lng],{pane:'label',
       icon:L.divIcon({className:'',iconSize:[0,0],
-        html:`<span class="poi-letter" style="background:${color};color:${letterFg||'#fff'}">${letter}</span>`})})
+        html:`<span class="poi-letter" style="background:${color};color:${letterFg||'#fff'};transform:${tf}">${letter}</span>`})})
       .bindTooltip(tip);
   }
   return L.circleMarker([p.lat,p.lng],{renderer:rPoi,radius:3,color:'#fff',weight:1,
     fillColor:color,fillOpacity:.92}).bindTooltip(tip);
 }
+// Outlets that share a postal code geocode to the SAME point, so their letter badges land on top
+// of each other and only one shows. Group points by ~11 m cell and fan each cluster out by a few
+// fixed pixels — a tiny constant offset that de-overlaps at low zoom without misplacing them (at
+// street zoom they are genuinely the same building anyway).
+function poiFanOffsets(pts){
+  const key=p=>p.lat.toFixed(4)+','+p.lng.toFixed(4);   // ~11 m — same building / shared postal
+  const groups={};
+  pts.forEach((p,i)=>{(groups[key(p)]=groups[key(p)]||[]).push(i);});
+  const off=pts.map(()=>null);
+  Object.values(groups).forEach(idx=>{
+    if(idx.length<2)return;                             // singleton: sits on its exact point
+    const m=idx.length,r=m===2?9:(m<=4?11:13);
+    idx.forEach((pi,k)=>{const a=(k/m)*2*Math.PI-Math.PI/2;   // fan starting from the top
+      off[pi]=[Math.round(Math.cos(a)*r),Math.round(Math.sin(a)*r)];});
+  });
+  return off;
+}
 function buildPois(){
   S.poiItems={};   // keep poi↔layer pairs so the 400 m scope filter can rebuild groups
   POI.forEach(cfg=>{
-    S.poiItems[cfg.key]=(S.pois[cfg.key]||[]).map(p=>({p,layer:poiLayer(p,cfg.color,cfg.letter,cfg.letterFg)}));
+    const pts=S.pois[cfg.key]||[];
+    const offs=cfg.letter?poiFanOffsets(pts):null;   // fan only the letter-badge (brand) layers
+    S.poiItems[cfg.key]=pts.map((p,i)=>({p,layer:poiLayer(p,cfg.color,cfg.letter,cfg.letterFg,offs?offs[i]:null)}));
     S.poiItems[cfg.key].forEach(it=>groups[cfg.key].addLayer(it.layer));
   });
+}
+// place layers currently drawn on the map — powers the export legend + on-screen chips
+function activePoiLayers(){
+  return POI.filter(cfg=>groups[cfg.key]&&map.hasLayer(groups[cfg.key]))
+    .map(cfg=>({key:cfg.key,label:cfg.label,color:cfg.color,letter:cfg.letter,
+      letterFg:cfg.letterFg,count:(S.pois[cfg.key]||[]).length}));
 }
 
 // ---------------- rail lines in official colours, per-line focus ----------------
@@ -902,7 +963,7 @@ function buildPanel(){
   const add=document.createElement('select');add.id='poiAdd';
   add.setAttribute('aria-label','Add a place layer to the map');
   add.innerHTML='<option value="">＋ Add a place layer…</option>'+POI_CATS.map(cat=>{
-    const opts=POI.filter(c=>c.cat===cat.key&&S.pois[c.key]).map(cfg=>{
+    const opts=POI.filter(c=>c.cat===cat.key&&S.pois[c.key]&&!c.mcd).map(cfg=>{
       const n=S.pois[cfg.key].length;
       return `<option value="${cfg.key}">${cfg.label}${n?` · ${n}`:''}</option>`;}).join('');
     return opts?`<optgroup label="${cat.label}">${opts}</optgroup>`:'';}).join('');
@@ -918,6 +979,7 @@ function buildPanel(){
   });
   buildClusters();
   buildRanking();
+  buildMcdSection();
   buildPropertyHeatmaps();
   buildDemographics();
   buildSearch();
@@ -1732,6 +1794,7 @@ function applyPoiScope(){
       :'Select routes first — showing all places until then.';}
   else note.style.display='none';
   renderPoiChips();   // keep chip counts in step with the scope
+  if(typeof renderMcdOutlets==='function')renderMcdOutlets();   // keep McDonald's toggles in sync
 }
 // add / remove a place layer, then refresh scope + chips
 function poiSetOn(key,on){
@@ -1757,19 +1820,136 @@ function updateExportCta(){
 // chips for the place layers currently on the map (removable) — visible status when the list is a dropdown
 function renderPoiChips(){
   const host=$('poiChips');if(!host)return;host.innerHTML='';
-  const on=POI.filter(cfg=>groups[cfg.key]&&map.hasLayer(groups[cfg.key]));
+  const on=POI.filter(cfg=>!cfg.mcd&&groups[cfg.key]&&map.hasLayer(groups[cfg.key]));
   if(!on.length){host.innerHTML='<div class="poi-empty">No places on the map yet — add one above.</div>';return;}
   const near=(S.poiScope==='near'&&S.selected.length>0);
   on.forEach(cfg=>{
     const total=S.pois[cfg.key]?S.pois[cfg.key].length:0;
     const shown=groups[cfg.key].getLayers().length;
     const chip=document.createElement('span');chip.className='poi-chip';
-    chip.innerHTML=`<span class="dot" style="background:${cfg.color}"></span>`
+    // brand layers show their letter badge so the chip legend matches the map marker
+    const swatch=cfg.letter
+      ? `<span class="pc-badge" style="background:${cfg.color};color:${cfg.letterFg||'#fff'}">${cfg.letter}</span>`
+      : `<span class="dot" style="background:${cfg.color}"></span>`;
+    chip.innerHTML=swatch
       +`<span class="pc-l">${cfg.label}</span>`
       +`<span class="pc-n">${near?shown+' / '+total:total}</span>`
       +`<button class="pc-x" aria-label="Remove ${cfg.label}" title="Remove">&#10005;</button>`;
     chip.querySelector('.pc-x').onclick=()=>poiSetOn(cfg.key,false);
     host.appendChild(chip);});
+}
+
+// ---------------- McDonald's section: outlet toggles (overlay the heat) ----------
+// The four fast-food layers live here, not in the generic place picker, so the whole
+// McDonald's-competitive story sits in one section. Toggles overlay the density heat.
+function renderMcdOutlets(){
+  const host=$('mcdOutlets');if(!host)return;host.innerHTML='';
+  POI.filter(c=>c.mcd&&S.pois[c.key]).forEach(cfg=>{
+    const on=groups[cfg.key]&&map.hasLayer(groups[cfg.key]);
+    const b=document.createElement('button');b.type='button';
+    b.className='mcd-tgl'+(on?' on':'');b.setAttribute('aria-pressed',String(!!on));
+    b.title=(on?'Hide ':'Show ')+cfg.label+' on the map';
+    b.innerHTML=`<span class="mcd-b" style="background:${cfg.color};color:${cfg.letterFg||'#fff'}">${cfg.letter}</span>`
+      +`<span>${cfg.label.replace(/ outlets$/,'')}</span>`
+      +`<span class="mcd-n">${(S.pois[cfg.key]||[]).length}</span>`;
+    b.onclick=()=>poiSetOn(cfg.key,!(groups[cfg.key]&&map.hasLayer(groups[cfg.key])));
+    host.appendChild(b);
+  });
+}
+function buildMcdSection(){renderMcdOutlets();buildCompDensity();}
+
+// ---------------- competitive density (McDonald's vs BK · KFC · Jollibee) --------
+// A continuous kernel-density surface. Two modes: "island" = competitor density across the whole
+// island; "mcd" = competitive pressure blooming around each McDonald's, scored by nearby rivals.
+// Radius (m) and decay kernel are live params; distance is geodesic (equirectangular metres).
+const CD_BOUNDS={lat0:1.205,lat1:1.480,lng0:103.585,lng1:104.10};   // SG grid frame
+const CD_COMPETITORS=['burgerking','kfc','jollibee'];
+const CD_HEAT=[   // cold → hot ramp; [stop, [r,g,b,a]] — low end transparent so the basemap reads
+  [0.00,[37,99,235,0]],[0.12,[37,99,235,95]],[0.30,[6,182,212,140]],[0.50,[132,204,22,170]],
+  [0.68,[250,204,21,195]],[0.84,[234,88,12,215]],[1.00,[220,38,38,232]]];
+function cdHeatRamp(t){t=t<0?0:t>1?1:t;
+  for(let k=1;k<CD_HEAT.length;k++){if(t<=CD_HEAT[k][0]){
+    const a=CD_HEAT[k-1],b=CD_HEAT[k],f=(t-a[0])/(b[0]-a[0]);
+    return [0,1,2,3].map(z=>Math.round(a[1][z]+(b[1][z]-a[1][z])*f));}}
+  return CD_HEAT[CD_HEAT.length-1][1];}
+function cdMPD(lat){return {x:111320*Math.cos(lat*Math.PI/180),y:110540};}   // metres per degree
+function cdDist(la1,lo1,la2,lo2){const m=cdMPD((la1+la2)/2);
+  const dx=(lo2-lo1)*m.x,dy=(la2-la1)*m.y;return Math.sqrt(dx*dx+dy*dy);}
+// decay kernels, all zero beyond R; "closer counts more" within it
+function cdDecay(d,R,kind){if(d>=R)return 0;const t=1-d/R;
+  if(kind==='linear')return t;
+  if(kind==='gaussian'){const s=R*0.5;return Math.exp(-(d*d)/(2*s*s));}
+  return t*t;}   // 'inverse' — inverse-square-like, sharp near
+function cdCompetitorPts(){return CD_COMPETITORS.flatMap(k=>S.pois[k]||[]);}
+function buildCompField(){
+  S.cd=S.cd||{mode:'off',radius:500,decay:'inverse'};
+  const cd=S.cd;
+  if(cd.mode==='off'){if(S.cdLayer){map.removeLayer(S.cdLayer);S.cdLayer=null;}setCompLegend();return;}
+  const R=cd.radius,decay=cd.decay,comp=cdCompetitorPts();
+  const B=CD_BOUNDS,midLat=(B.lat0+B.lat1)/2,mpd=cdMPD(midLat),cell=140;   // ~140 m grid
+  const nx=Math.max(1,Math.round((B.lng1-B.lng0)*mpd.x/cell));
+  const ny=Math.max(1,Math.round((B.lat1-B.lat0)*mpd.y/cell));
+  const dLat=R/mpd.y,dLng=R/mpd.x;   // bbox prefilter half-extents (degrees) to skip far points
+  // anchor mode: each McDonald's carries a competitive score = Σ inverse-distance-weighted rivals
+  let anchors=null;
+  if(cd.mode==='mcd'){anchors=(S.pois.mcdonalds||[]).map(m=>{let sc=0;
+    for(const c of comp){if(Math.abs(c.lat-m.lat)>dLat||Math.abs(c.lng-m.lng)>dLng)continue;
+      const d=cdDist(m.lat,m.lng,c.lat,c.lng);if(d<R)sc+=cdDecay(d,R,decay);}
+    return {lat:m.lat,lng:m.lng,sc};}).filter(a=>a.sc>0);}
+  const src=cd.mode==='island'?comp:anchors;
+  const field=new Float32Array(nx*ny);let maxV=0;
+  for(let j=0;j<ny;j++){const lat=B.lat0+(j+0.5)/ny*(B.lat1-B.lat0);
+    for(let i=0;i<nx;i++){const lng=B.lng0+(i+0.5)/nx*(B.lng1-B.lng0);let v=0;
+      for(const p of src){if(Math.abs(p.lat-lat)>dLat||Math.abs(p.lng-lng)>dLng)continue;
+        const d=cdDist(lat,lng,p.lat,p.lng);if(d<R)v+=(p.sc||1)*cdDecay(d,R,decay);}
+      field[j*nx+i]=v;if(v>maxV)maxV=v;}}
+  // paint the grid to a canvas (row 0 = north, so flip j); browser bilinear-scales the <img> smooth
+  const cv=document.createElement('canvas');cv.width=nx;cv.height=ny;
+  const ctx=cv.getContext('2d'),im=ctx.createImageData(nx,ny),inv=maxV>0?1/maxV:0;
+  for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){
+    const t=Math.sqrt(field[j*nx+i]*inv),c=cdHeatRamp(t),idx=((ny-1-j)*nx+i)*4;
+    im.data[idx]=c[0];im.data[idx+1]=c[1];im.data[idx+2]=c[2];im.data[idx+3]=c[3];}
+  ctx.putImageData(im,0,0);
+  const bounds=L.latLngBounds([B.lat0,B.lng0],[B.lat1,B.lng1]);
+  if(S.cdLayer)map.removeLayer(S.cdLayer);
+  S.cdLayer=L.imageOverlay(cv.toDataURL(),bounds,{pane:'heat',interactive:false,opacity:.85}).addTo(map);
+  setCompLegend();
+}
+function setCompLegend(){
+  const el=$('cdLegend');if(!el)return;const cd=S.cd||{mode:'off'};
+  const grad='linear-gradient(90deg,'+CD_HEAT.map(s=>
+    `rgba(${s[1][0]},${s[1][1]},${s[1][2]},${(s[1][3]/255).toFixed(2)}) ${Math.round(s[0]*100)}%`).join(',')+')';
+  el.innerHTML=`<div class="cd-bar" style="background:${grad}"></div>`
+    +`<div class="cd-bl"><span>Low</span><span>competitor density</span><span>High</span></div>`;
+  const note=$('cdNote');if(note)note.textContent=
+    (cd.mode==='mcd'?'Heat blooms around each McDonald’s, weighted by nearby BK / KFC / Jollibee — hottest where a store faces the most close rivals.'
+     :'Continuous competitor density island-wide — hot zones show rival clustering even where no McDonald’s sits (white-space).')
+    +` Radius ${cd.radius} m · ${({linear:'linear',inverse:'inverse-square',gaussian:'gaussian'})[cd.decay]} decay · straight-line. Tip: switch on McDonald’s outlets to read the pins against the heat.`;
+}
+function buildCompDensity(){
+  const host=$('compDens');if(!host)return;
+  S.cd=S.cd||{mode:'off',radius:500,decay:'inverse'};
+  host.innerHTML=`
+    <div class="seg cd-mode" role="group" aria-label="Competitive density mode">
+      <button type="button" data-m="off" class="on">Off</button>
+      <button type="button" data-m="mcd">McD Anchor</button>
+      <button type="button" data-m="island">Islandwide</button></div>
+    <div class="cd-params" ${S.cd.mode==='off'?'hidden':''}>
+      <div class="cd-row"><span class="cd-k">Radius</span>
+        <div class="seg cd-rad" role="group" aria-label="Search radius">
+          <button type="button" data-r="300"${S.cd.radius===300?' class="on"':''}>300 m</button>
+          <button type="button" data-r="500"${S.cd.radius===500?' class="on"':''}>500 m</button>
+          <button type="button" data-r="800"${S.cd.radius===800?' class="on"':''}>800 m</button></div></div>
+      <div id="cdLegend"></div>
+      <div class="note" id="cdNote"></div></div>`;
+  const params=host.querySelector('.cd-params');
+  host.querySelectorAll('.cd-mode button').forEach(b=>b.onclick=()=>{
+    host.querySelectorAll('.cd-mode button').forEach(x=>x.classList.toggle('on',x===b));
+    S.cd.mode=b.dataset.m;params.hidden=(S.cd.mode==='off');buildCompField();});
+  host.querySelectorAll('.cd-rad button').forEach(b=>b.onclick=()=>{
+    host.querySelectorAll('.cd-rad button').forEach(x=>x.classList.toggle('on',x===b));
+    S.cd.radius=+b.dataset.r;buildCompField();});
+  setCompLegend();
 }
 
 // ---------------- search ----------------
@@ -1865,7 +2045,11 @@ function titleInfo(){
   if(S.selected.length>1)
     return {kind:'multi',eyebrow:'Bus routes',badge:String(S.selected.length),color:'#1e293b',
       title:S.selected.length+' bus routes',termini:'',type:'',combi,routes};
-  return {kind:'none',eyebrow:'Transit network',badge:'',color:'#1e40af',
+  const aps=activePoiLayers();   // no routes, but a POI map is still worth titling
+  if(aps.length===1)
+    return {kind:'none',eyebrow:'Places on the map',badge:'',color:'#1e40af',
+      title:aps[0].label,termini:'',type:'',combi:'',routes:[]};
+  return {kind:'none',eyebrow:aps.length?'Places on the map':'Transit network',badge:'',color:'#1e40af',
     title:'Singapore Transit Atlas',termini:'',type:'',combi:'',routes:[]};
 }
 function selImpressions(){
@@ -2017,6 +2201,21 @@ function stampCard(x,W,H){
         x.textAlign='right';x.fillText(r[1],M+pad+inW,ry);x.textAlign='left';});
       ry+=noteF*1.4;x.fillStyle=CARD.grey;x.font=`500 ${noteF}px Inter,system-ui,sans-serif`;
       x.fillText('Covered / day = unique × '+DIRS+' directions × '+TRIPS_DAY+' trips.',M+pad,ry);}});}
+  const aps=activePoiLayers();
+  if(aps.length){const rowH=17*u,sw=15*u;   // legend for the place layers on the map
+    blocks.push({h:labF+8*u+aps.length*rowH,draw:cy=>{
+      x.fillStyle=CARD.grey;x.font=`700 ${labF}px Inter,system-ui,sans-serif`;
+      x.fillText('LEGEND',M+pad,cy+labF);
+      let ry=cy+labF+8*u;
+      aps.forEach(l=>{ry+=rowH;const bx=M+pad+sw/2,by=ry-bodyF*0.34;
+        x.fillStyle=l.color;x.beginPath();x.arc(bx,by,sw/2,0,2*Math.PI);x.fill();
+        if(l.letter){x.fillStyle=l.letterFg||'#fff';x.font=`800 ${10*u}px Inter,system-ui,sans-serif`;
+          x.textAlign='center';x.textBaseline='middle';x.fillText(l.letter,bx,by);
+          x.textAlign='left';x.textBaseline='alphabetic';}
+        x.fillStyle=CARD.ink;x.font=`600 ${bodyF}px Inter,system-ui,sans-serif`;
+        x.fillText(l.label,M+pad+sw+8*u,ry);
+        x.fillStyle=CARD.grey;x.font=`700 ${bodyF}px Inter,system-ui,sans-serif`;
+        x.textAlign='right';x.fillText(String(l.count),M+pad+inW,ry);x.textAlign='left';});}});}
   if(imp){blocks.push({h:statF*2+9*u,draw:cy=>{
     x.font=`800 ${statF}px Inter,system-ui,sans-serif`;x.fillStyle=CARD.ink;
     const l1='≈ '+fmt(imp.wd)+' ',w1=x.measureText(l1).width;x.fillText(l1,M+pad,cy+statF);
@@ -2094,6 +2293,7 @@ function addCard(s,info,imp){
   const corridorRoads=(S.exp.corridor&&single)?routeCorridor(info.badge):[];
   const hasCorr=corridorRoads.length>0;
   const hasStops=S.exp.stops;
+  const aps=activePoiLayers();
   // tally height
   let H=P+0.24+0.66;                                   // pad+eyebrow+header
   if(single&&info.type)H+=0.30;
@@ -2101,6 +2301,7 @@ function addCard(s,info,imp){
   if(legend)H+=0.22+py;
   if(hasCorr)H+=0.20+0.5;
   if(hasStops)H+=0.20+0.56+0.2;   // label + tile row + formula note
+  if(aps.length)H+=0.20+aps.length*0.28;
   if(imp)H+=0.66;
   H+=P;
   // bottom-left corner — sits over Jurong Island / the sea (no buses), so it rarely covers routes
@@ -2147,6 +2348,14 @@ function addCard(s,info,imp){
         charSpacing:0.2,fontFace:'Inter'});});yy+=0.56;
     s.addText('Covered / day = unique × '+DIRS+' directions × '+TRIPS_DAY+' trips.',
       {x:X+P,y:yy,w:W-2*P,h:0.16,fontSize:7.5,italic:true,color:GREY,fontFace:'Inter'});yy+=0.2;}
+  if(aps.length){s.addText('LEGEND',{x:X+P,y:yy,w:W-2*P,h:0.18,fontSize:9,bold:true,
+    color:GREY,charSpacing:1.5,fontFace:'Inter'});yy+=0.20;
+    aps.forEach(l=>{s.addShape('ellipse',{x:X+P,y:yy+0.02,w:0.22,h:0.22,fill:{color:hx(l.color)},line:{type:'none'}});
+      if(l.letter)s.addText(l.letter,{x:X+P,y:yy+0.02,w:0.22,h:0.22,fontSize:9,bold:true,
+        color:hx(l.letterFg||'#ffffff'),align:'center',valign:'middle',fontFace:'Inter'});
+      s.addText(l.label,{x:X+P+0.3,y:yy,w:W-2*P-0.9,h:0.26,fontSize:10.5,color:INK,valign:'middle',fontFace:'Inter'});
+      s.addText(String(l.count),{x:X+P,y:yy,w:W-2*P,h:0.26,fontSize:10.5,bold:true,color:GREY,
+        align:'right',valign:'middle',fontFace:'Inter'});yy+=0.28;});}
   if(imp){s.addText([{text:'≈ '+fmt(imp.wd)+' ',options:{bold:true,color:INK,fontSize:13,fontFace:'Inter'}},
     {text:'daily impressions',options:{color:GREY,fontSize:11,fontFace:'Inter'}}],
     {x:X+P,y:yy,w:W-2*P,h:0.3,valign:'middle'});yy+=0.32;
