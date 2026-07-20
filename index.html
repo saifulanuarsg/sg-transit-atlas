@@ -1924,22 +1924,24 @@ function setCompLegend(){
   const note=$('cdNote');if(note)note.textContent=
     (cd.mode==='mcd'?'Heat blooms around each McDonald’s, weighted by nearby BK / KFC / Jollibee — hottest where a store faces the most close rivals.'
      :'Continuous competitor density island-wide — hot zones show rival clustering even where no McDonald’s sits (white-space).')
-    +` Radius ${cd.radius} m · ${({linear:'linear',inverse:'inverse-square',gaussian:'gaussian'})[cd.decay]} decay · straight-line. Tip: switch on McDonald’s outlets to read the pins against the heat.`;
+    +` Radius ${cd.radius>=1000?(cd.radius/1000)+' km':cd.radius+' m'} · ${({linear:'linear',inverse:'inverse-square',gaussian:'gaussian'})[cd.decay]} decay · straight-line. Tip: switch on McDonald’s outlets to read the pins against the heat.`;
 }
 function buildCompDensity(){
   const host=$('compDens');if(!host)return;
   S.cd=S.cd||{mode:'off',radius:500,decay:'inverse'};
   host.innerHTML=`
     <div class="seg cd-mode" role="group" aria-label="Competitive density mode">
-      <button type="button" data-m="off" class="on">Off</button>
-      <button type="button" data-m="mcd">McD Anchor</button>
-      <button type="button" data-m="island">Islandwide</button></div>
+      <button type="button" data-m="off"${S.cd.mode==='off'?' class="on"':''}>Off</button>
+      <button type="button" data-m="mcd"${S.cd.mode==='mcd'?' class="on"':''}>McD Anchor</button>
+      <button type="button" data-m="island"${S.cd.mode==='island'?' class="on"':''}>Islandwide</button></div>
     <div class="cd-params" ${S.cd.mode==='off'?'hidden':''}>
       <div class="cd-row"><span class="cd-k">Radius</span>
         <div class="seg cd-rad" role="group" aria-label="Search radius">
           <button type="button" data-r="300"${S.cd.radius===300?' class="on"':''}>300 m</button>
           <button type="button" data-r="500"${S.cd.radius===500?' class="on"':''}>500 m</button>
-          <button type="button" data-r="800"${S.cd.radius===800?' class="on"':''}>800 m</button></div></div>
+          <button type="button" data-r="800"${S.cd.radius===800?' class="on"':''}>800 m</button>
+          <button type="button" data-r="1000"${S.cd.radius===1000?' class="on"':''}>1 km</button>
+          <button type="button" data-r="2000"${S.cd.radius===2000?' class="on"':''}>2 km</button></div></div>
       <div id="cdLegend"></div>
       <div class="note" id="cdNote"></div></div>`;
   const params=host.querySelector('.cd-params');
