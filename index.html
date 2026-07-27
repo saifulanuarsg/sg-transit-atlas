@@ -120,6 +120,30 @@
   .res .tag.svc{background:#dbeafe;color:var(--primary)}
   .res .rn{font-weight:700;min-width:34px}
   .res .rd{color:var(--muted);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* multi-add: tick boxes on service rows, a batch row for pasted lists, sticky Add bar */
+  .res.on{background:#f1f5f9}
+  .res .ck{width:15px;height:15px;border:1.5px solid #cbd5e1;border-radius:4px;flex:none;
+    background:#fff;display:grid;place-items:center;font:800 10px/1 system-ui;color:#fff}
+  .res .ck:hover{border-color:var(--primary)}
+  .res .ck.on{background:var(--primary);border-color:var(--primary)}
+  .res .ck.on::after{content:"\2713"}
+  .res .mark{margin-left:auto;flex:none;font:700 9.5px/1 system-ui;color:#166534;
+    background:#dcfce7;padding:3px 6px;border-radius:5px;text-transform:uppercase;letter-spacing:.4px}
+  .res-batch{display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;
+    background:var(--primary-soft);border-bottom:1px solid var(--line);font-size:12.5px}
+  .res-batch:hover{background:#dbeafe}
+  .res-batch b{font-size:13px;color:var(--primary);flex:none}
+  .res-batch .kbd{margin-left:auto;flex:none;font:700 9.5px/1 system-ui;color:var(--muted);
+    border:1px solid var(--line);background:#fff;border-radius:4px;padding:3px 5px}
+  .res-warn{padding:7px 12px;font-size:11.5px;color:#92400e;background:#fffbeb;
+    border-bottom:1px solid #fde68a}
+  .res-bar{position:sticky;bottom:0;display:flex;align-items:center;gap:8px;padding:8px 12px;
+    background:#fff;border-top:1px solid var(--line);box-shadow:0 -4px 12px rgba(15,23,42,.07)}
+  .res-bar .pk{font-size:11.5px;color:var(--muted);overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap}
+  .res-bar button{margin-left:auto;flex:none;font:700 12px/1 system-ui;color:#fff;cursor:pointer;
+    background:var(--primary);border:none;border-radius:7px;padding:7px 11px}
+  .res-bar button:hover{background:#0a2ab5}
 
   #body{flex:1;overflow-y:auto}
   .sec{padding:12px 16px;border-bottom:1px solid var(--line)}
@@ -247,6 +271,9 @@
   .sec-prop .sec-lab{color:#9f1239}
   #propHeat select{margin-bottom:2px}
   #mopLegend:empty,#txLegend:empty{display:none}
+  /* hatch legend — stripe density is the scale, so the swatches need height to read */
+  .legend.hatch div{height:17px;background-color:#fff;border-right:1px solid var(--line)}
+  .legend.hatch div:last-child{border-right:0}
 
   /* ---------- bus products (route presets) ---------- */
   .prod-lab{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:13px 0 6px}
@@ -309,13 +336,6 @@
   details.more summary{cursor:pointer;font:600 11.5px/1 system-ui;color:var(--primary)}
   .placeholder{color:var(--muted);font-size:12px;line-height:1.5;padding:2px 0}
   .sel-empty{font:500 12px/1.5 system-ui;color:var(--muted);padding:2px 0}
-  /* internal-feed stubs — clearly non-data placeholders (rate card / MooveSMART) */
-  .stub{border:1px dashed var(--border,#cbd5e1);border-radius:8px;padding:9px 10px;margin:7px 0 0;
-    background:repeating-linear-gradient(135deg,transparent,transparent 8px,rgba(148,163,184,.06) 8px,rgba(148,163,184,.06) 16px)}
-  .stub .st-top{display:flex;align-items:center;gap:8px;font:700 12px/1.2 system-ui}
-  .stub .st-tag{margin-left:auto;font:700 8.5px/1 system-ui;letter-spacing:.5px;text-transform:uppercase;
-    color:#b45309;background:#fef3c7;border:1px solid #fde68a;border-radius:4px;padding:3px 5px;white-space:nowrap}
-  .stub .st-body{font:500 11.5px/1.5 system-ui;color:var(--muted);margin-top:5px}
 
   /* ---------- rail line legend (per-line focus) ---------- */
   .sub-lab{font:700 10px/1 system-ui;color:var(--muted);text-transform:uppercase;
@@ -427,8 +447,8 @@
       <div class="sub">Build a selection &middot; read its reach &middot; export</div>
     </div>
     <div class="searchwrap">
-      <input id="search" placeholder="Search a bus service…" autocomplete="off"
-        aria-label="Search a bus service">
+      <input id="search" placeholder="Search, or paste a list — 10, 14, 196" autocomplete="off"
+        aria-label="Search a bus service, or paste several separated by commas">
       <div id="results"></div>
     </div>
     <div id="leftBody">
@@ -445,11 +465,10 @@
       </div>
       <div class="sec" id="selcard"></div>
       <div class="sec sec-prod" id="prodSec">
-        <div class="sec-lab">Dynamic Bus products <span class="hint-txt" style="text-transform:none;letter-spacing:0">one-tap presets</span></div>
+        <div class="sec-lab">Curated route sets <span class="hint-txt" style="text-transform:none;letter-spacing:0">one-tap presets</span></div>
         <div id="clusterBtns"></div>
-        <div class="note">Each preset loads a product route set — tap again to clear. Dominance sells as one
-          of four fixed 5-bus combis. (GAS) in a preset's tooltip = Go-Ahead Singapore service on the
-          multi-route format. Counts are routes drawn; “×2” buses on a route don't change the modelled reach.</div>
+        <div class="note">Each preset loads a ready-made shortlist — tap again to clear. Hover a preset to
+          see the services it contains. Counts are routes drawn.</div>
       </div>
       <div class="sec">
         <div class="sec-lab">Reach ranking <span class="hint-txt" style="text-transform:none;letter-spacing:0">ranks your selection</span></div>
@@ -574,29 +593,51 @@ const CHORO_R={
   tx_hdb_val:['#eef2ff','#c7d2fe','#818cf8','#4f46e5','#312e81'],
   tx_priv_vol:['#fdf4ff','#f5d0fe','#e879f9','#c026d3','#701a75'],     // fuchsia — private transactions
   tx_priv_val:['#fdf4ff','#f5d0fe','#e879f9','#c026d3','#701a75']};
+// Diagonal-stripe fills for the second property layer. MOP and transactions can be shaded at the
+// same time: MOP takes the polygon fill, transactions the hatch on top. Quintile is carried by
+// stripe width rather than colour, so it stays readable over both the pale and the dark end of the
+// rose ramp underneath; a white halo under each stripe keeps the edge crisp either way.
+// Top quintile is capped near half coverage — past that the stripes stop reading as a texture and
+// just repaint the area, hiding the MOP fill they are supposed to sit on top of.
+const HATCH_W=[.7,1.2,1.9,2.8,3.8], HATCH_T=10, HATCH_HALO=1.1;
+const _hatchCache={};
+function hatchFill(col,w){
+  const k=col+'|'+w;if(_hatchCache[k])return _hatchCache[k];
+  const c=document.createElement('canvas');c.width=c.height=HATCH_T;
+  const x=c.getContext('2d');x.lineCap='round';
+  // lines x+y = 0, T, 2T — the two corner slivers make the tile repeat seamlessly
+  const path=()=>{x.beginPath();
+    for(let i=0;i<=HATCH_T*2;i+=HATCH_T){x.moveTo(i,0);x.lineTo(i-HATCH_T,HATCH_T);}};
+  path();x.strokeStyle='rgba(255,255,255,.5)';x.lineWidth=w+HATCH_HALO;x.stroke();
+  path();x.strokeStyle=col;x.lineWidth=w;x.stroke();
+  return _hatchCache[k]=x.createPattern(c,'repeat');
+}
+// CSS twin of the canvas pattern, for the sidebar legend swatches
+function hatchCss(col,w){
+  const h=(w+HATCH_HALO).toFixed(1), gap=(HATCH_T/Math.SQRT2).toFixed(1);
+  return `repeating-linear-gradient(135deg,${col} 0 ${w}px,`
+    +`rgba(255,255,255,.5) ${w}px ${h}px,transparent ${h}px ${gap}px)`;
+}
 // distinct colours for multi-route selection (dark enough for white pill text).
 // 16 unique — covers the largest product set with no repeats; consecutive entries
 // are far apart in hue so overlapping lanes stay tellable-apart.
 const SELP=['#dc2626','#2563eb','#16a34a','#d97706','#7c3aed','#0e7490','#db2777','#4d7c0f',
   '#4338ca','#92400e','#0891b2','#a21caf','#991b1b','#1e3a8a','#047857','#c2410c'];
-// GAS = Go-Ahead Singapore services running on the multi-route format
-const GAS=new Set(['518','85','31','43','65','2','12','10','28','39','72']);
-// bus products — each preset (City / City-outer, or a Dominance combi) loads a route set.
-// "×N buses" specs count physical buses (some routes carry 2); the map draws each route once
-// and modelled reach is route-level, so bus multiples don't change the audience figure.
+// curated route sets — each preset loads a ready-made shortlist of services.
+// Reach is modelled per route, so a route appearing once or twice in a set doesn't
+// change the audience figure.
 const PRODUCTS=[
-  {key:'landscape', name:'Dynamic Bus · Landscape', spec:'18 curated services', sets:[
+  {key:'landscape', name:'Core corridors', spec:'18 curated services', sets:[
     {ck:'city', label:'City',       color:'#091CA1', routes:['5','107','111','121','132','147']},
     {ck:'outer',label:'City outer', color:'#0E8A6E', routes:['117','21','45','103','102','109','153','157','161','163','168','198']},
   ]},
-  // 100% dominance sells as one of four fixed 5-bus combis — each is its own preset
-  {key:'dual', name:'DB Portrait · Dual screen', spec:'100% dominance · 5 buses per combi', sets:[
-    {ck:'c1', label:'Combi 1', color:'#091CA1', routes:['190','518','70','117','87']},
-    {ck:'c2', label:'Combi 2', color:'#0E8A6E', routes:['190','70','133','198','85']},
-    {ck:'c3', label:'Combi 3', color:'#7C2D92', routes:['972','143','5','76','31']},
-    {ck:'c4', label:'Combi 4', color:'#C2410C', routes:['972','97','130','89','43']},
+  {key:'dual', name:'Five-route sets', spec:'5 routes each', sets:[
+    {ck:'c1', label:'Set 1', color:'#091CA1', routes:['190','518','70','117','87']},
+    {ck:'c2', label:'Set 2', color:'#0E8A6E', routes:['190','70','133','198','85']},
+    {ck:'c3', label:'Set 3', color:'#7C2D92', routes:['972','143','5','76','31']},
+    {ck:'c4', label:'Set 4', color:'#C2410C', routes:['972','97','130','89','43']},
   ]},
-  {key:'single', name:'DB Portrait · Single screen', spec:'30 buses · SOT / programmatic', sets:[
+  {key:'single', name:'Wide sets', spec:'30 routes', sets:[
     {ck:'city', label:'City',       color:'#091CA1', routes:['190','972','106','143','132','65','80','188','960','961','70','176','2','12','10']},
     {ck:'outer',label:'City outer', color:'#0E8A6E', routes:['117','71','28','39','72','979','962','335','181','185','800','806','807','811']},
   ]},
@@ -621,6 +662,8 @@ const baseTiles=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}
   attribution:'&copy; OpenStreetMap contributors &copy; CARTO',maxZoom:19,
   crossOrigin:'anonymous'}).addTo(map);   // enables canvas export of the basemap
 ['areas','bus','poi'].forEach((p,i)=>{map.createPane(p).style.zIndex=380+i*20;});
+map.createPane('areaHatch').style.zIndex=382;   // second property layer, hatched over the choropleth fill
+map.getPane('areaHatch').style.pointerEvents='none';
 map.createPane('heat').style.zIndex=385;   // competitive-density surface: over areas, under rail/POI/labels
 map.getPane('heat').style.pointerEvents='none';
 map.createPane('rail').style.zIndex=410;   // coloured rail lines over the grey bus base
@@ -631,6 +674,7 @@ map.getPane('label').style.pointerEvents='none';
 const rBus=L.canvas({pane:'bus',padding:.4}), rPoi=L.canvas({pane:'poi',padding:.4}),
       rRail=L.canvas({pane:'rail',padding:.4}),
       rAreas=L.canvas({pane:'areas',padding:.5}),   // canvas (not default SVG) so choropleth exports aligned
+      rHatch=L.canvas({pane:'areaHatch',padding:.5}),
       rSel=L.canvas({pane:'sel',padding:.5});   // canvas (not SVG) so image export captures the selection
 
 // ---------------- state ----------------
@@ -710,6 +754,7 @@ const SEG=[
   {key:'youth',   label:'Students & youth (15–24)',prop:'share_youth'},
 ];
 S.segment='none';   // active choropleth segment (none = no shading by default)
+S.segHatch=null;    // second property segment, drawn as hatching over S.segment (null = off)
 S.regionFilter='all';  // property-heatmap region filter (MOP layer); 'all' = whole island
 S.txSeg='hdb';         // property-transactions segment: 'hdb' (resale) | 'priv' (private)
 
@@ -992,13 +1037,13 @@ function buildClusters(){
     lab.innerHTML=`<span class="pl-name">${p.name}</span><span class="pl-spec">${p.spec}</span>`;
     host.appendChild(lab);
     const row=document.createElement('div');
-    row.className='cluster-btns'+(p.sets.length>2?' grid2':'');   // 4 combis wrap 2×2
+    row.className='cluster-btns'+(p.sets.length>2?' grid2':'');   // 4 sets wrap 2×2
     p.sets.forEach(st=>{
       const key=p.key+'-'+st.ck,c=CLUSTERS[key];
       const n=c.routes.filter(x=>S.svcs[x]).length;
       const btn=document.createElement('button');btn.type='button';btn.className='clbtn';
       btn.dataset.k=key;btn.style.setProperty('--cc',c.color);btn.setAttribute('aria-pressed','false');
-      btn.title=`${c.title} — ${c.routes.map(r=>GAS.has(r)?r+' (GAS)':r).join(', ')}`;
+      btn.title=`${c.title} — ${c.routes.join(', ')}`;
       btn.innerHTML=`<span class="cl-name">${c.label}</span><span class="cl-n">${n}</span>`;
       btn.onclick=()=>selectCluster(key);
       row.appendChild(btn);
@@ -1044,6 +1089,10 @@ function buildAreas(){
           +`<br>${(p.share_senior*100).toFixed(0)}% seniors · ${(p.share_family*100).toFixed(0)}% children`
           +(p.income_median?`<br>median income $${fmt(p.income_median)}`:'')).openPopup();});
     }}).addTo(map);
+  // twin polygon set one pane up, used only for the hatch overlay — same geometry, no interaction,
+  // so the fill choropleth underneath keeps its tooltips and area drill-down.
+  S._hatchLayer=L.geoJSON(S.areas,{pane:'areaHatch',renderer:rHatch,interactive:false,
+    style:{stroke:false,fill:true,fillColor:'#000',fillOpacity:0}}).addTo(map);
 }
 function areaMetric(p,seg){
   if(seg==='none')return null;
@@ -1067,10 +1116,10 @@ function paintChoro(seg){
   ['choroLegend','mopLegend','txLegend'].forEach(id=>{const e=$(id);if(e)e.innerHTML='';});
   clearAreaLabels();
   if(!S._areaLayer)return;
-  if(seg==='none'){S._areaLayer.setStyle({fillOpacity:0,opacity:0});return;}   // hide boundaries
-  // region filter applies to the MOP layer only (its dropdown); 'all' elsewhere
-  const isMop=seg.indexOf('mop_')===0;
-  const inRegion=p=>(!isMop||S.regionFilter==='all'||p.region===S.regionFilter);
+  if(seg==='none'){S._areaLayer.setStyle({fillOpacity:0,opacity:0});paintHatch(null);return;}   // hide boundaries
+  // region filter applies to the property heatmaps only (their dropdown); 'all' elsewhere
+  const isMop=seg.indexOf('mop_')===0, isProp=isMop||seg.indexOf('tx_')===0;
+  const inRegion=p=>(!isProp||S.regionFilter==='all'||p.region===S.regionFilter);
   const ramp=CHORO_R[seg]||CHORO_C;
   const vals=[];S._areaLayer.eachLayer(l=>{const p=l.feature.properties,v=areaMetric(p,seg);
     if(v!=null&&isFinite(v)&&inRegion(p))vals.push(v);});
@@ -1080,7 +1129,9 @@ function paintChoro(seg){
   S._areaLayer.eachLayer(l=>{const p=l.feature.properties,v=areaMetric(p,seg);
     if(v==null||!isFinite(v)||!inRegion(p)){l.setStyle({fillOpacity:0});return;}
     let i=0;while(i<4&&v>=br[i])i++;
-    l.setStyle({fillColor:ramp[i],fillOpacity:.55,color:'#64748b',weight:1,opacity:.4});});
+    // a stacked hatch eats some of the fill, so give the fill more weight when one is on
+    l.setStyle({fillColor:ramp[i],fillOpacity:S.segHatch ? .7 : .55,
+      color:'#64748b',weight:1,opacity:.4});});
   // legend: pick the host + number format for this segment family
   const lgId=isMop?'mopLegend':seg.indexOf('tx_')===0?'txLegend':'choroLegend';
   const lg=$(lgId);if(!lg)return;
@@ -1094,6 +1145,32 @@ function paintChoro(seg){
   lg.innerHTML='<div class="legend">'+ramp.map(c=>`<div style="background:${c}"></div>`).join('')+'</div>'
     +`<div class="legend-lab"><span>${f(vals[0])}</span><span>${unit}</span><span>${f(vals[vals.length-1])}</span></div>`;
   renderAreaLabels(seg,inRegion);   // name the shaded areas so the heatmap is readable (live + export)
+  paintHatch(S.segHatch,inRegion);  // second property layer, if one is stacked on this fill
+}
+// transactions-over-MOP overlay: same quintile maths as the fill, but the class is carried by
+// stripe density instead of colour. Runs after paintChoro has cleared the legends, so it owns
+// #txLegend whenever it is on.
+function paintHatch(seg,inRegion){
+  if(!S._hatchLayer)return;
+  if(!seg){S._hatchLayer.setStyle({fillOpacity:0});return;}
+  const keep=inRegion||(()=>true), col=(CHORO_R[seg]||CHORO_C)[3];
+  const vals=[];S._hatchLayer.eachLayer(l=>{const p=l.feature.properties,v=areaMetric(p,seg);
+    if(v!=null&&isFinite(v)&&keep(p))vals.push(v);});
+  if(!vals.length){S._hatchLayer.setStyle({fillOpacity:0});return;}
+  vals.sort((a,b)=>a-b);
+  const q=i=>vals[Math.min(vals.length-1,Math.floor(i*vals.length/5))],br=[q(1),q(2),q(3),q(4)];
+  S._hatchLayer.eachLayer(l=>{const p=l.feature.properties,v=areaMetric(p,seg);
+    if(v==null||!isFinite(v)||!keep(p)){l.setStyle({fillOpacity:0});return;}
+    let i=0;while(i<4&&v>=br[i])i++;
+    l.setStyle({fillColor:hatchFill(col,HATCH_W[i]),fillOpacity:1});});
+  const lg=$('txLegend');if(!lg)return;
+  const isPrice=seg.slice(-4)==='_val';
+  const f=isPrice?(v=>'$'+cf(v)):(v=>fmt(Math.round(v)));
+  const unit=isPrice?'median price':seg.indexOf('tx_hdb')===0?'HDB deals / yr':'private deals / yr';
+  lg.innerHTML='<div class="legend hatch">'+HATCH_W.map(w=>
+      `<div style="background-image:${hatchCss(col,w)}"></div>`).join('')+'</div>'
+    +`<div class="legend-lab"><span>${f(vals[0])}</span><span>${unit} · hatched</span>`
+    +`<span>${f(vals[vals.length-1])}</span></div>`;
 }
 // planning-area name labels for the shaded areas of the active choropleth
 function clearAreaLabels(){if(S._areaLabels){map.removeLayer(S._areaLabels);S._areaLabels=null;}}
@@ -1118,7 +1195,7 @@ function buildDemographics(){
    ['affluent','Affluent index'],
    ['family','Families index'],['senior','Seniors index'],['youth','Students & youth index']]
    .forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;sel.appendChild(o);});
-  sel.onchange=()=>{S.segment=sel.value;if(sel.value!=='none')clearShades('demo');
+  sel.onchange=()=>{clearShades('demo');S.segment=sel.value;S.segHatch=null;
     paintChoro(S.segment);if(S.selected.length)renderSelection();};
   host.appendChild(sel);
   const lg=document.createElement('div');lg.id='choroLegend';host.appendChild(lg);
@@ -1127,12 +1204,15 @@ function buildDemographics(){
     +'catchment share. Aggregate and modelled, not panel-measured.';
   host.appendChild(note);
 }
-// only one choropleth shades the map at a time — reset the other two dropdowns
+// Demographics and the property heatmaps are mutually exclusive; the two property layers are one
+// group, since MOP and transactions can shade the map together (fill + hatch).
 function clearShades(keep){
   if(keep!=='demo'){const d=$('demoSel');if(d)d.value='none';}
-  if(keep!=='mop'){const m=$('mopSel');if(m)m.value='';
+  if(keep!=='prop'){
+    const m=$('mopSel');if(m)m.value='';
+    const t=$('txMetricSel');if(t)t.value='';
+    S.segHatch=null;
     S.regionFilter='all';const r=$('mopRegionSel');if(r)r.value='all';}
-  if(keep!=='tx'){const t=$('txMetricSel');if(t)t.value='';}
 }
 // property-agent heatmaps: HDB MOP watch (+region filter) and transactions (HDB vs private)
 function buildPropertyHeatmaps(){
@@ -1150,15 +1230,25 @@ function buildPropertyHeatmaps(){
    .forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;mop.appendChild(o);});
   host.appendChild(mop);
   const reg=document.createElement('select');reg.id='mopRegionSel';reg.style.marginTop='7px';
-  reg.setAttribute('aria-label','Filter MOP heatmap by region');
+  reg.setAttribute('aria-label','Filter the property heatmaps by region');
   [['all','All regions'],['Central Region','Central'],['East Region','East'],
    ['North Region','North'],['North-East Region','North-East'],['West Region','West']]
    .forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;reg.appendChild(o);});
   host.appendChild(reg);
   host.insertAdjacentHTML('beforeend','<div id="mopLegend"></div>');
-  mop.onchange=()=>{if(mop.value){clearShades('mop');S.segment=mop.value;}else S.segment='none';
-    paintChoro(S.segment);};
-  reg.onchange=()=>{S.regionFilter=reg.value;if(S.segment.indexOf('mop_')===0)paintChoro(S.segment);};
+  // MOP and transactions stack: MOP takes the polygon fill, transactions the hatch on top.
+  // Either one on its own falls back to a plain fill choropleth.
+  const applyProp=()=>{
+    const met=$('txMetricSel'),
+          m=mop.value, t=(met&&met.value)?'tx_'+S.txSeg+'_'+met.value:'';
+    if(m||t)clearShades('prop');
+    S.segment=m||t||'none';
+    S.segHatch=(m&&t)?t:null;
+    paintChoro(S.segment);
+  };
+  mop.onchange=applyProp;
+  reg.onchange=()=>{S.regionFilter=reg.value;
+    if(S.segment.indexOf('mop_')===0||S.segment.indexOf('tx_')===0)paintChoro(S.segment);};
   // Block B — property transactions: HDB resale vs private, by volume or value
   host.insertAdjacentHTML('beforeend',
     '<div class="sub-lab" style="margin-top:14px">Property transactions <span class="hint-txt">deal density</span></div>'
@@ -1171,15 +1261,15 @@ function buildPropertyHeatmaps(){
    .forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;met.appendChild(o);});
   host.appendChild(met);
   host.insertAdjacentHTML('beforeend','<div id="txLegend"></div>');
-  const applyTx=()=>{if(met.value){clearShades('tx');S.segment='tx_'+S.txSeg+'_'+met.value;}else S.segment='none';
-    paintChoro(S.segment);};
   host.querySelectorAll('#txSegSeg button').forEach(b=>b.onclick=()=>{
     S.txSeg=b.dataset.s;host.querySelectorAll('#txSegSeg button').forEach(x=>x.classList.toggle('on',x===b));
-    if(met.value)applyTx();});
-  met.onchange=applyTx;
+    if(met.value)applyProp();});
+  met.onchange=applyProp;
   const note=document.createElement('div');note.className='note';
   note.innerHTML='<b>Volume</b> = agent opportunity — more deals means more listings and buyers; '
     +'switch to <b>Value</b> for median-price context. '
+    +'Run both layers together and MOP shades the areas while transactions hatch over them — '
+    +'dense stripes on a dark area means new supply landing in an already-busy market. '
     +'MOP: HDB/URA totals (2025: 6,973 flats · 2026: 13,484), town split from PropNex / EdgeProp / OrangeTee. '
     +'HDB resale: data.gov.sg, 12 mo. Private: URA 2025 (26,492 units) by market segment — illustrative v1.';
   host.appendChild(note);
@@ -1565,7 +1655,7 @@ function renderSelection(opt){
     : `<div class="subhead">Demographics</div><div class="placeholder">Demographic layer not loaded yet — will overlay for the selection once data is available.</div>`;
   c.innerHTML=`<div class="card-top">${header}
       <button class="xbtn" aria-label="Clear selection">&#10005;</button></div>
-    <div class="stat-grid">${stopStats}</div>${covNote}${poi}${demo}${renderInternalStubs()}`;
+    <div class="stat-grid">${stopStats}</div>${covNote}${poi}${demo}`;
   c.classList.add('show');
   wireCard(c);
   renderLeftbar();applyPoiScope();if(typeof syncExportUI==="function")syncExportUI();
@@ -1627,18 +1717,6 @@ function renderDemographics(sel,uCodes){
     ${detail}
     <div class="note">Modelled OTS = LTA taps (Jun 2026) × Census 2020 catchment share. Aggregate, not measured.
       <b>V3</b> will profile who is reached <b>by time of day</b> — the media-planning cut this card is missing.</div>`;
-}
-// Internal-feed stubs (DATA-SYNTHESIS-PLAN §6). Clearly-labelled placeholders — the two
-// dependencies that aren't public data. No fabricated rates or attribution numbers.
-function renderInternalStubs(){
-  return `<div class="stub">
-      <div class="st-top">Commercial — rate &amp; availability<span class="st-tag">internal feed · pending ad-ops</span></div>
-      <div class="st-body">CPM / rate, availability by cycle and format spec (screen size, SOV, loop length) attach here per preset once Moove's rate card lands. Until then the atlas shortlists but cannot quote.</div>
-    </div>
-    <div class="stub">
-      <div class="st-top">MooveSMART — footfall attribution<span class="st-tag">internal feed · pending ad-ops</span></div>
-      <div class="st-body">O2O footfall, 16 personas and dayparting — the "beyond impressions" outcome story — surface here from the MooveSMART export. The map currently models opportunities-to-see and stops there.</div>
-    </div>`;
 }
 // back-compat: some callers still name single selection
 function selectRoute(n){ clearSel(); toggleRoute(n); }
@@ -1955,43 +2033,143 @@ function buildCompDensity(){
 }
 
 // ---------------- search ----------------
+// Two ways to load several services at once:
+//   paste  — "10, 14, 196" (comma / slash / newline / space separated) resolves every
+//            token in one go; Enter or the batch row adds them and names any that miss.
+//   tick   — each service row carries a tick box, so a set can be assembled across
+//            several different searches and added together from the sticky bar.
+// A plain click on a row still adds that one route immediately, as before.
+
+// raw token -> real service key, case- and punctuation-insensitive ("Bus 12E" -> "12e")
+function resolveSvc(tok){
+  const t=String(tok).toLowerCase().replace(/^(bus|svc|service)\s+/,'').replace(/[^0-9a-z]/g,'');
+  if(!t)return null;
+  if(!resolveSvc._ix){const ix={},ks=Object.keys(S.svcs||{});
+    if(!ks.length)return null;                       // services not loaded yet — don't cache empty
+    ks.forEach(k=>ix[k.toLowerCase().replace(/[^0-9a-z]/g,'')]=k);resolveSvc._ix=ix;}
+  return resolveSvc._ix[t]||null;
+}
+const BATCH_SEP=/[,;/|+\n\r\t]/;
+// read the query as a list of services, or null if it's an ordinary one-thing search
+function parseBatch(q){
+  const toks=q.split(/[,;/|+\s]+/).map(t=>t.trim()).filter(Boolean),explicit=BATCH_SEP.test(q);
+  if(toks.length<2&&!explicit)return null;
+  const found=[],miss=[],seen=new Set();
+  toks.forEach(t=>{const k=resolveSvc(t);
+    if(!k)miss.push(t);else if(!seen.has(k)){seen.add(k);found.push(k);}});
+  if(!explicit&&miss.length)return null;      // "jurong east" is a name search, not a list
+  return {found,miss};
+}
+// add many routes in one pass — dedupes against the current selection, redraws once
+function addRoutes(keys){
+  const add=(keys||[]).filter(n=>S.svcs[n]&&S.selected.indexOf(n)<0);
+  if(!add.length)return 0;
+  S.selected.push(...add);
+  renderSelection({fit:true});
+  return add.length;
+}
+
 function buildSearch(){
   const inp=$('search'),res=$('results');
+  const pick=new Set();            // ticked, not yet added — survives re-searching
+  let hits=[],batch=null;
+
+  const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const svcRow=s=>{
+    const on=pick.has(s.n),added=S.selected.indexOf(s.n)>=0;
+    return `<div class="res${on?' on':''}" data-t="svc" data-k="${esc(s.n)}">`+
+      `<span class="ck${on?' on':''}" data-ck="${esc(s.n)}" title="Tick to add several at once"></span>`+
+      `<span class="tag svc">bus</span><span class="rn">${esc(s.n)}</span>`+
+      `<span class="rd">${esc(s.name)}</span>${added?'<span class="mark">added</span>':''}</div>`;
+  };
+
+  function draw(){
+    let html='';
+    if(batch){
+      if(batch.found.length)
+        html+=`<div class="res-batch" data-add="all"><b>Add ${batch.found.length} `+
+          `service${batch.found.length>1?'s':''}</b>`+
+          `<span class="rd">${esc(batch.found.join(' · '))}</span><span class="kbd">&crarr;</span></div>`;
+      if(batch.miss.length)
+        html+=`<div class="res-warn">No such service: <b>${esc(batch.miss.join(', '))}</b></div>`;
+      if(!batch.found.length&&!batch.miss.length)
+        html+='<div class="res"><span class="rd">No matches</span></div>';
+    }else{
+      html+=hits.slice(0,12).map(h=>
+        h.t==='svc'?svcRow(h.s)
+        :h.t==='area'?`<div class="res" data-t="area" data-k="${esc(h.a)}"><span class="tag">area</span><span class="rd" style="font-weight:700;color:var(--ink)">${esc(h.a)}</span></div>`
+        :`<div class="res" data-t="stn" data-k="${esc(h.st.name)}"><span class="tag" style="background:#dcfce7;color:#166534">rail</span><span class="rd" style="font-weight:700;color:var(--ink)">${esc(h.st.name)}</span></div>`
+      ).join('')||'<div class="res"><span class="rd">No matches</span></div>';
+    }
+    if(pick.size)
+      html+=`<div class="res-bar"><span class="pk">Ticked: ${esc([...pick].join(' · '))}</span>`+
+        `<button data-add="pick">Add ${pick.size} route${pick.size>1?'s':''}</button></div>`;
+    res.innerHTML=html;res.style.display='block';
+  }
+
+  function commit(keys){
+    const n=addRoutes(keys);
+    pick.clear();batch=null;hits=[];
+    inp.value='';res.style.display='none';
+    return n;
+  }
+
   inp.addEventListener('input',()=>{
-    const q=inp.value.trim().toLowerCase();
-    if(!q){res.style.display='none';return;}
-    const hits=[];
-    Object.values(S.svcs).forEach(s=>{
-      if(s.n.toLowerCase().startsWith(q)||s.name.toLowerCase().includes(q))hits.push({t:'svc',s});
-    });
-    Object.keys(S.areaStats).forEach(a=>{if(a.toLowerCase().includes(q))hits.push({t:'area',a});});
-    (S.stations||[]).forEach(st=>{if(st.name.toLowerCase().includes(q))hits.push({t:'stn',st});});
-    res.innerHTML=hits.slice(0,12).map(h=>
-      h.t==='svc'?`<div class="res" data-t="svc" data-k="${h.s.n}"><span class="tag svc">bus</span><span class="rn">${h.s.n}</span><span class="rd">${h.s.name}</span></div>`
-      :h.t==='area'?`<div class="res" data-t="area" data-k="${h.a}"><span class="tag">area</span><span class="rd" style="font-weight:700;color:var(--ink)">${h.a}</span></div>`
-      :`<div class="res" data-t="stn" data-k="${h.st.name}"><span class="tag" style="background:#dcfce7;color:#166534">rail</span><span class="rd" style="font-weight:700;color:var(--ink)">${h.st.name}</span></div>`
-    ).join('')||'<div class="res"><span class="rd">No matches</span></div>';
-    res.style.display='block';
+    const raw=inp.value.trim(),q=raw.toLowerCase();
+    if(!raw){batch=null;hits=[];if(pick.size)draw();else res.style.display='none';return;}
+    batch=parseBatch(raw);
+    if(!batch){
+      hits=[];
+      Object.values(S.svcs).forEach(s=>{
+        if(s.n.toLowerCase().startsWith(q)||s.name.toLowerCase().includes(q))hits.push({t:'svc',s});
+      });
+      Object.keys(S.areaStats).forEach(a=>{if(a.toLowerCase().includes(q))hits.push({t:'area',a});});
+      (S.stations||[]).forEach(st=>{if(st.name.toLowerCase().includes(q))hits.push({t:'stn',st});});
+    }
+    draw();
   });
+  inp.addEventListener('focus',()=>{if(pick.size||hits.length||batch)draw();});
+
+  inp.addEventListener('keydown',e=>{
+    if(e.key!=='Enter')return;
+    e.preventDefault();
+    if(batch&&batch.found.length)return void commit(batch.found);
+    const top=hits.find(h=>h.t==='svc');
+    if(top){                       // Enter takes the top service and stays put for the next one
+      if(pick.size){pick.add(top.s.n);commit([...pick]);}else commit([top.s.n]);
+      inp.focus();return;
+    }
+    if(pick.size)commit([...pick]);
+  });
+
   res.addEventListener('click',e=>{
+    const bulk=e.target.closest('[data-add]');
+    if(bulk){commit(bulk.dataset.add==='all'?batch.found:[...pick]);return;}
+    const ck=e.target.closest('.ck');
+    if(ck){                        // tick box: keep the list open, build the batch up
+      const k=ck.dataset.ck;pick.has(k)?pick.delete(k):pick.add(k);draw();return;}
     const d=e.target.closest('.res');if(!d||!d.dataset.k)return;
+    if(d.dataset.t==='svc'){const k=d.dataset.k;pick.delete(k);
+      res.style.display='none';inp.value='';batch=null;hits=[];
+      toggleRoute(k);return;}      // plain click still adds (or removes) just this one
     res.style.display='none';inp.value='';
-    if(d.dataset.t==='svc')toggleRoute(d.dataset.k);   // add to selection
-    else{const st=(S.stations||[]).find(x=>x.name===d.dataset.k);
-      if(st){map.setView([st.lat,st.lng],15);
-        if(!map.hasLayer(groups.stations))groups.stations.addTo(map);}}
+    const st=(S.stations||[]).find(x=>x.name===d.dataset.k);
+    if(st){map.setView([st.lat,st.lng],15);
+      if(!map.hasLayer(groups.stations))groups.stations.addTo(map);}
   });
+
   document.addEventListener('click',e=>{if(!e.target.closest('.searchwrap'))res.style.display='none';});
   document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;
     const m=$('expModal');if(m&&!m.hidden){m.hidden=true;return;}   // Esc closes the export modal first
+    if(res.style.display==='block'){res.style.display='none';return;}   // then the results list
     clearSel();});
 }
 
 // ---------------- export current map as JPG / PPTX ----------------
 // Re-renders the map into a fixed aspect ratio (square for JPG, 16:9 for PPTX),
 // re-fitting the current selection so the route is framed tight — no dead space —
-// then stamps a Moove-styled title card. Live layout is restored afterwards.
-// neutral, un-branded palette for exports (no Moove marks or brand colours)
+// then stamps a title card. Live layout is restored afterwards.
+// neutral, un-branded palette for exports
 const CARD={ink:'#0f172a',sub:'#475569',grey:'#64748b',line:'#e2e8f0',tile:'#f8fafc',hdr:'#1e293b'};
 const TYPE_C={Trunk:{bg:'#dcfce7',fg:'#166534'},Feeder:{bg:'#fef3c7',fg:'#92400e'},
   Express:{bg:'#e0e7ff',fg:'#3730a3'}};
@@ -2039,20 +2217,19 @@ function ensureExportData(){
 function titleInfo(){
   const m=matchedCluster(),colOf=S._colOf||{};
   const routes=S.selected.map(n=>({n,color:colOf[n]||'#334155',type:busType(S.svcs[n])}));
-  const combi=m?CLUSTERS[m].label+' · '+CLUSTERS[m].product.replace(/^DB Portrait · /,'')
-    .replace(/^Dynamic Bus · /,''):'';
+  const setLabel=m?CLUSTERS[m].product+' · '+CLUSTERS[m].label:'';
   if(S.selected.length===1){const s=S.svcs[S.selected[0]],t=termsOf(s);
     return {kind:'single',eyebrow:'Bus route',badge:s.n,color:colOf[s.n]||SELP[0],
-      title:s.name,termini:t.loop?t.from+' ⟲':t.from+'  ⇄  '+t.to,type:busType(s),combi,routes};}
+      title:s.name,termini:t.loop?t.from+' ⟲':t.from+'  ⇄  '+t.to,type:busType(s),setLabel,routes};}
   if(S.selected.length>1)
     return {kind:'multi',eyebrow:'Bus routes',badge:String(S.selected.length),color:'#1e293b',
-      title:S.selected.length+' bus routes',termini:'',type:'',combi,routes};
+      title:S.selected.length+' bus routes',termini:'',type:'',setLabel,routes};
   const aps=activePoiLayers();   // no routes, but a POI map is still worth titling
   if(aps.length===1)
     return {kind:'none',eyebrow:'Places on the map',badge:'',color:'#1e40af',
-      title:aps[0].label,termini:'',type:'',combi:'',routes:[]};
+      title:aps[0].label,termini:'',type:'',setLabel:'',routes:[]};
   return {kind:'none',eyebrow:aps.length?'Places on the map':'Transit network',badge:'',color:'#1e40af',
-    title:'Singapore Transit Atlas',termini:'',type:'',combi:'',routes:[]};
+    title:'Singapore Transit Atlas',termini:'',type:'',setLabel:'',routes:[]};
 }
 function selImpressions(){
   if(!FEATURES.demographics||!S.selected.length)return null;
@@ -2168,9 +2345,9 @@ function stampCard(x,W,H){
       x.fillStyle=tc.bg;roundRect(x,M+pad,cy,cw,19*u,6*u);x.fill();
       x.fillStyle=tc.fg;x.font=`800 ${chipF}px Inter,system-ui,sans-serif`;x.textBaseline='middle';
       x.fillText(label,M+pad+8*u,cy+9.5*u);x.textBaseline='alphabetic';}});}
-  if(info.combi){blocks.push({h:bodyF*1.2,draw:cy=>{x.fillStyle=CARD.grey;
+  if(info.setLabel){blocks.push({h:bodyF*1.2,draw:cy=>{x.fillStyle=CARD.grey;
     x.font=`600 ${bodyF*0.92}px Inter,system-ui,sans-serif`;
-    x.fillText(info.combi,M+pad,cy+bodyF);}});}
+    x.fillText(info.setLabel,M+pad,cy+bodyF);}});}
   if(S.exp.legend&&info.routes.length>1){
     const lh=pillBlock(x,info.routes,M+pad,0,inW,u,false);
     blocks.push({h:labF+7*u+lh,draw:cy=>{x.fillStyle=CARD.grey;
@@ -2299,7 +2476,7 @@ function addCard(s,info,imp){
   // tally height
   let H=P+0.24+0.66;                                   // pad+eyebrow+header
   if(single&&info.type)H+=0.30;
-  if(info.combi)H+=0.24;
+  if(info.setLabel)H+=0.24;
   if(legend)H+=0.22+py;
   if(hasCorr)H+=0.20+0.5;
   if(hasStops)H+=0.20+0.56+0.2;   // label + tile row + formula note
@@ -2324,7 +2501,7 @@ function addCard(s,info,imp){
     s.addShape('roundRect',{x:X+P,y:yy,w:1.0,h:0.24,fill:{color:hx(tc.bg)},line:{type:'none'},rectRadius:0.06});
     s.addText(info.type.toUpperCase(),{x:X+P,y:yy,w:1.0,h:0.24,fontSize:9,bold:true,color:hx(tc.fg),
       align:'center',valign:'middle',fontFace:'Inter'});yy+=0.30;}
-  if(info.combi){s.addText(info.combi,{x:X+P,y:yy,w:W-2*P,h:0.22,fontSize:10.5,color:GREY,
+  if(info.setLabel){s.addText(info.setLabel,{x:X+P,y:yy,w:W-2*P,h:0.22,fontSize:10.5,color:GREY,
     fontFace:'Inter'});yy+=0.24;}
   if(legend){s.addText('ROUTES',{x:X+P,y:yy,w:W-2*P,h:0.18,fontSize:9,bold:true,color:GREY,
     charSpacing:1.5,fontFace:'Inter'});yy+=0.22;
@@ -2371,7 +2548,7 @@ function addSummarySlide(p,info,imp){
   const s=p.addSlide();s.background={color:'FFFFFF'};
   const ag=selAgg();
   s.addText('Route summary',{x:0.55,y:0.4,w:8,h:0.5,fontSize:26,bold:true,color:INK,fontFace:'Inter'});
-  s.addText(info.combi||(ag.routes+' bus routes selected'),{x:0.56,y:0.92,w:9,h:0.3,fontSize:13,
+  s.addText(info.setLabel||(ag.routes+' bus routes selected'),{x:0.56,y:0.92,w:9,h:0.3,fontSize:13,
     color:GREY,fontFace:'Inter'});
   // stat tiles across the top
   const tiles=[['Unique bus stops',ag.unique.toLocaleString('en-SG')],
