@@ -678,7 +678,7 @@ const rBus=L.canvas({pane:'bus',padding:.4}), rPoi=L.canvas({pane:'poi',padding:
       rSel=L.canvas({pane:'sel',padding:.5});   // canvas (not SVG) so image export captures the selection
 
 // ---------------- state ----------------
-// POI categories — the 24 layers group under these 5 collapsible headers to save panel space
+// POI categories — the 28 layers group under these 5 collapsible headers to save panel space
 const POI_CATS=[
   {key:'edu',   label:'Education'},
   {key:'retail',label:'Retail & dining'},
@@ -688,7 +688,11 @@ const POI_CATS=[
 ];
 const POI=[
   {key:'schools',label:'Schools',color:'#7c3aed',file:'data/poi_schools.json',cat:'edu'},
-  {key:'ihl',label:'IHLs (universities, polys, ITE)',color:'#0891b2',file:'data/poi_ihl.json',cat:'edu'},
+  {key:'jc',label:'Junior colleges',color:'#a78bfa',file:'data/poi_jc.json',cat:'edu'},
+  {key:'uni',label:'Universities',color:'#0e7490',file:'data/poi_uni.json',cat:'edu'},
+  {key:'poly',label:'Polytechnics',color:'#0891b2',file:'data/poi_poly.json',cat:'edu'},
+  {key:'ite',label:'ITE colleges',color:'#22d3ee',file:'data/poi_ite.json',cat:'edu'},
+  {key:'arts',label:'Arts institutions',color:'#f0abfc',file:'data/poi_arts.json',cat:'edu'},
   {key:'pei',label:'Private education (PEI)',color:'#6366f1',file:'data/poi_pei.json',cat:'edu'},
   {key:'studentcare',label:'Student care',color:'#f59e0b',file:'data/poi_studentcare.json',cat:'edu'},
   {key:'malls',label:'Shopping malls',color:'#db2777',file:'data/poi_malls.json',cat:'retail'},
