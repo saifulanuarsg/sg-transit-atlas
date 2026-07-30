@@ -1,0 +1,188 @@
+[
+ {
+  "name": "Carnival Cinemas Golden Mile",
+  "lng": 103.86402,
+  "lat": 1.30189,
+  "kind": "Carnival Cinemas \u00b7 4 screens"
+ },
+ {
+  "name": "EagleWings Cinematics KAP",
+  "lng": 103.77929,
+  "lat": 1.33683,
+  "kind": "EagleWings \u00b7 5 screens"
+ },
+ {
+  "name": "Filmhouse Golden Mile",
+  "lng": 103.86402,
+  "lat": 1.30189,
+  "kind": "Filmhouse \u00b7 3 screens"
+ },
+ {
+  "name": "GV Bugis+",
+  "lng": 103.85418,
+  "lat": 1.29966,
+  "kind": "Golden Village \u00b7 8 screens"
+ },
+ {
+  "name": "GV Capitol Theatre",
+  "lng": 103.85117,
+  "lat": 1.29351,
+  "kind": "Golden Village \u00b7 1 screen"
+ },
+ {
+  "name": "GV Century Square",
+  "lng": 103.94381,
+  "lat": 1.35237,
+  "kind": "Golden Village \u00b7 6 screens"
+ },
+ {
+  "name": "GV Cineleisure",
+  "lng": 103.83647,
+  "lat": 1.3015,
+  "kind": "Golden Village \u00b7 6 screens"
+ },
+ {
+  "name": "GV City Square",
+  "lng": 103.85657,
+  "lat": 1.31141,
+  "kind": "Golden Village \u00b7 6 screens"
+ },
+ {
+  "name": "GV Djitsun Mall Bedok",
+  "lng": 103.92955,
+  "lat": 1.32613,
+  "kind": "Golden Village \u00b7 6 screens"
+ },
+ {
+  "name": "GV Downtown East",
+  "lng": 103.95464,
+  "lat": 1.37708,
+  "kind": "Golden Village \u00b7 6 screens"
+ },
+ {
+  "name": "GV Funan",
+  "lng": 103.84993,
+  "lat": 1.29142,
+  "kind": "Golden Village \u00b7 7 screens"
+ },
+ {
+  "name": "GV Grand, Great World",
+  "lng": 103.83192,
+  "lat": 1.29357,
+  "kind": "Golden Village \u00b7 5 screens"
+ },
+ {
+  "name": "GV Junction 8",
+  "lng": 103.84869,
+  "lat": 1.35059,
+  "kind": "Golden Village \u00b7 6 screens"
+ },
+ {
+  "name": "GV Jurong Point",
+  "lng": 103.70579,
+  "lat": 1.3395,
+  "kind": "Golden Village \u00b7 6 screens"
+ },
+ {
+  "name": "GV Plaza Singapura",
+  "lng": 103.84523,
+  "lat": 1.30033,
+  "kind": "Golden Village \u00b7 10 screens"
+ },
+ {
+  "name": "GV SingPost Centre",
+  "lng": 103.89482,
+  "lat": 1.31898,
+  "kind": "Golden Village \u00b7 8 screens"
+ },
+ {
+  "name": "GV Suntec City",
+  "lng": 103.8587,
+  "lat": 1.29601,
+  "kind": "Golden Village \u00b7 11 screens"
+ },
+ {
+  "name": "GV Tampines Mall",
+  "lng": 103.94467,
+  "lat": 1.35251,
+  "kind": "Golden Village \u00b7 8 screens"
+ },
+ {
+  "name": "GV VivoCity",
+  "lng": 103.82228,
+  "lat": 1.26427,
+  "kind": "Golden Village \u00b7 15 screens"
+ },
+ {
+  "name": "GV Yishun 10",
+  "lng": 103.83642,
+  "lat": 1.42992,
+  "kind": "Golden Village \u00b7 10 screens"
+ },
+ {
+  "name": "GV i12 Katong",
+  "lng": 103.90504,
+  "lat": 1.30518,
+  "kind": "Golden Village \u00b7 8 screens"
+ },
+ {
+  "name": "Oldham Theatre",
+  "lng": 103.84844,
+  "lat": 1.29333,
+  "kind": "Asian Film Archive \u00b7 1 screen"
+ },
+ {
+  "name": "SAS Cineplex Causeway Point",
+  "lng": 103.78598,
+  "lat": 1.43608,
+  "kind": "SAS Cineplex \u00b7 7 screens"
+ },
+ {
+  "name": "Shaw Theatres Balestier",
+  "lng": 103.85121,
+  "lat": 1.32499,
+  "kind": "Shaw Theatres \u00b7 11 screens"
+ },
+ {
+  "name": "Shaw Theatres Jem",
+  "lng": 103.7434,
+  "lat": 1.33329,
+  "kind": "Shaw Theatres \u00b7 10 screens"
+ },
+ {
+  "name": "Shaw Theatres Jewel",
+  "lng": 103.98975,
+  "lat": 1.36022,
+  "kind": "Shaw Theatres \u00b7 11 screens"
+ },
+ {
+  "name": "Shaw Theatres Lido",
+  "lng": 103.83151,
+  "lat": 1.30579,
+  "kind": "Shaw Theatres \u00b7 11 screens"
+ },
+ {
+  "name": "Shaw Theatres Lot One",
+  "lng": 103.74496,
+  "lat": 1.38516,
+  "kind": "Shaw Theatres \u00b7 8 screens"
+ },
+ {
+  "name": "Shaw Theatres Paya Lebar Quarter",
+  "lng": 103.89272,
+  "lat": 1.31752,
+  "kind": "Shaw Theatres \u00b7 12 screens"
+ },
+ {
+  "name": "Shaw Theatres Waterway Point",
+  "lng": 103.90211,
+  "lat": 1.40649,
+  "kind": "Shaw Theatres \u00b7 11 screens"
+ },
+ {
+  "name": "Shaw Theatres nex",
+  "lng": 103.87232,
+  "lat": 1.35057,
+  "kind": "Shaw Theatres \u00b7 10 screens"
+ }
+]

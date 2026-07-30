@@ -678,7 +678,7 @@ const rBus=L.canvas({pane:'bus',padding:.4}), rPoi=L.canvas({pane:'poi',padding:
       rSel=L.canvas({pane:'sel',padding:.5});   // canvas (not SVG) so image export captures the selection
 
 // ---------------- state ----------------
-// POI categories — the 19 layers group under these 5 collapsible headers to save panel space
+// POI categories — the 24 layers group under these 5 collapsible headers to save panel space
 const POI_CATS=[
   {key:'edu',   label:'Education'},
   {key:'retail',label:'Retail & dining'},
@@ -709,6 +709,7 @@ const POI=[
   {key:'sport',label:'SportSG facilities',color:'#65a30d',file:'data/poi_sport.json',cat:'civic'},
   {key:'hotels',label:'Hotels',color:'#b45309',file:'data/poi_hotels.json',cat:'life'},
   {key:'tourism',label:'Tourist attractions',color:'#c026d3',file:'data/poi_tourism.json',cat:'life'},
+  {key:'cinemas',label:'Cinemas',color:'#831843',file:'data/poi_cinemas.json',cat:'life'},
   {key:'remittance',label:'Remittance & money transfer',color:'#9333ea',file:'data/poi_remittance.json',cat:'life'},
 ];
 const S={svcs:{},stops:{},areas:null,pois:{},
