@@ -137,6 +137,20 @@
     border:1px solid var(--line);background:#fff;border-radius:4px;padding:3px 5px}
   .res-warn{padding:7px 12px;font-size:11.5px;color:#92400e;background:#fffbeb;
     border-bottom:1px solid #fde68a}
+  /* Persistent notice under the search box. The results list is dismissed on commit, so
+     anything the user still needs to know (tokens that matched nothing, an undo for a
+     cleared selection) is re-homed here instead of disappearing with the dropdown. */
+  #searchNotice{display:flex;align-items:center;gap:8px;margin-top:8px;padding:7px 10px;
+    border-radius:8px;font:600 11.5px/1.35 system-ui}
+  /* the id rule above outranks the UA [hidden] rule, so restate it or hiding never takes */
+  #searchNotice[hidden]{display:none}
+  #searchNotice.warn{color:#92400e;background:#fffbeb;border:1px solid #fde68a}
+  #searchNotice.undo{color:#334155;background:var(--primary-soft);border:1px solid #c7d2fe}
+  #searchNotice .sn-t{flex:1}
+  #searchNotice button{flex:none;font:700 11px/1 system-ui;cursor:pointer;border-radius:6px;
+    padding:5px 8px;border:1px solid currentColor;background:#fff;color:inherit}
+  #searchNotice .sn-x{border:none;background:none;color:#94a3b8;font-size:11px;padding:2px 4px}
+  #searchNotice .sn-x:hover{color:var(--destructive,#dc2626)}
   .res-bar{position:sticky;bottom:0;display:flex;align-items:center;gap:8px;padding:8px 12px;
     background:#fff;border-top:1px solid var(--line);box-shadow:0 -4px 12px rgba(15,23,42,.07)}
   .res-bar .pk{font-size:11.5px;color:var(--muted);overflow:hidden;
@@ -450,6 +464,7 @@
       <input id="search" placeholder="Search, or paste a list — 10, 14, 196" autocomplete="off"
         aria-label="Search a bus service, or paste several separated by commas">
       <div id="results"></div>
+      <div id="searchNotice" hidden></div>
     </div>
     <div id="leftBody">
       <div class="sec" id="routesSec" hidden>
@@ -678,7 +693,8 @@ const rBus=L.canvas({pane:'bus',padding:.4}), rPoi=L.canvas({pane:'poi',padding:
       rSel=L.canvas({pane:'sel',padding:.5});   // canvas (not SVG) so image export captures the selection
 
 // ---------------- state ----------------
-// POI categories — the 28 layers group under these 5 collapsible headers to save panel space
+// POI categories — the 32 layers group under these 5 collapsible headers to save panel space
+// (28 are offered in the place picker; the 4 brand layers live in their own McDonald's section)
 const POI_CATS=[
   {key:'edu',   label:'Education'},
   {key:'retail',label:'Retail & dining'},
@@ -687,8 +703,14 @@ const POI_CATS=[
   {key:'life',  label:'Lifestyle & services'},
 ];
 const POI=[
-  {key:'schools',label:'Schools',color:'#7c3aed',file:'data/poi_schools.json',cat:'edu'},
-  {key:'jc',label:'Junior colleges',color:'#a78bfa',file:'data/poi_jc.json',cat:'edu'},
+  // Education layers use MOE's own level and type terms. The 337-member MOE registry
+  // (poi_schools.json) is decomposed into the six below, so it is not drawn as a layer itself.
+  {key:'pri',label:'Primary schools',color:'#a78bfa',file:'data/poi_pri.json',cat:'edu'},
+  {key:'sec',label:'Secondary schools',color:'#7c3aed',file:'data/poi_sec.json',cat:'edu'},
+  {key:'jcmi',label:'Junior colleges & Millennia Inst.',color:'#4c1d95',file:'data/poi_jcmi.json',cat:'edu'},
+  {key:'ip',label:'Integrated Programme schools',color:'#e879f9',file:'data/poi_ip.json',cat:'edu'},
+  {key:'sis',label:'Specialised Independent Schools',color:'#14b8a6',file:'data/poi_sis.json',cat:'edu'},
+  {key:'spec',label:'Specialised Schools',color:'#f43f5e',file:'data/poi_spec.json',cat:'edu'},
   {key:'uni',label:'Universities',color:'#0e7490',file:'data/poi_uni.json',cat:'edu'},
   {key:'poly',label:'Polytechnics',color:'#0891b2',file:'data/poi_poly.json',cat:'edu'},
   {key:'ite',label:'ITE colleges',color:'#22d3ee',file:'data/poi_ite.json',cat:'edu'},
@@ -1072,7 +1094,7 @@ function updateClusterBtns(){
 function selectCluster(k){
   const set=CLUSTERS[k].routes.filter(n=>S.svcs[n]);
   const already=matchedCluster()===k;
-  clearSel();                       // resets selection (and clears any cluster highlight)
+  clearSel({silent:true});          // resets selection (and clears any cluster highlight)
   if(already)return;                // tapping the active cluster just clears
   set.forEach(n=>S.selected.push(n));
   renderSelection({fit:true});
@@ -1376,10 +1398,38 @@ function rankBy(key){
 }
 
 // ---------------- selection helpers ----------------
-function clearSel(){
+// ---------------- persistent notice under the search box ----------------
+// The results dropdown is hidden the moment a search commits, so anything the user still
+// needs after that moment has to live outside it. Two things do: search tokens that matched
+// no service, and an undo for a cleared selection.
+let _noticeTimer=null;
+function showNotice(kind,html,action){
+  const el=$('searchNotice');if(!el)return;
+  clearTimeout(_noticeTimer);
+  el.className=kind;
+  el.innerHTML=`<span class="sn-t">${html}</span>`
+    +(action?`<button type="button" id="snAct">${action.label}</button>`:'')
+    +'<button type="button" class="sn-x" id="snX" aria-label="Dismiss">&#10005;</button>';
+  el.hidden=false;
+  $('snX').onclick=hideNotice;
+  if(action){$('snAct').onclick=()=>{hideNotice();action.run();};
+    _noticeTimer=setTimeout(hideNotice,action.ttl||12000);}
+}
+function hideNotice(){const el=$('searchNotice');if(!el)return;
+  clearTimeout(_noticeTimer);el.hidden=true;el.innerHTML='';el.className='';}
+
+// clearSel wipes a selection the user may have spent real effort assembling — and it is
+// reachable by a bare Escape as well as the Reset button, so it needs a way back.
+function clearSel(opt){
+  const prev=S.selected.slice();
   S.selected.forEach(n=>{const s=S.svcs[n];if(s&&s._line)s._line.setStyle(busStyle());});
   S.selected=[];
   renderSelection();
+  // Only touch the notice when something was actually cleared. A second Escape (or a Reset
+  // on an already-empty selection) is a no-op and must not discard a live Undo offer.
+  if(prev.length&&!(opt&&opt.silent))
+    showNotice('undo',`Cleared <b>${prev.length}</b> route${prev.length>1?'s':''}.`,
+      {label:'Undo',run:()=>addRoutes(prev)});
 }
 function near(pois,stopsLL,km){ // count pois within km of any stop; area POIs use footprint
   const m=nearMask(pois,stopsLL,km);
@@ -1724,11 +1774,11 @@ function renderDemographics(sel,uCodes){
       <b>V3</b> will profile who is reached <b>by time of day</b> — the media-planning cut this card is missing.</div>`;
 }
 // back-compat: some callers still name single selection
-function selectRoute(n){ clearSel(); toggleRoute(n); }
+function selectRoute(n){ clearSel({silent:true}); toggleRoute(n); }
 
 // ---------------- selection: area ----------------
 function selectArea(name){
-  clearSel();
+  clearSel({silent:true});
   const st=S.areaStats[name];if(!st)return;
   S.sel=name;S.selType='area';
   const p=st.f.properties;
@@ -1763,7 +1813,7 @@ function selectArea(name){
   $('leftBody').scrollTop=0;
 }
 function wireCard(c){
-  const x=c.querySelector('.xbtn');if(x)x.onclick=clearSel;
+  const x=c.querySelector('.xbtn');if(x)x.onclick=()=>clearSel();
   c.querySelectorAll('.achip').forEach(ch=>{
     ch.onclick=()=>{if(ch.dataset.rm)toggleRoute(ch.dataset.rm);        // remove from selection
       else if(ch.dataset.svc)toggleRoute(ch.dataset.svc);};
@@ -1901,9 +1951,22 @@ function updateExportCta(){
   if(!has){const m=$('expModal');if(m)m.hidden=true;}
 }
 // chips for the place layers currently on the map (removable) — visible status when the list is a dropdown
+// Keep the picker in step with what is already drawn. The dropdown is built once at boot,
+// so without this a layer that is already on the map looks identical to one that is not —
+// with 24 options (8 of them education) you would have to read the chip row to tell.
+function syncPoiPicker(activeKeys){
+  const sel=$('poiAdd');if(!sel)return;
+  [...sel.options].forEach(o=>{
+    if(!o.value)return;
+    const on=activeKeys.includes(o.value);
+    const base=o.dataset.label||(o.dataset.label=o.text);
+    o.text=on?`✓ ${base}`:base;
+  });
+}
 function renderPoiChips(){
   const host=$('poiChips');if(!host)return;host.innerHTML='';
   const on=POI.filter(cfg=>!cfg.mcd&&groups[cfg.key]&&map.hasLayer(groups[cfg.key]));
+  syncPoiPicker(on.map(c=>c.key));
   if(!on.length){host.innerHTML='<div class="poi-empty">No places on the map yet — add one above.</div>';return;}
   const near=(S.poiScope==='near'&&S.selected.length>0);
   on.forEach(cfg=>{
@@ -2113,9 +2176,16 @@ function buildSearch(){
   }
 
   function commit(keys){
+    // Grab the misses BEFORE clearing batch — hiding the results list would otherwise take
+    // the "No such service" warning with it, and a pasted list would look fully accepted.
+    const miss=batch&&batch.miss.length?batch.miss.slice():null;
     const n=addRoutes(keys);
     pick.clear();batch=null;hits=[];
     inp.value='';res.style.display='none';
+    if(miss)showNotice('warn',
+      (n?`Added <b>${n}</b> route${n===1?'':'s'}. `:'Nothing new added. ')
+      +`No such service: <b>${esc(miss.join(', '))}</b> — check the number and search again.`);
+    else hideNotice();
     return n;
   }
 
@@ -2731,7 +2801,7 @@ $('openExport').onclick=openExport;
 $('expClose').onclick=closeExport;
 expModal.onclick=e=>{if(e.target===expModal)closeExport();};
 // reset = clear the whole selection (labelled control instead of a lone ✕)
-$('resetSel').onclick=clearSel;
+$('resetSel').onclick=()=>clearSel();
 </script>
 </body>
 </html>

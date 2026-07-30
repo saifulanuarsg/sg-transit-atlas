@@ -1,0 +1,200 @@
+[
+ {
+  "name": "Anderson Serangoon Junior College",
+  "lng": 103.88704,
+  "lat": 1.36504,
+  "kind": "Junior College"
+ },
+ {
+  "name": "Anglo-Chinese Junior College",
+  "lng": 103.78536,
+  "lat": 1.30304,
+  "kind": "Junior College",
+  "poly": [
+   [
+    [
+     103.78411,
+     1.30274
+    ],
+    [
+     103.7847,
+     1.30248
+    ],
+    [
+     103.7849,
+     1.3023
+    ],
+    [
+     103.78489,
+     1.30187
+    ],
+    [
+     103.78536,
+     1.30169
+    ],
+    [
+     103.78517,
+     1.30122
+    ],
+    [
+     103.78536,
+     1.30115
+    ],
+    [
+     103.78515,
+     1.30061
+    ],
+    [
+     103.78408,
+     1.30103
+    ],
+    [
+     103.78343,
+     1.30181
+    ],
+    [
+     103.78387,
+     1.30217
+    ],
+    [
+     103.78411,
+     1.30274
+    ]
+   ]
+  ]
+ },
+ {
+  "name": "Catholic Junior College",
+  "lng": 103.83503,
+  "lat": 1.32456,
+  "kind": "Junior College"
+ },
+ {
+  "name": "Eunoia Junior College",
+  "lng": 103.84129,
+  "lat": 1.36214,
+  "kind": "Junior College"
+ },
+ {
+  "name": "Jurong Pioneer Junior College",
+  "lng": 103.75437,
+  "lat": 1.38437,
+  "kind": "Junior College",
+  "poly": [
+   [
+    [
+     103.75291,
+     1.3846
+    ],
+    [
+     103.7528,
+     1.38439
+    ],
+    [
+     103.75292,
+     1.38392
+    ],
+    [
+     103.75292,
+     1.38353
+    ],
+    [
+     103.75436,
+     1.38304
+    ],
+    [
+     103.75451,
+     1.38329
+    ],
+    [
+     103.75456,
+     1.38357
+    ],
+    [
+     103.75433,
+     1.38393
+    ],
+    [
+     103.75433,
+     1.38408
+    ],
+    [
+     103.75385,
+     1.38436
+    ],
+    [
+     103.75291,
+     1.3846
+    ]
+   ]
+  ]
+ },
+ {
+  "name": "Millennia Institute",
+  "lng": 103.74159,
+  "lat": 1.35032,
+  "kind": "Centralised Institute",
+  "poly": [
+   [
+    [
+     103.74158,
+     1.34867
+    ],
+    [
+     103.74157,
+     1.34969
+    ],
+    [
+     103.74034,
+     1.34968
+    ],
+    [
+     103.74035,
+     1.34875
+    ],
+    [
+     103.741,
+     1.34875
+    ],
+    [
+     103.74114,
+     1.34867
+    ],
+    [
+     103.74158,
+     1.34867
+    ]
+   ]
+  ]
+ },
+ {
+  "name": "Nanyang Junior College",
+  "lng": 103.8665,
+  "lat": 1.35028,
+  "kind": "Junior College"
+ },
+ {
+  "name": "St Andrew's Junior College",
+  "lng": 103.86358,
+  "lat": 1.33307,
+  "kind": "Junior College"
+ },
+ {
+  "name": "Tampines Meridian Junior College",
+  "lng": 103.93699,
+  "lat": 1.37633,
+  "kind": "Junior College"
+ },
+ {
+  "name": "Victoria Junior College",
+  "lng": 103.91998,
+  "lat": 1.3067,
+  "kind": "Junior College"
+ },
+ {
+  "name": "Yishun Innova Junior College",
+  "lng": 103.83003,
+  "lat": 1.42427,
+  "kind": "Junior College"
+ }
+]
