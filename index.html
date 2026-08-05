@@ -247,6 +247,23 @@
   .poi-chip .pc-badge{display:inline-flex;align-items:center;justify-content:center;width:15px;
     height:15px;border-radius:50%;font:800 9px/1 system-ui;flex:none}
   .poi-chip .pc-n{font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums}
+  /* granular picks — search one place by name and put just that one on the map */
+  .pick-wrap{position:relative;margin-top:10px}
+  #poiFind{width:100%;font:600 12px/1 system-ui;padding:8px 9px;border:1px solid var(--line);
+    border-radius:8px;background:#fff;color:var(--ink,#0f172a)}
+  #poiFind:focus{outline:2px solid var(--primary);outline-offset:-1px}
+  #poiFindRes{position:absolute;left:0;right:0;top:calc(100% + 3px);z-index:60;background:#fff;
+    border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 18px rgba(15,23,42,.16);
+    max-height:220px;overflow:auto}
+  #poiFindRes[hidden]{display:none}
+  .pk-res{display:flex;align-items:center;gap:8px;padding:7px 9px;cursor:pointer;
+    font:600 12px/1.25 system-ui;border-bottom:1px solid var(--line)}
+  .pk-res:last-child{border-bottom:none}
+  .pk-res:hover,.pk-res.cur{background:var(--primary-soft)}
+  .pk-res .pk-nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pk-res .pk-cat{font:600 10px/1 system-ui;color:var(--muted);flex:none}
+  .pk-none{padding:8px 9px;font:500 11.5px/1.4 system-ui;color:var(--muted)}
+  .pick-chip .pc-l{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   /* McDonald's section — outlet toggles + competitive density */
   .mcd-sub{font:700 11px/1 system-ui;color:var(--muted);margin:11px 0 7px;display:flex;
     align-items:baseline;gap:7px}
@@ -390,6 +407,10 @@
   .rct{font:800 13px/1 system-ui;font-variant-numeric:tabular-nums;flex:none}
   .rbar-wrap{height:4px;background:var(--line);border-radius:2px;margin-top:4px;overflow:hidden}
   .rbar{height:100%;border-radius:2px}
+  /* a ranked route that is already in the selection — the list now spans the whole network,
+     so it has to say which of these 20 you are already carrying */
+  .rrow.on{background:var(--primary-soft)}
+  .rrow.on .rbadge{box-shadow:0 0 0 2px var(--primary-soft),0 0 0 3.5px var(--primary)}
 
   /* ---------- footer ---------- */
   #foot{border-top:1px solid var(--line);background:#fbfcfd;padding:9px 16px;font:500 10.5px/1.5 system-ui;
@@ -416,6 +437,17 @@
   .poi-letter{position:absolute;transform:translate(-50%,-50%);display:flex;
     align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;
     font:800 10px/1 system-ui;border:1.5px solid #fff;box-shadow:0 1px 3px rgba(15,23,42,.4)}
+  /* POI name labels — opt-in via the Places switch; halo so they read on any basemap */
+  .poi-lab{position:absolute;transform:translate(9px,-50%);white-space:nowrap;pointer-events:none;
+    font:600 10px/1 system-ui;color:#0f172a;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff}
+  .poi-lab .pl-d{display:inline-block;width:5px;height:5px;border-radius:50%;margin-right:4px;
+    vertical-align:middle}
+  /* a place picked individually — ring marker + always-on label, independent of its whole layer */
+  .pick-pin{position:absolute;transform:translate(-50%,-50%);width:13px;height:13px;border-radius:50%;
+    border:2.5px solid #fff;box-shadow:0 1px 4px rgba(15,23,42,.45)}
+  .pick-lab{position:absolute;transform:translate(11px,-50%);white-space:nowrap;pointer-events:none;
+    font:700 10.5px/1 system-ui;color:#0f172a;background:rgba(255,255,255,.82);
+    padding:2px 5px;border-radius:5px;box-shadow:0 0 0 .5px rgba(15,23,42,.12)}
   /* termini labels for the selected routes (chip so they survive image export) */
   .termlab{position:absolute;top:0;transform:translateY(-50%);white-space:nowrap;
     font:700 10.5px/1 system-ui;color:#0f172a;background:rgba(255,255,255,.58);
@@ -486,12 +518,16 @@
           see the services it contains. Counts are routes drawn.</div>
       </div>
       <div class="sec">
-        <div class="sec-lab">Reach ranking <span class="hint-txt" style="text-transform:none;letter-spacing:0">ranks your selection</span></div>
-        <select id="rankSel" aria-label="Rank selected routes by reach">
-          <option value="">Rank selected routes by…</option>
+        <div class="sec-lab">Reach ranking <span class="hint-txt" style="text-transform:none;letter-spacing:0">every route, or just yours</span></div>
+        <select id="rankSel" aria-label="Rank routes by reach">
+          <option value="">Rank routes by…</option>
         </select>
+        <div class="seg" id="rankScopeSeg" role="group" aria-label="Which routes to rank" style="margin-top:8px">
+          <button type="button" data-s="all" class="on">All trunk routes</button>
+          <button type="button" data-s="sel">My selection</button>
+        </div>
         <div id="rankNote" class="note" style="display:none">
-          Your selected routes, ranked by places within 400 m of their stops.</div>
+          Routes ranked by places within 400 m of their stops.</div>
         <div id="rankList"></div>
       </div>
     </div>
@@ -517,12 +553,23 @@
         </details>
       </div>
       <div class="sec">
-        <div class="sec-lab">Places &amp; landmarks</div>
+        <div class="sec-lab">Places &amp; landmarks <span class="hint-txt" style="text-transform:none;letter-spacing:0">hover any place for its name</span></div>
         <div class="seg" id="poiScopeSeg" role="group" aria-label="Which places to show">
           <button type="button" data-s="all" class="on">All</button>
           <button type="button" data-s="near">Within 400 m of selection</button>
         </div>
         <div id="poiToggles"></div>
+        <div class="pick-wrap">
+          <input id="poiFind" type="search" autocomplete="off" placeholder="Find one place by name…"
+            aria-label="Find a single place by name and put it on the map">
+          <div id="poiFindRes" role="listbox" aria-label="Matching places" hidden></div>
+        </div>
+        <div id="pickChips" class="poi-chips"></div>
+        <label class="mini-tgl" id="poiLabTgl" title="Show every place's name on the map">
+          <input type="checkbox" id="poiLabChk" role="switch">
+          <span>Show place names on the map</span>
+        </label>
+        <div class="note" id="poiLabNote" style="display:none"></div>
         <div class="note" id="poiScopeNote" style="display:none"></div>
       </div>
       <div class="sec sec-mcd">
@@ -553,6 +600,7 @@
         <li><b>Bus hubs</b> (54) — interchanges &amp; terminals derived from LTA stop names. <b>MRT/LRT lines &amp; stations</b> (8 lines, 182 stations) — OpenStreetMap; stations filtered to those on a drawn line (future CRL/RTS-Link stations omitted). Labels appear as you zoom in.</li>
         <li><b>Audience</b> — modelled opportunities-to-see = passenger taps (LTA DataMall, Passenger Volume by Bus Stops, Jun 2026) × catchment segment share (SingStat Census 2020: residents by planning area &amp; age; households by income). Planning areas: URA Master Plan 2019. Every figure is aggregate and modelled, not panel-measured; no individual-level data (PDPA).</li>
         <li>Places shown as areas where they span 2+ buildings, else as points. Within-400 m counts use footprints. All layers clipped to the Singapore boundary. Data compiled Jul 2026.</li>
+        <li>Hover any place for its name; <b>Show place names</b> pins the names of what's in view (overlapping ones are dropped — zoom in for those). <b>Find one place by name</b> puts a single place on the map without its whole layer, and picked places can be ranked like any layer.</li>
         <li>Basemap © OpenStreetMap contributors © CARTO.</li>
       </ul>
     </details>
@@ -684,9 +732,14 @@ map.getPane('heat').style.pointerEvents='none';
 map.createPane('rail').style.zIndex=410;   // coloured rail lines over the grey bus base
 map.createPane('sel').style.zIndex=470;
 map.createPane('pill').style.zIndex=490;   // route pills sit above their lines
+// brand-outlet letter badges: their own pane so they keep pointer events (the label pane below
+// switches them off) — without this, hovering an outlet badge never opened its name tooltip
+map.createPane('poiIcon').style.zIndex=494;
 map.createPane('label').style.zIndex=495;  // hub / station reference labels on top
 map.getPane('label').style.pointerEvents='none';
-const rBus=L.canvas({pane:'bus',padding:.4}), rPoi=L.canvas({pane:'poi',padding:.4}),
+// tolerance: a 3 px POI dot is a hard hover target — give the canvas a few px of slack so the
+// name tooltip opens when the cursor is near the dot, not only dead on it
+const rBus=L.canvas({pane:'bus',padding:.4}), rPoi=L.canvas({pane:'poi',padding:.4,tolerance:6}),
       rRail=L.canvas({pane:'rail',padding:.4}),
       rAreas=L.canvas({pane:'areas',padding:.5}),   // canvas (not default SVG) so choropleth exports aligned
       rHatch=L.canvas({pane:'areaHatch',padding:.5}),
@@ -747,6 +800,8 @@ const RAIL_NAME={EWL:'East–West Line',NSL:'North–South Line',NEL:'North East
   SKLRT:'Sengkang LRT',JRL:'Jurong Region Line (future)'};
 const groups={trunk:L.layerGroup(),rail:L.layerGroup(),hubs:L.layerGroup(),stations:L.layerGroup()};
 POI.forEach(p=>groups[p.key]=L.layerGroup());
+groups.poiLab=L.layerGroup();    // always-on place-name labels (opt-in switch)
+groups.poiPick=L.layerGroup();   // individually picked places, independent of their whole layer
 const busStyle=()=>({color:'#64748b',weight:1.8,opacity:.55});
 
 // ---------------- data load ----------------
@@ -807,25 +862,35 @@ function buildBus(){
 }
 
 // ---------------- POIs (footprint polygon where OSM has one, else a dot) -----
-function poiTip(p){return p.kind?`<b>${p.name}</b> · ${p.kind}`:p.name;}
-function poiLayer(p,color,letter,letterFg,off){
-  const tip=poiTip(p);
+function poiTip(p,cfg){
+  const sub=[p.kind,cfg&&cfg.label].filter(Boolean).join(' · ');
+  return sub?`<b>${p.name}</b><br><span style="color:#64748b">${sub}</span>`:`<b>${p.name}</b>`;
+}
+function poiLayer(p,color,letter,letterFg,off,cfg){
+  // every place answers a hover with its name — tooltips open on mouseover and follow the cursor
+  const tip=poiTip(p,cfg),tOpt={sticky:true,direction:'top',offset:[0,-4],className:'poi-tip'};
   if(p.poly&&p.poly.length){
     const shells=p.poly.map(r=>[r.map(c=>[c[1],c[0]])]); // each ring its own shell
-    return L.polygon(shells,{renderer:rPoi,color:color,weight:1.2,opacity:.9,
-      fillColor:color,fillOpacity:.28}).bindTooltip(tip);
+    const ly=L.polygon(shells,{renderer:rPoi,color:color,weight:1.2,opacity:.9,
+      fillColor:color,fillOpacity:.28}).bindTooltip(tip,tOpt);
+    ly.on('mouseover',()=>ly.setStyle({weight:2.2,fillOpacity:.45}));
+    ly.on('mouseout',()=>ly.setStyle({weight:1.2,fillOpacity:.28}));
+    return ly;
   }
   if(letter){ // brand-outlet layers: a fixed-pixel letter badge reads at any zoom, unlike a 3px dot
     // off = [dx,dy] px nudge so co-located outlets (shared postal code) fan out instead of stacking
     const dx=off?off[0]:0,dy=off?off[1]:0;
     const tf=`translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-    return L.marker([p.lat,p.lng],{pane:'label',
+    return L.marker([p.lat,p.lng],{pane:'poiIcon',
       icon:L.divIcon({className:'',iconSize:[0,0],
         html:`<span class="poi-letter" style="background:${color};color:${letterFg||'#fff'};transform:${tf}">${letter}</span>`})})
-      .bindTooltip(tip);
+      .bindTooltip(tip,{direction:'top',offset:[0,-10],className:'poi-tip'});
   }
-  return L.circleMarker([p.lat,p.lng],{renderer:rPoi,radius:3,color:'#fff',weight:1,
-    fillColor:color,fillOpacity:.92}).bindTooltip(tip);
+  const ly=L.circleMarker([p.lat,p.lng],{renderer:rPoi,radius:3,color:'#fff',weight:1,
+    fillColor:color,fillOpacity:.92}).bindTooltip(tip,tOpt);
+  ly.on('mouseover',()=>ly.setStyle({radius:5.5,weight:1.6}));
+  ly.on('mouseout',()=>ly.setStyle({radius:3,weight:1}));
+  return ly;
 }
 // Outlets that share a postal code geocode to the SAME point, so their letter badges land on top
 // of each other and only one shows. Group points by ~11 m cell and fan each cluster out by a few
@@ -849,15 +914,195 @@ function buildPois(){
   POI.forEach(cfg=>{
     const pts=S.pois[cfg.key]||[];
     const offs=cfg.letter?poiFanOffsets(pts):null;   // fan only the letter-badge (brand) layers
-    S.poiItems[cfg.key]=pts.map((p,i)=>({p,layer:poiLayer(p,cfg.color,cfg.letter,cfg.letterFg,offs?offs[i]:null)}));
+    S.poiItems[cfg.key]=pts.map((p,i)=>({p,layer:poiLayer(p,cfg.color,cfg.letter,cfg.letterFg,offs?offs[i]:null,cfg)}));
     S.poiItems[cfg.key].forEach(it=>groups[cfg.key].addLayer(it.layer));
   });
 }
 // place layers currently drawn on the map — powers the export legend + on-screen chips
 function activePoiLayers(){
-  return POI.filter(cfg=>groups[cfg.key]&&map.hasLayer(groups[cfg.key]))
+  const rows=POI.filter(cfg=>groups[cfg.key]&&map.hasLayer(groups[cfg.key]))
     .map(cfg=>({key:cfg.key,label:cfg.label,color:cfg.color,letter:cfg.letter,
       letterFg:cfg.letterFg,count:(S.pois[cfg.key]||[]).length}));
+  // individually picked places are on the map too, so they belong in the exported legend
+  const picks=(S.picks||[]);
+  picks.slice(0,6).forEach(x=>rows.push({key:'pick:'+x.key+'#'+x.idx,label:x.p.name,
+    color:x.cfg.color,letter:null,letterFg:null,count:''}));
+  if(picks.length>6)rows.push({key:'pick:more',label:`+${picks.length-6} more picked places`,
+    color:'#94a3b8',letter:null,letterFg:null,count:''});
+  return rows;
+}
+
+// ---------------- place-name labels (hover always; always-on behind a switch) ----
+// Hovering any place opens its name. The switch below pins the names on instead, for reading a
+// whole area at a glance (and for exports). Only what is in view is drawn, overlaps are dropped
+// and the total is capped — 1,800 F&B names at island zoom would be a grey smear, not a map.
+S.poiLabels=false;
+const POI_LAB_MAX=220;             // most labels drawn at once
+const poiLabPos=p=>p.poly&&p.poly.length   // footprint places label from their first ring's centre
+  ?(()=>{const r=p.poly[0];let x=0,y=0;r.forEach(c=>{x+=c[0];y+=c[1];});
+     return[y/r.length,x/r.length];})()
+  :[p.lat,p.lng];
+function poiLabMarker(ll,text,color){
+  return L.marker(ll,{pane:'label',interactive:false,icon:L.divIcon({className:'',iconSize:[0,0],
+    html:`<span class="poi-lab"><i class="pl-d" style="background:${color}"></i>${esc(text)}</span>`})});
+}
+function renderPoiLabels(){
+  const g=groups.poiLab,note=$('poiLabNote');
+  g.clearLayers();
+  const setNote=t=>{if(!note)return;note.textContent=t||'';note.style.display=t?'':'none';};
+  if(!S.poiLabels){setNote('');return;}
+  if(!map.hasLayer(g))g.addTo(map);
+  const live=POI.filter(cfg=>groups[cfg.key]&&map.hasLayer(groups[cfg.key]));
+  if(!live.length){setNote('Add a place layer above and its names will appear here.');return;}
+  const b=map.getBounds(),placed=[],cand=[];
+  live.forEach(cfg=>{
+    (S.poiItems[cfg.key]||[]).forEach((it,i)=>{
+      if(!groups[cfg.key].hasLayer(it.layer))return;   // respects the 400 m scope filter
+      // a picked place already carries its own always-on label — don't print the name twice
+      if(S.picks.some(x=>x.key===cfg.key&&x.idx===i))return;
+      const ll=poiLabPos(it.p);
+      if(!b.contains(ll))return;
+      cand.push({ll,name:it.p.name,color:cfg.color});
+    });
+  });
+  cand.sort((a,z)=>z.ll[0]-a.ll[0]);   // north to south, so the order is stable as you pan
+  let drawn=0;
+  for(const c of cand){
+    if(drawn>=POI_LAB_MAX)break;
+    const p=map.latLngToContainerPoint(c.ll);
+    const w=Math.min(c.name.length,26)*5.6+18,x0=p.x+4,y0=p.y-7;   // approx label box
+    let clash=false;
+    for(const r of placed){
+      if(x0<r[0]+r[2]&&x0+w>r[0]&&y0<r[1]+14&&y0+14>r[1]){clash=true;break;}}
+    if(clash)continue;
+    placed.push([x0,y0,w]);
+    g.addLayer(poiLabMarker(c.ll,c.name.length>30?c.name.slice(0,29)+'…':c.name,c.color));
+    drawn++;
+  }
+  const hidden=cand.length-drawn;
+  setNote(hidden>0
+    ?`Naming ${drawn} of ${cand.length} places in view — zoom in for the ${hidden} the labels don't fit.`
+    :`Naming all ${drawn} place${drawn===1?'':'s'} in view.`);
+}
+function setPoiLabels(on){
+  S.poiLabels=!!on;
+  const chk=$('poiLabChk');if(chk)chk.checked=S.poiLabels;
+  if(S.poiLabels)groups.poiLab.addTo(map);else map.removeLayer(groups.poiLab);
+  renderPoiLabels();
+}
+
+// ---------------- granular picks: one place at a time, by name --------------------
+// Whole-layer toggles are blunt — "all 532 supermarkets" when the question is about three of them.
+// The finder searches every loaded place by name and pins just the one you choose, with its name
+// always on, independent of whether its layer is drawn.
+S.picks=[];   // [{key,idx,p,cfg,layer,label}]
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function poiSearchIndex(){
+  if(S._poiIdx)return S._poiIdx;
+  const idx=[];
+  POI.forEach(cfg=>(S.pois[cfg.key]||[]).forEach((p,i)=>{
+    if(p&&p.name)idx.push({key:cfg.key,idx:i,p,cfg,q:p.name.toLowerCase()});}));
+  return S._poiIdx=idx;
+}
+function findPlaces(term,limit){
+  const q=term.trim().toLowerCase();if(q.length<2)return[];
+  const starts=[],has=[];
+  for(const r of poiSearchIndex()){
+    const at=r.q.indexOf(q);if(at<0)continue;
+    (at===0?starts:has).push(r);
+    if(starts.length>=limit)break;
+  }
+  return starts.concat(has).slice(0,limit);
+}
+const pickId=r=>r.key+'#'+r.idx;
+const isPicked=r=>S.picks.some(x=>pickId(x)===pickId(r));
+function addPick(r,opt){
+  if(isPicked(r))return;
+  const ll=[r.p.lat,r.p.lng],col=r.cfg.color;
+  const pin=L.marker(ll,{pane:'poiIcon',icon:L.divIcon({className:'',iconSize:[0,0],
+    html:`<span class="pick-pin" style="background:${col}"></span>`})})
+    .bindTooltip(poiTip(r.p,r.cfg),{direction:'top',offset:[0,-10]});
+  const lab=L.marker(ll,{pane:'label',interactive:false,icon:L.divIcon({className:'',iconSize:[0,0],
+    html:`<span class="pick-lab">${esc(r.p.name)}</span>`})});
+  let shape=null;
+  if(r.p.poly&&r.p.poly.length){   // pinned footprint reads as the same place, outlined harder
+    shape=L.polygon(r.p.poly.map(ring=>[ring.map(c=>[c[1],c[0]])]),
+      {renderer:rPoi,color:col,weight:2.4,opacity:1,fillColor:col,fillOpacity:.22,interactive:false});
+    groups.poiPick.addLayer(shape);
+  }
+  groups.poiPick.addLayer(pin);groups.poiPick.addLayer(lab);
+  if(!map.hasLayer(groups.poiPick))groups.poiPick.addTo(map);
+  S.picks.push({...r,pin,lab,shape});
+  if(opt&&opt.fly)map.setView(ll,Math.max(map.getZoom(),16),{animate:true});
+  renderPickChips();updateExportCta();renderPoiLabels();
+  const rk=$('rankSel');if(rk&&rk.value==='__picks')rankBy('__picks');
+}
+function removePick(id){
+  const i=S.picks.findIndex(x=>pickId(x)===id);if(i<0)return;
+  const x=S.picks[i];
+  [x.pin,x.lab,x.shape].forEach(l=>{if(l)groups.poiPick.removeLayer(l);});
+  S.picks.splice(i,1);
+  renderPickChips();updateExportCta();renderPoiLabels();
+  const rk=$('rankSel');if(rk&&rk.value==='__picks')rankBy('__picks');
+}
+function clearPicks(){[...S.picks].forEach(x=>removePick(pickId(x)));}
+function renderPickChips(){
+  syncRankPicksOption();   // the ranking can target the picks, so keep its option in step
+  const host=$('pickChips');if(!host)return;host.innerHTML='';
+  if(!S.picks.length)return;
+  S.picks.forEach(x=>{
+    const chip=document.createElement('span');chip.className='poi-chip pick-chip';
+    chip.innerHTML=`<span class="dot" style="background:${x.cfg.color}"></span>`
+      +`<span class="pc-l" title="${esc(x.p.name)} · ${esc(x.cfg.label)}">${esc(x.p.name)}</span>`
+      +`<button class="pc-x" aria-label="Remove ${esc(x.p.name)}" title="Remove">&#10005;</button>`;
+    chip.querySelector('.pc-l').onclick=()=>map.setView([x.p.lat,x.p.lng],Math.max(map.getZoom(),16));
+    chip.querySelector('.pc-x').onclick=()=>removePick(pickId(x));
+    host.appendChild(chip);
+  });
+  const cl=document.createElement('button');cl.type='button';cl.className='poi-chip';
+  cl.style.cursor='pointer';cl.textContent='Clear picked places';
+  cl.onclick=clearPicks;host.appendChild(cl);
+}
+function buildPlaceFinder(){
+  const inp=$('poiFind'),res=$('poiFindRes');if(!inp||!res)return;
+  let cur=-1,rows=[];
+  const close=()=>{res.hidden=true;res.innerHTML='';cur=-1;rows=[];};
+  const draw=()=>{
+    rows=findPlaces(inp.value,12);
+    if(!inp.value.trim()){close();return;}
+    if(!rows.length){res.innerHTML='<div class="pk-none">No place with that name.</div>';
+      res.hidden=false;return;}
+    res.innerHTML=rows.map((r,i)=>{
+      const on=isPicked(r);
+      return `<div class="pk-res${i===cur?' cur':''}" role="option" data-i="${i}">`
+        +`<span class="dot" style="background:${r.cfg.color}"></span>`
+        +`<span class="pk-nm">${on?'✓ ':''}${esc(r.p.name)}</span>`
+        +`<span class="pk-cat">${esc(r.cfg.label)}</span></div>`;}).join('');
+    res.hidden=false;
+    res.querySelectorAll('.pk-res').forEach(el=>{
+      el.onclick=()=>{const r=rows[+el.dataset.i];
+        isPicked(r)?removePick(pickId(r)):addPick(r,{fly:true});
+        inp.value='';close();};
+    });
+  };
+  inp.oninput=draw;
+  inp.onfocus=()=>{if(inp.value.trim())draw();};
+  inp.onkeydown=e=>{
+    if(e.key==='Escape'){close();inp.blur();return;}
+    if(!rows.length)return;
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+      e.preventDefault();cur=(cur+(e.key==='ArrowDown'?1:rows.length-1))%rows.length;
+      res.querySelectorAll('.pk-res').forEach((el,i)=>el.classList.toggle('cur',i===cur));
+    }else if(e.key==='Enter'){
+      e.preventDefault();const r=rows[cur<0?0:cur];if(!r)return;
+      isPicked(r)?removePick(pickId(r)):addPick(r,{fly:true});
+      inp.value='';close();
+    }
+  };
+  document.addEventListener('click',e=>{if(!res.contains(e.target)&&e.target!==inp)close();});
+  const chk=$('poiLabChk');
+  if(chk)chk.onchange=()=>setPoiLabels(chk.checked);
+  map.on('moveend',renderPoiLabels);
 }
 
 // ---------------- rail lines in official colours, per-line focus ----------------
@@ -1044,6 +1289,7 @@ function buildPanel(){
   pt.appendChild(chips);
   add.onchange=()=>{if(add.value){poiSetOn(add.value,true);add.value='';}};
   renderPoiChips();
+  buildPlaceFinder();
   document.querySelectorAll('#poiScopeSeg button').forEach(b=>b.onclick=()=>{
     S.poiScope=b.dataset.s;
     document.querySelectorAll('#poiScopeSeg button').forEach(x=>x.classList.toggle('on',x===b));
@@ -1304,6 +1550,7 @@ function buildPropertyHeatmaps(){
 
 // ---------------- reach ranking (turns the map into a planner) ----------------
 S._rankCache={};
+S.rankScope='all';   // rank every trunk route by default; 'sel' narrows to the selection
 function buildRanking(){
   const sel=$('rankSel');
   POI.forEach(cfg=>{
@@ -1312,6 +1559,23 @@ function buildRanking(){
     o.textContent='Routes reaching '+cfg.label.toLowerCase();sel.appendChild(o);
   });
   sel.onchange=()=>rankBy(sel.value);
+  document.querySelectorAll('#rankScopeSeg button').forEach(b=>b.onclick=()=>{
+    S.rankScope=b.dataset.s;
+    document.querySelectorAll('#rankScopeSeg button').forEach(x=>x.classList.toggle('on',x===b));
+    rankBy(sel.value);
+  });
+}
+// the picked-places option only exists while there are picks to rank against
+function syncRankPicksOption(){
+  const sel=$('rankSel');if(!sel)return;
+  let o=[...sel.options].find(x=>x.value==='__picks');
+  if(S.picks.length){
+    if(!o){o=document.createElement('option');o.value='__picks';sel.insertBefore(o,sel.options[1]||null);}
+    o.textContent=`Routes reaching your ${S.picks.length} picked place${S.picks.length>1?'s':''}`;
+  }else if(o){
+    const was=sel.value==='__picks';o.remove();
+    if(was){sel.value='';rankBy('');}
+  }
 }
 // inverted index: stop -> trunk routes, plus a global grid of trunk-served stops.
 // Ranking then scans each POI once (find nearby stops -> credit their routes),
@@ -1356,33 +1620,51 @@ function routesNearPoi(p,km,found){
     }
   }
 }
+function rankPoints(key){   // what a ranking counts: a whole layer, or just the picked places
+  return key==='__picks'?S.picks.map(x=>x.p):(S.pois[key]||[]);
+}
 function computeRank(key){
-  if(S._rankCache[key])return S._rankCache[key];
+  if(key!=='__picks'&&S._rankCache[key])return S._rankCache[key];
   buildStopIndex();
   const counts={};
   Object.values(S.svcs).forEach(s=>{if(!s.feeder)counts[s.n]=0;});
-  (S.pois[key]||[]).forEach(p=>{const found=new Set();routesNearPoi(p,.4,found);
+  rankPoints(key).forEach(p=>{const found=new Set();routesNearPoi(p,.4,found);
     found.forEach(n=>{if(counts[n]!=null)counts[n]++;});});
   const scored=Object.entries(counts).map(([num,ct])=>({s:S.svcs[num],n:ct}))
     .sort((a,b)=>b.n-a.n);
-  S._rankCache[key]=scored;return scored;
+  if(key!=='__picks')S._rankCache[key]=scored;   // picks change often — never cached
+  return scored;
 }
 function rankBy(key){
   const list=$('rankList'),note=$('rankNote');
   list.innerHTML='';
   if(!key){note.style.display='none';return;}
   note.style.display='';
-  if(!S.selected.length){   // ranking now reflects the on-screen selection, not all 293 trunk routes
-    list.innerHTML='<div class="placeholder">Pick one or more routes first — this ranks the routes you\'ve selected.</div>';
+  const sel=S.rankScope==='sel';
+  if(sel&&!S.selected.length){
+    note.textContent='Ranking your selection — pick routes, or switch to all trunk routes.';
+    list.innerHTML='<div class="placeholder">No routes selected yet. Tap <b>All trunk routes</b> above to rank the whole network instead.</div>';
     return;}
   list.innerHTML='<div class="placeholder">Ranking…</div>';
-  const cfg=POI.find(c=>c.key===key);
+  const cfg=key==='__picks'
+    ?{color:'#1e40af',label:'your picked places'}
+    :POI.find(c=>c.key===key);
+  const what=key==='__picks'?`your ${S.picks.length} picked place${S.picks.length>1?'s':''}`
+    :cfg.label.toLowerCase();
+  note.textContent=sel
+    ?`Your ${S.selected.length} selected route${S.selected.length>1?'s':''}, ranked by ${what} within 400 m of their stops.`
+    :`Every trunk route, ranked by ${what} within 400 m of its stops. Tap a route to add it to the selection.`;
   setTimeout(()=>{
-    const scored=computeRank(key).filter(r=>isSel(r.s.n));   // only the selected routes
+    const all=computeRank(key);
+    const scored=(sel?all.filter(r=>isSel(r.s.n)):all).filter(r=>r.n>0);
     const max=scored.length?Math.max(1,scored[0].n):1;
     list.innerHTML='';
+    if(!scored.length){
+      list.innerHTML=`<div class="placeholder">No ${sel?'selected ':''}route passes within 400 m of ${what}.</div>`;
+      return;}
     scored.slice(0,20).forEach((r,i)=>{
-      const row=document.createElement('div');row.className='rrow';
+      const row=document.createElement('div');row.className='rrow'+(isSel(r.s.n)?' on':'');
+      row.title=(isSel(r.s.n)?'In your selection — tap to remove':'Tap to add to your selection');
       row.innerHTML=`<span class="rk">${i+1}</span>`
         +`<span class="rbadge">${r.s.n}</span>`
         +`<div class="rmid"><div class="rtop">`
@@ -1927,6 +2209,7 @@ function applyPoiScope(){
       :'Select routes first — showing all places until then.';}
   else note.style.display='none';
   renderPoiChips();   // keep chip counts in step with the scope
+  renderPoiLabels();  // labels follow whatever the scope leaves on the map
   if(typeof renderMcdOutlets==='function')renderMcdOutlets();   // keep McDonald's toggles in sync
 }
 // add / remove a place layer, then refresh scope + chips
@@ -1943,6 +2226,7 @@ function poiSetOn(key,on){
 function anyMapContent(){
   return S.selected.length>0
     || POI.some(cfg=>groups[cfg.key]&&map.hasLayer(groups[cfg.key]))
+    || (S.picks&&S.picks.length>0)
     || (S.segment&&S.segment!=='none');
 }
 function updateExportCta(){
