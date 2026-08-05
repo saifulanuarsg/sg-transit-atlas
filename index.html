@@ -2707,8 +2707,10 @@ function tilesReady(){
     baseTiles.once('load',()=>setTimeout(fin,140));
     setTimeout(fin,1800);});
 }
-// render the map at w×h px, framed on the selection, return a scale-2 canvas
-async function captureFramed(w,h){
+// render the map at w×h px, framed on the selection, return a scale-2 canvas.
+// opts.avoidLeft (CSS px): extra left fit-padding so content clears an overlay card
+// stamped on the left of the frame — routes must never hide behind the card.
+async function captureFramed(w,h,opts){
   if(typeof html2canvas==='undefined')throw new Error('image library not loaded');
   const el=$('map');
   const view={c:map.getCenter(),z:map.getZoom()};
@@ -2721,7 +2723,8 @@ async function captureFramed(w,h){
   map.invalidateSize({animate:false});
   S.exportMode=true;                 // termini: show every one, at a smaller size
   const b=selectionBounds(),pad=Math.round(Math.min(w,h)*0.055);
-  if(b)map.fitBounds(b,{padding:[pad,pad],animate:false});
+  const padL=pad+((opts&&opts.avoidLeft)||0);
+  if(b)map.fitBounds(b,{paddingTopLeft:[padL,pad],paddingBottomRight:[pad,pad],animate:false});
   await new Promise(r=>{map.once('moveend',r);setTimeout(r,350);});
   if(S.selected.length)placeTermini();   // re-lay the termini at export sizing for this frame
   await tilesReady();
@@ -2771,6 +2774,7 @@ function pillBlock(x,routes,xL,cyTop,maxW,u,draw){
 function stampCard(x,W,H){
   H=H||W;   // JPG is square; card anchors to the bottom-left corner (over the sea, off the routes)
   const info=titleInfo(),imp=impForExport(),u=W/1000,single=info.kind==='single';
+  if(info.kind==='multi')info.badge='';   // "6 bus routes" already carries the count — no badge echo
   x.textBaseline='alphabetic';
   const M=26*u,pad=20*u,cardW=Math.min(W-2*M,398*u),inW=cardW-2*pad;
   const eyeF=12*u,badgeF=info.badge.length<=2?32*u:(info.badge.length<=3?26*u:20*u),
@@ -2850,7 +2854,8 @@ function stampCard(x,W,H){
     x.font=`600 ${statF}px Inter,system-ui,sans-serif`;x.fillStyle=CARD.grey;
     x.fillText('impressions · 12 weeks',M+pad+w2,cy+statF*2+9*u);}});}
   const cardH=pad+eyeF+10*u+headH+blocks.reduce((a,b)=>a+G+b.h,0)+pad;
-  const topY=H-cardH-M;   // bottom-left corner
+  // bottom-left corner, lifted clear of the source strip so the two never collide
+  const topY=H-cardH-M-56*u;
   // card background
   x.save();x.shadowColor='rgba(15,23,42,.16)';x.shadowBlur=20*u;x.shadowOffsetY=5*u;
   x.fillStyle='#ffffff';roundRect(x,M,topY,cardW,cardH,15*u);x.fill();x.restore();
@@ -2888,7 +2893,8 @@ async function exportJPG(){
   try{
     await ensureExportData();
     const side=Math.round(Math.max(680,Math.min(window.innerWidth-8,window.innerHeight-8,1080)));
-    const mc=await captureFramed(side,side);
+    // the card occupies the left ~42% strip — shift the framing so routes clear it entirely
+    const mc=await captureFramed(side,side,{avoidLeft:Math.round(side*0.42)});
     const cv=document.createElement('canvas');cv.width=mc.width;cv.height=mc.height;
     const x=cv.getContext('2d');
     x.drawImage(mc,0,0);
@@ -2902,90 +2908,81 @@ async function exportJPG(){
 
 // ================= PPTX =================
 const hx=h=>h.replace('#','');
-// map-slide title card as native editable shapes (mirrors the JPG card, un-branded)
-function addCard(s,info,imp){
-  const INK=hx(CARD.ink),SUB=hx(CARD.sub),GREY=hx(CARD.grey);
-  const single=info.kind==='single';
-  const X=0.35,P=0.22,W=single?4.7:4.3,badgeW=info.badge.length<=3?0.9:1.3;
-  // pre-measure legend rows so the card height fits
-  const legend=S.exp.legend&&info.routes.length>1;
-  const pillPos=[];let py=0;
-  if(legend){let px=0,row=0;const maxW=W-2*P;
-    info.routes.forEach(r=>{const w=Math.max(0.42,0.085*(''+r.n).length+0.22);
-      if(px>0&&px+w>maxW){px=0;row++;}pillPos.push({x:px,row,w,color:r.color,n:r.n});px+=w+0.08;});
-    py=(row+1)*0.36;}
-  const corridorRoads=(S.exp.corridor&&single)?routeCorridor(info.badge):[];
-  const hasCorr=corridorRoads.length>0;
-  const hasStops=S.exp.stops;
-  const aps=activePoiLayers();
-  // tally height
-  let H=P+0.24+0.66;                                   // pad+eyebrow+header
-  if(single&&info.type)H+=0.30;
-  if(info.setLabel)H+=0.24;
-  if(legend)H+=0.22+py;
-  if(hasCorr)H+=0.20+0.5;
-  if(hasStops)H+=0.20+0.56+0.2;   // label + tile row + formula note
-  if(aps.length)H+=0.20+aps.length*0.28;
-  if(imp)H+=0.66;
-  H+=P;
-  // bottom-left corner — sits over Jurong Island / the sea (no buses), so it rarely covers routes
-  const Y=7.5-H-0.32;
-  s.addShape('roundRect',{x:X,y:Y,w:W,h:H,fill:{color:'FFFFFF'},line:{color:hx(CARD.line),width:1},
-    rectRadius:0.10,shadow:{type:'outer',color:'0F172A',opacity:0.18,blur:9,offset:3,angle:90}});
-  let yy=Y+P;
-  s.addText(info.eyebrow.toUpperCase(),{x:X+P,y:yy,w:W-2*P,h:0.2,fontSize:10,bold:true,
-    color:GREY,charSpacing:2,fontFace:'Inter'});yy+=0.24;
-  if(info.badge){s.addShape('roundRect',{x:X+P,y:yy,w:badgeW,h:0.6,fill:{color:hx(info.color)},
-    line:{type:'none'},rectRadius:0.1});
-    s.addText(info.badge,{x:X+P,y:yy,w:badgeW,h:0.6,fontSize:info.badge.length<=3?25:18,bold:true,
-      color:'FFFFFF',align:'center',valign:'middle',fontFace:'Inter'});}
-  s.addText(single?info.termini:info.title,{x:X+P+(info.badge?badgeW+0.16:0),y:yy,
-    w:W-2*P-(info.badge?badgeW+0.16:0),h:0.6,fontSize:single?15:18,bold:true,color:INK,
-    valign:'middle',fontFace:'Inter'});yy+=0.66;
-  if(single&&info.type){const tc=TYPE_C[info.type]||TYPE_C.Trunk;
-    s.addShape('roundRect',{x:X+P,y:yy,w:1.0,h:0.24,fill:{color:hx(tc.bg)},line:{type:'none'},rectRadius:0.06});
-    s.addText(info.type.toUpperCase(),{x:X+P,y:yy,w:1.0,h:0.24,fontSize:9,bold:true,color:hx(tc.fg),
-      align:'center',valign:'middle',fontFace:'Inter'});yy+=0.30;}
-  if(info.setLabel){s.addText(info.setLabel,{x:X+P,y:yy,w:W-2*P,h:0.22,fontSize:10.5,color:GREY,
-    fontFace:'Inter'});yy+=0.24;}
-  if(legend){s.addText('ROUTES',{x:X+P,y:yy,w:W-2*P,h:0.18,fontSize:9,bold:true,color:GREY,
-    charSpacing:1.5,fontFace:'Inter'});yy+=0.22;
-    pillPos.forEach(pp=>{s.addShape('roundRect',{x:X+P+pp.x,y:yy+pp.row*0.36,w:pp.w,h:0.28,
-      fill:{color:hx(pp.color)},line:{type:'none'},rectRadius:0.14});
-      s.addText(pp.n,{x:X+P+pp.x,y:yy+pp.row*0.36,w:pp.w,h:0.28,fontSize:11,bold:true,color:'FFFFFF',
-        align:'center',valign:'middle',fontFace:'Inter'});});yy+=py;}
-  if(hasCorr){s.addText('CORRIDOR · '+corridorRoads.length+' ROADS',{x:X+P,y:yy,w:W-2*P,h:0.18,
-    fontSize:9,bold:true,color:GREY,charSpacing:1.5,fontFace:'Inter'});yy+=0.20;
-    s.addText(corridorRoads.join('  ·  '),{x:X+P,y:yy,w:W-2*P,h:0.5,fontSize:9.5,color:SUB,
-      fontFace:'Inter',valign:'top'});yy+=0.5;}
-  if(hasStops){const ag=selAgg();
-    // the three coverage stats as a mini tile row: unique · covered/day (×2×7) · avg per route
-    const uni=single?S.svcs[info.badge].sc:ag.unique, cov=uni*DIRS*TRIPS_DAY, avg=single?uni:ag.avg;
-    const cells=[['Unique bus stops',fmt(uni)],['Stops covered / day',fmt(cov)]];
-    if(!single)cells.push(['Avg stops / route',fmt(avg)]);
-    s.addText('STOPS & COVERAGE',{x:X+P,y:yy,w:W-2*P,h:0.18,fontSize:9,bold:true,color:GREY,
-      charSpacing:1.5,fontFace:'Inter'});yy+=0.20;
-    const cw=(W-2*P)/cells.length;
-    cells.forEach((c,i)=>{s.addText(c[1],{x:X+P+i*cw,y:yy,w:cw,h:0.3,fontSize:16,bold:true,color:INK,
-        fontFace:'Inter'});
-      s.addText(c[0].toUpperCase(),{x:X+P+i*cw,y:yy+0.3,w:cw,h:0.2,fontSize:7,bold:true,color:GREY,
-        charSpacing:0.2,fontFace:'Inter'});});yy+=0.56;
-    s.addText('Covered / day = unique × '+DIRS+' directions × '+TRIPS_DAY+' trips.',
-      {x:X+P,y:yy,w:W-2*P,h:0.16,fontSize:7.5,italic:true,color:GREY,fontFace:'Inter'});yy+=0.2;}
-  if(aps.length){s.addText('LEGEND',{x:X+P,y:yy,w:W-2*P,h:0.18,fontSize:9,bold:true,
-    color:GREY,charSpacing:1.5,fontFace:'Inter'});yy+=0.20;
-    aps.forEach(l=>{s.addShape('ellipse',{x:X+P,y:yy+0.02,w:0.22,h:0.22,fill:{color:hx(l.color)},line:{type:'none'}});
-      if(l.letter)s.addText(l.letter,{x:X+P,y:yy+0.02,w:0.22,h:0.22,fontSize:9,bold:true,
-        color:hx(l.letterFg||'#ffffff'),align:'center',valign:'middle',fontFace:'Inter'});
-      s.addText(l.label,{x:X+P+0.3,y:yy,w:W-2*P-0.9,h:0.26,fontSize:10.5,color:INK,valign:'middle',fontFace:'Inter'});
-      s.addText(String(l.count),{x:X+P,y:yy,w:W-2*P,h:0.26,fontSize:10.5,bold:true,color:GREY,
-        align:'right',valign:'middle',fontFace:'Inter'});yy+=0.28;});}
-  if(imp){s.addText([{text:'≈ '+fmt(imp.wd)+' ',options:{bold:true,color:INK,fontSize:13,fontFace:'Inter'}},
-    {text:'daily impressions',options:{color:GREY,fontSize:11,fontFace:'Inter'}}],
-    {x:X+P,y:yy,w:W-2*P,h:0.3,valign:'middle'});yy+=0.32;
-    s.addText([{text:'≈ '+cf(imp.w12)+' ',options:{bold:true,color:INK,fontSize:13,fontFace:'Inter'}},
-      {text:'impressions · 12 weeks',options:{color:GREY,fontSize:11,fontFace:'Inter'}}],
-      {x:X+P,y:yy,w:W-2*P,h:0.3,valign:'middle'});}
+// HERO MAP slide — the reference layout: eyebrow pill + title, a big framed map on the left,
+// and a stats rail on the right. The map is never covered; the rail carries what the old
+// floating card used to. Brand accents are one constant swap away from any other client.
+const BRAND={pink:'F0245E',navy:'1B2D8A',wordmark:'MOOVE MEDIA'};
+function addHeroMapSlide(p,img,info,imp){
+  const GREY=hx(CARD.grey),SUB=hx(CARD.sub),LINE=hx(CARD.line);
+  const s=p.addSlide();s.background={color:'FFFFFF'};
+  const single=info.kind==='single',aps=activePoiLayers();
+  // eyebrow pill — the package / product code a seller quotes ("Core corridors · City")
+  const eye=(info.setLabel||info.eyebrow).toUpperCase();
+  const eyeW=Math.max(1.1,eye.length*0.082+0.36);
+  s.addShape('roundRect',{x:0.4,y:0.34,w:eyeW,h:0.4,fill:{color:BRAND.pink},line:{type:'none'},rectRadius:0.09});
+  s.addText(eye,{x:0.4,y:0.34,w:eyeW,h:0.4,fontSize:11,bold:true,color:'FFFFFF',
+    align:'center',valign:'middle',charSpacing:1.4,fontFace:'Inter'});
+  // title — the count lives here, so no badge repeats it (US-15)
+  const title=single?info.badge+'  ·  '+info.termini:info.title;
+  s.addText(title,{x:0.38,y:0.78,w:12.5,h:0.72,fontSize:34,bold:true,color:BRAND.pink,
+    valign:'middle',fontFace:'Inter'});
+  // the map — as big as the layout allows, framed, nothing on top of it (US-14)
+  const MX=0.4,MY=1.62,MW=9.55,MH=5.3;
+  s.addImage({data:img,x:MX,y:MY,w:MW,h:MH});
+  s.addShape('rect',{x:MX,y:MY,w:MW,h:MH,fill:{type:'none'},line:{color:LINE,width:1.25}});
+  // ---- right rail ----
+  const RX=10.15,RW=2.78;let ry=MY;
+  const railLabel=t=>{s.addText(t,{x:RX,y:ry,w:RW,h:0.24,fontSize:10,bold:true,color:BRAND.pink,
+    charSpacing:1.6,fontFace:'Inter'});ry+=0.3;};
+  if(info.routes.length){
+    railLabel('ROUTES');
+    const perRow=4,pw=(RW-(perRow-1)*0.08)/perRow,ph=0.36,shown=info.routes.slice(0,12);
+    shown.forEach((r,i)=>{const rx=RX+(i%perRow)*(pw+0.08),ryy=ry+Math.floor(i/perRow)*(ph+0.09);
+      s.addShape('roundRect',{x:rx,y:ryy,w:pw,h:ph,fill:{color:hx(r.color)},line:{type:'none'},rectRadius:0.05});
+      s.addText(r.n,{x:rx,y:ryy,w:pw,h:ph,fontSize:11,bold:true,color:'FFFFFF',
+        align:'center',valign:'middle',fontFace:'Inter'});});
+    ry+=Math.ceil(shown.length/perRow)*(ph+0.09)+0.02;
+    if(info.routes.length>shown.length){
+      s.addText('+'+(info.routes.length-shown.length)+' more',{x:RX,y:ry,w:RW,h:0.22,fontSize:9,
+        color:GREY,fontFace:'Inter'});ry+=0.26;}
+    ry+=0.14;
+  }
+  // stats — number left, quiet label right (mock layout); pink marks the money number
+  const stat=(v,l,pink)=>{
+    s.addText(v,{x:RX,y:ry,w:1.62,h:0.62,fontSize:26,bold:true,
+      color:pink?BRAND.pink:BRAND.navy,valign:'middle',fontFace:'Inter'});
+    s.addText(l,{x:RX+1.66,y:ry,w:RW-1.66,h:0.62,fontSize:10.5,color:SUB,
+      valign:'middle',fontFace:'Inter'});
+    ry+=0.74;};
+  if(S.selected.length){
+    const ag=selAgg();
+    if(single){const svc=S.svcs[info.badge];
+      stat(String(svc.stops.length),'stops each way',false);
+      stat(fmt(svc.sc),'unique bus stops',false);
+      stat(routeLen(svc).toFixed(1)+' km','route length',false);
+    }else{
+      stat(fmt(ag.unique),'unique bus stops',false);
+      stat(fmt(ag.unique*DIRS*TRIPS_DAY),'stops covered per day',true);
+      stat(String(ag.avg),'average stops per route',false);
+      stat(ag.km.toFixed(1)+' km','combined route length',false);
+    }
+    if(imp)stat('≈'+cf(imp.w12),'impressions · 12 weeks',true);
+  }
+  // place layers on the map — the rail doubles as the legend
+  if(aps.length&&ry<MY+MH-0.4){
+    railLabel('ON THE MAP');
+    aps.slice(0,Math.max(0,Math.floor((MY+MH-ry)/0.27))).forEach(l=>{
+      s.addShape('ellipse',{x:RX,y:ry+0.05,w:0.16,h:0.16,fill:{color:hx(l.color)},line:{type:'none'}});
+      s.addText(l.label+(l.count!==''?'  ·  '+l.count:''),{x:RX+0.24,y:ry,w:RW-0.24,h:0.26,
+        fontSize:9.5,color:hx(CARD.ink),valign:'middle',fontFace:'Inter'});
+      ry+=0.27;});
+  }
+  // footer — method note + attribution left, wordmark right; nothing overlaps the map
+  const note=(S.selected.length&&!single?'Stops covered per day = unique stops × '+DIRS
+    +' directions × '+TRIPS_DAY+' trips.  ·  ':'')+SOURCE+' · modelled, not measured';
+  s.addText(note,{x:0.4,y:7.06,w:9.6,h:0.34,fontSize:8,color:GREY,valign:'middle',fontFace:'Inter'});
+  s.addText(BRAND.wordmark,{x:10.0,y:7.0,w:2.93,h:0.4,fontSize:15,bold:true,italic:true,
+    color:BRAND.navy,align:'right',valign:'middle',charSpacing:1,fontFace:'Inter'});
 }
 // SUMMARY slide — aggregate tiles + a ROUTE/FROM/VIA/VIA/TO table + total impressions
 function addSummarySlide(p,info,imp){
@@ -3077,25 +3074,42 @@ function addRouteSlide(p,n){
   stops.forEach((c,i)=>{const st=S.stops[c],road=st?(st[3]||'—'):'—';
     if(!groups.length||groups[groups.length-1].road!==road)groups.push({road,items:[]});
     groups[groups.length-1].items.push({i:i+1,nm:st?st[2]:c});});
-  const totalLines=groups.reduce((a,g)=>a+1+g.items.length,0);
-  const cols=totalLines>96?4:3, colW=12.23/cols;
-  const fs=totalLines>120?6.8:totalLines>82?7.4:8.2;   // shrink to fit longer routes
-  // pack whole road-groups into columns, balancing line counts (groups never split mid-road)
-  const target=Math.ceil(totalLines/cols), columns=[[]]; let used=0;
-  groups.forEach(g=>{const gl=1+g.items.length;
-    if(used>0&&used+gl>target&&columns.length<cols){columns.push([]);used=0;}
-    columns[columns.length-1].push(g);used+=gl;});
-  columns.forEach((col,ci)=>{
-    const runs=[];
-    col.forEach((g,gi)=>{
-      if(gi>0)runs.push({text:'\n',options:{fontSize:3}});                 // gap between roads
-      runs.push({text:g.road.toUpperCase()+'\n',options:{bold:true,color:hx(color),
-        fontSize:fs,charSpacing:0.3,fontFace:'Inter'}});
-      g.items.forEach(o=>{
-        runs.push({text:'  '+o.i+'  ',options:{color:GREY,fontSize:fs-0.6,fontFace:'Inter'}});
-        runs.push({text:o.nm+'\n',options:{color:INK,fontSize:fs,fontFace:'Inter'}});});});
-    s.addText(runs,{x:0.55+ci*colW,y,w:colW-0.18,h:7.28-y,valign:'top',
+  // capacity-driven layout: pick the first (columns, font-size) able to hold every line, then
+  // flow line-by-line — a road group may split across columns (header repeats with "· cont.") —
+  // so the list can NEVER run past the column box into the footer (US-16).
+  const colBot=6.95,colH=colBot-y;                       // hard floor: footer starts at 7.08
+  const totalLines=groups.reduce((a,g)=>a+1+g.items.length,0)+groups.length; // + inter-road gaps
+  let cols=3,fs=8.2;
+  for(const[c,f]of[[3,8.2],[3,7.6],[4,7.2],[4,6.8],[4,6.4],[4,6.0]]){
+    cols=c;fs=f;
+    if(totalLines<=c*Math.floor(colH*72/(f*1.36)))break;
+  }
+  const cap=Math.floor(colH*72/(fs*1.36)),colW=12.23/cols;
+  const colRuns=[[]];let lines=0,truncated=0;
+  const push=(run,n)=>{ // append run counting n lines; open a new column when this one is full
+    if(lines+n>cap&&colRuns.length<cols){colRuns.push([]);lines=0;}
+    if(lines+n>cap){truncated++;return false;}
+    colRuns[colRuns.length-1].push(run);lines+=n;return true;};
+  groups.forEach(g=>{
+    if(colRuns[colRuns.length-1].length)push({text:'\n',options:{fontSize:3}},1);
+    let head=false;
+    g.items.forEach(o=>{
+      // header travels with its first stop in the column; re-emitted after a column break
+      if(!head||lines===0){
+        if(!push({text:g.road.toUpperCase()+(head?' · CONT.':'')+'\n',
+          options:{bold:true,color:hx(color),fontSize:fs,charSpacing:0.3,fontFace:'Inter'}},1))return;
+        head=true;}
+      if(lines+1>cap&&colRuns.length<cols){colRuns.push([]);lines=0;
+        push({text:g.road.toUpperCase()+' · CONT.\n',
+          options:{bold:true,color:hx(color),fontSize:fs,charSpacing:0.3,fontFace:'Inter'}},1);}
+      if(!push({text:'  '+o.i+'  ',options:{color:GREY,fontSize:fs-0.6,fontFace:'Inter'}},0))
+        {truncated++;return;}
+      push({text:o.nm+'\n',options:{color:INK,fontSize:fs,fontFace:'Inter'}},1);});});
+  colRuns.forEach((runs,ci)=>{if(!runs.length)return;
+    s.addText(runs,{x:0.55+ci*colW,y,w:colW-0.18,h:colH,valign:'top',
       lineSpacingMultiple:1.05,fontFace:'Inter'});});
+  if(truncated)s.addText('… +'+truncated+' more stops — see the app for the full list',
+    {x:0.55,y:7.02,w:6,h:0.28,fontSize:8,italic:true,color:GREY,valign:'middle',fontFace:'Inter'});
   s.addText(SOURCE,{x:9.4,y:7.16,w:3.5,h:0.28,fontSize:7.5,color:GREY,align:'right',valign:'middle',fontFace:'Inter'});
 }
 async function exportPPT(){
@@ -3103,17 +3117,14 @@ async function exportPPT(){
   try{
     if(typeof PptxGenJS==='undefined')throw new Error('PowerPoint library not loaded');
     await ensureExportData();
-    const w=Math.round(Math.min(window.innerWidth-8,(window.innerHeight-8)*16/9,1280));
-    const h=Math.round(w*9/16);
+    // capture at the hero slide's map-box aspect (9.55 × 5.3 in) so the image isn't distorted
+    const w=Math.round(Math.min(window.innerWidth-8,(window.innerHeight-8)*9.55/5.3,1280));
+    const h=Math.round(w*5.3/9.55);
     const mc=await captureFramed(w,h),img=mc.toDataURL('image/jpeg',0.9);
     const info=titleInfo(),imp=impForExport();
     const p=new PptxGenJS();p.defineLayout({name:'W',width:13.333,height:7.5});p.layout='W';
-    // slide 1 — the framed map with its title card
-    const s=p.addSlide();s.background={color:'FFFFFF'};
-    s.addImage({data:img,x:0,y:0,w:13.333,h:7.5});
-    addCard(s,info,imp);
-    s.addText(SOURCE,{x:5.2,y:7.02,w:7.9,h:0.36,fontSize:8,color:'FFFFFF',align:'right',
-      valign:'middle',fontFace:'Inter',outline:{size:0.5,color:'334155'}});
+    // slide 1 — big framed map + stats rail (no overlay card: the map stays unobstructed)
+    addHeroMapSlide(p,img,info,imp);
     // optional extra slides
     if(S.exp.summary&&S.selected.length)addSummarySlide(p,info,imp);
     if(S.exp.perRoute)S.selected.forEach(n=>addRouteSlide(p,n));

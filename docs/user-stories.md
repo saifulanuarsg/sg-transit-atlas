@@ -44,6 +44,19 @@ under a second while talking.
 | US-11 | As a returning user, I want each block recognisable by colour before I read its label, so navigation becomes muscle memory. | ✅ | Per-block accent (left inset bar + label dot): network blue, places green, audience purple, insights amber, ranking teal, packages blue. |
 | US-12 | As a seller mid-scroll, I want the export step to stay its own visible block whenever there is something to export. | ✅ | Export card sticky at the bar's bottom edge over the tinted backdrop. |
 
+## 2026-08-05 · Simulation: the deck itself — seller exporting, client receiving (PR #6)
+
+Personas: (a) the account manager who exports the deck and must send it **without editing a
+single slide**; (b) the client who receives it and judges the pitch by the map.
+
+| # | Story | Status | Check |
+|---|-------|--------|-------|
+| US-14 | As a client reading the map slide, I want the map to be the hero and never covered — stats belong beside the map, not floating on top of the routes. | ✅ | Deck XML audit: map image 9.55×5.3 in at (0.4, 1.62); routes/stats/legend all in the 10.15–12.93 in rail; zero shapes over the map. |
+| US-15 | As a seller, I never want redundant elements — if the title says "6 bus routes", there must be no separate big "6" badge repeating it. | ✅ | Hero slide has a single "6 bus routes" title, no badge shape; JPG card drops the badge for multi-route selections too. |
+| US-16 | As a seller exporting a long route, I want every stops-by-road slide to fit — the list must shrink and flow to more columns rather than ever colliding with the footer. | ✅ | Capacity-based flow (roads split with "· CONT."): route 147 (20 roads · 75 stops) lays out 4 columns ending at 6.95 in; worst shape bottom across the whole deck 7.44 in, none past the 7.5 in slide edge. |
+| US-17 | As a seller exporting the JPG, I want the overlay card to sit on empty map, with the framing shifted so routes are never hidden behind it. | ✅ | Asymmetric fitBounds padding (avoidLeft = 42% of frame) shifts routes clear; card also lifted 56 px above the source strip. Verified on the rendered JPG. |
+| US-18 | As a Moove seller, I want the deck in our colours with our wordmark and the package code as the eyebrow — client-ready, not tool-branded. | ✅ | BRAND constant (pink F0245E · navy 1B2D8A · wordmark) drives pill, title, stats and footer; eyebrow reads "CORE CORRIDORS · CITY" from the selected package. |
+
 ### Follow-up defect (user screenshot, PR #5)
 
 | # | Story | Status | Check |
