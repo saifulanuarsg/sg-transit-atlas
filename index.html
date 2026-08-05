@@ -160,9 +160,22 @@
   .res-bar button:hover{background:#0a2ab5}
 
   #body{flex:1;overflow-y:auto}
-  .sec{padding:12px 16px;border-bottom:1px solid var(--line)}
+  /* each block is its own card on a tinted backdrop — sections read at a glance instead of
+     bleeding into one another across a hairline. Every card carries an accent (left bar +
+     label dot) so a block is recognisable by colour before its label is read. */
+  #body,#leftBody{background:#e9eef5;padding:9px}
+  .sec{--acc:#94a3b8;padding:12px 14px;background:#fff;border:1px solid var(--line);
+    border-radius:12px;margin-bottom:9px;
+    box-shadow:0 1px 2px rgba(15,23,42,.06),inset 3px 0 0 var(--acc)}
+  .sec-net{--acc:var(--primary)}
+  .sec-poi{--acc:#16a34a}
+  .sec-aud{--acc:#7c3aed}
+  .sec-ins{--acc:#d97706}
+  .sec-rank{--acc:#0e7490}
+  #routesSec,#selcard{--acc:var(--primary)}
   .sec-lab{font:700 10px/1 system-ui;color:var(--muted);text-transform:uppercase;
     letter-spacing:.7px;margin-bottom:9px;display:flex;align-items:center;gap:6px}
+  .sec-lab::before{content:"";width:8px;height:8px;border-radius:3px;background:var(--acc);flex:none}
   .row{display:flex;align-items:center;gap:10px;padding:5px 0;cursor:pointer;user-select:none;
     font:600 13px/1.2 system-ui}
   .row .cnt{color:var(--muted);font-weight:500;margin-left:auto;font-size:12px}
@@ -241,7 +254,7 @@
   .exp-dl.primary:hover{background:#1b3aa0;color:#fff}
   .exp-dl:disabled{opacity:.6;cursor:progress}
   /* Bus products — highlighted section + cleaner preset buttons */
-  .sec-prod{background:linear-gradient(180deg,#eef4ff,#fff 62%);box-shadow:inset 3px 0 0 var(--primary)}
+  .sec-prod{--acc:var(--primary);background:linear-gradient(180deg,#eef4ff,#fff 62%)}
   .sec-prod .sec-lab{color:var(--primary)}
   /* place-layer chips (POI dropdown picks) */
   .poi-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
@@ -532,7 +545,7 @@
         <div class="note">Each package loads a ready-made shortlist — tap again to clear. The small line
           on each button is where its routes run. Hover for the full service list.</div>
       </div>
-      <div class="sec">
+      <div class="sec sec-rank">
         <div class="sec-lab">Reach ranking <span class="hint-txt" style="text-transform:none;letter-spacing:0">every route, or just yours</span></div>
         <select id="rankSel" aria-label="Rank routes by reach">
           <option value="">Rank routes by…</option>
@@ -563,7 +576,7 @@
       <div class="sub">what's drawn on the map</div>
     </div>
     <div id="body">
-      <div class="sec">
+      <div class="sec sec-net">
         <div class="sec-lab">Transit network</div>
         <div id="netToggles"></div>
         <details class="rail-acc" id="railAcc">
@@ -571,7 +584,7 @@
           <div id="railLegend"></div>
         </details>
       </div>
-      <div class="sec">
+      <div class="sec sec-poi">
         <div class="sec-lab">Places &amp; landmarks <span class="hint-txt" style="text-transform:none;letter-spacing:0">hover any place for its name</span></div>
         <div class="seg" id="poiScopeSeg" role="group" aria-label="Which places to show">
           <button type="button" data-s="all" class="on">All</button>
@@ -591,13 +604,13 @@
         <div class="note" id="poiLabNote" style="display:none"></div>
         <div class="note" id="poiScopeNote" style="display:none"></div>
       </div>
-      <div class="sec">
+      <div class="sec sec-aud">
         <div class="sec-lab">Audience <span class="hint-txt" style="text-transform:none;letter-spacing:0">who lives &amp; rides where</span></div>
         <div id="demoToggle"></div>
       </div>
       <!-- vertical-specific overlays live behind accordions: they tell one client's story each,
            so they stay out of the way until that story is the one being sold -->
-      <div class="sec">
+      <div class="sec sec-ins">
         <div class="sec-lab">Vertical insights <span class="hint-txt" style="text-transform:none;letter-spacing:0">campaign-specific overlays</span></div>
         <details class="ins-acc" id="qsrAcc">
           <summary>Fast-food competition <span class="hint-txt">brand vs rivals · heat</span></summary>
