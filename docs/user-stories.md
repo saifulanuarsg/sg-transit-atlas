@@ -43,3 +43,9 @@ under a second while talking.
 | US-10 | As a seller scanning a sidebar mid-sentence, I want each block to read as a separate card so sections don't bleed together across a hairline. | ✅ | Both panel bodies tinted; every `.sec` a white rounded card with border + shadow; verified computed styles and screenshot. |
 | US-11 | As a returning user, I want each block recognisable by colour before I read its label, so navigation becomes muscle memory. | ✅ | Per-block accent (left inset bar + label dot): network blue, places green, audience purple, insights amber, ranking teal, packages blue. |
 | US-12 | As a seller mid-scroll, I want the export step to stay its own visible block whenever there is something to export. | ✅ | Export card sticky at the bar's bottom edge over the tinted backdrop. |
+
+### Follow-up defect (user screenshot, PR #5)
+
+| # | Story | Status | Check |
+|---|-------|--------|-------|
+| US-13 | As a user of the left bar, I want package buttons to stay inside their card at any width — the coverage line must truncate, never push the layout apart. | ✅ | Root cause: flex items refuse to shrink below nowrap content (`min-width:auto`). Fixed with `min-width:0` on `.clbtn`. Headless check: 0 buttons outside the card bounds; five-route sets render 2×2 again; coverage lines ellipsize. |
