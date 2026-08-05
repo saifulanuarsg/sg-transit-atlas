@@ -210,6 +210,10 @@
     padding:5px 10px;cursor:pointer}
   .reset-btn:hover{border-color:var(--destructive,#dc2626);color:var(--destructive,#dc2626)}
   /* Export call-to-action — opens the export modal */
+  /* export rides the bottom of the left bar — the last step of the sell, always in reach once
+     there is anything on the map worth exporting */
+  #exportCta{position:sticky;bottom:0;z-index:6;background:#fff;border-bottom:none;
+    box-shadow:0 -4px 12px rgba(15,23,42,.07)}
   .cta-export{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
     font:800 13px/1 system-ui;color:#fff;background:var(--primary);border:none;border-radius:10px;
     padding:12px;cursor:pointer;box-shadow:0 2px 6px rgba(30,64,175,.28)}
@@ -236,7 +240,7 @@
   .exp-dl.primary{background:var(--primary);border-color:var(--primary);color:#fff}
   .exp-dl.primary:hover{background:#1b3aa0;color:#fff}
   .exp-dl:disabled{opacity:.6;cursor:progress}
-  /* Bus products — highlighted section (like the Howards request block) + cleaner preset buttons */
+  /* Bus products — highlighted section + cleaner preset buttons */
   .sec-prod{background:linear-gradient(180deg,#eef4ff,#fff 62%);box-shadow:inset 3px 0 0 var(--primary)}
   .sec-prod .sec-lab{color:var(--primary)}
   /* place-layer chips (POI dropdown picks) */
@@ -296,10 +300,19 @@
   .aud-more>summary::before{content:"›";color:#94a3b8;font-weight:700;transition:transform .15s;display:inline-block}
   .aud-more[open]>summary::before{transform:rotate(90deg)}
   .sh-hint{font:500 9.5px/1 system-ui;color:#94a3b8;text-transform:none;letter-spacing:0}
-  /* property-heatmaps section — own tint + accent so it reads apart from the blue transit layers */
-  .sec-prop{background:linear-gradient(180deg,#fff6f9,#fff 64%);
-    box-shadow:inset 3px 0 0 #e11d48}
-  .sec-prop .sec-lab{color:#9f1239}
+  /* vertical-insight accordions — one client story each, collapsed until that story is on */
+  details.ins-acc{border:1px solid var(--line);border-radius:9px;margin-top:8px;background:#fbfcfd}
+  details.ins-acc:first-of-type{margin-top:0}
+  .ins-acc>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:7px;
+    padding:10px 11px;font:600 12.5px/1 system-ui;color:var(--ink)}
+  .ins-acc>summary::-webkit-details-marker{display:none}
+  .ins-acc>summary::before{content:"›";color:#94a3b8;font:700 13px/1 system-ui;transition:transform .15s}
+  .ins-acc[open]>summary::before{transform:rotate(90deg)}
+  .ins-acc>summary:hover{color:var(--primary)}
+  .ins-acc>summary .hint-txt{margin-left:auto}
+  .ins-acc .ins-body{padding:2px 11px 11px}
+  .ins-acc .acc-badge{font:700 9.5px/1 system-ui;color:#fff;background:var(--primary);
+    border-radius:999px;padding:3px 7px}
   #propHeat select{margin-bottom:2px}
   #mopLegend:empty,#txLegend:empty{display:none}
   /* hatch legend — stripe density is the scale, so the swatches need height to read */
@@ -315,9 +328,15 @@
   .cluster-btns{display:flex;gap:8px}
   .cluster-btns.grid2{flex-wrap:wrap}
   .cluster-btns.grid2 .clbtn{flex:1 1 calc(50% - 4px);padding:9px 8px}
-  .clbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;
-    font:700 13px/1 system-ui;color:var(--ink);background:#fff;border:1.5px solid var(--line);
-    border-radius:10px;padding:11px 10px;transition:.12s}
+  .clbtn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+    cursor:pointer;font:700 13px/1 system-ui;color:var(--ink);background:#fff;
+    border:1.5px solid var(--line);border-radius:10px;padding:9px 8px;transition:.12s}
+  .clbtn .cl-top{display:flex;align-items:center;gap:7px}
+  /* where the package actually goes, derived from its routes' termini — a seller can read the
+     story off the button instead of memorising what "Set 3" means */
+  .clbtn .cl-cov{font:500 9.5px/1.3 system-ui;color:var(--muted);text-align:center;max-width:100%;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .clbtn.on .cl-cov{color:rgba(255,255,255,.85)}
   .clbtn:hover{border-color:var(--cc);color:var(--cc)}
   .clbtn.on{background:var(--cc);border-color:var(--cc);color:#fff}
   .clbtn:focus-visible{outline:2px solid var(--cc);outline-offset:2px}
@@ -506,16 +525,12 @@
         </div>
         <div id="lbBody"></div>
       </div>
-      <div class="sec" id="exportCta" hidden>
-        <button id="openExport" class="cta-export" title="Open export options">
-          <span class="ce-ico">⭳</span> Export map…</button>
-      </div>
       <div class="sec" id="selcard"></div>
       <div class="sec sec-prod" id="prodSec">
-        <div class="sec-lab">Curated route sets <span class="hint-txt" style="text-transform:none;letter-spacing:0">one-tap presets</span></div>
+        <div class="sec-lab">Route packages <span class="hint-txt" style="text-transform:none;letter-spacing:0">one-tap sell-in sets</span></div>
         <div id="clusterBtns"></div>
-        <div class="note">Each preset loads a ready-made shortlist — tap again to clear. Hover a preset to
-          see the services it contains. Counts are routes drawn.</div>
+        <div class="note">Each package loads a ready-made shortlist — tap again to clear. The small line
+          on each button is where its routes run. Hover for the full service list.</div>
       </div>
       <div class="sec">
         <div class="sec-lab">Reach ranking <span class="hint-txt" style="text-transform:none;letter-spacing:0">every route, or just yours</span></div>
@@ -529,6 +544,10 @@
         <div id="rankNote" class="note" style="display:none">
           Routes ranked by places within 400 m of their stops.</div>
         <div id="rankList"></div>
+      </div>
+      <div class="sec" id="exportCta" hidden>
+        <button id="openExport" class="cta-export" title="Open export options">
+          <span class="ce-ico">⭳</span> Export map…</button>
       </div>
     </div>
   </aside>
@@ -572,20 +591,34 @@
         <div class="note" id="poiLabNote" style="display:none"></div>
         <div class="note" id="poiScopeNote" style="display:none"></div>
       </div>
-      <div class="sec sec-mcd">
-        <div class="sec-lab">McDonald's <span class="hint-txt">outlets &amp; competitive density</span></div>
-        <div class="mcd-sub">Outlets <span class="hint-txt">tap to show — overlays the heat</span></div>
-        <div id="mcdOutlets" class="mcd-outlets"></div>
-        <div class="mcd-sub">Competitive density <span class="hint-txt">McDonald's vs BK · KFC · Jollibee</span></div>
-        <div id="compDens"></div>
-      </div>
-      <div class="sec sec-prop">
-        <div class="sec-lab">Howards request <span class="hint-txt">agent audience · v1</span></div>
-        <div id="propHeat"></div>
-      </div>
       <div class="sec">
-        <div class="sec-lab">Demographics</div>
+        <div class="sec-lab">Audience <span class="hint-txt" style="text-transform:none;letter-spacing:0">who lives &amp; rides where</span></div>
         <div id="demoToggle"></div>
+      </div>
+      <!-- vertical-specific overlays live behind accordions: they tell one client's story each,
+           so they stay out of the way until that story is the one being sold -->
+      <div class="sec">
+        <div class="sec-lab">Vertical insights <span class="hint-txt" style="text-transform:none;letter-spacing:0">campaign-specific overlays</span></div>
+        <details class="ins-acc" id="qsrAcc">
+          <summary>Fast-food competition <span class="hint-txt">brand vs rivals · heat</span></summary>
+          <div class="ins-body">
+            <div class="note" style="margin-top:0">For quick-service pitches: pick an anchor brand,
+              read where rivals crowd it — hot zones are conquest territory for transit ads.</div>
+            <div class="mcd-sub">Outlets <span class="hint-txt">tap to show — overlays the heat</span></div>
+            <div id="mcdOutlets" class="mcd-outlets"></div>
+            <div class="mcd-sub">Competitive density <span class="hint-txt">anchor brand vs the rest</span></div>
+            <div id="compDens"></div>
+          </div>
+        </details>
+        <details class="ins-acc" id="propAcc">
+          <summary>Property &amp; home-movers <span class="hint-txt">supply · deal density</span></summary>
+          <div class="ins-body">
+            <div class="note" style="margin-top:0">For property-sector pitches: where new resale supply
+              (MOP) lands and where deals concentrate — the mover &amp; agent audience. Shares the map
+              shading with Audience above; picking one clears the other.</div>
+            <div id="propHeat"></div>
+          </div>
+        </details>
       </div>
     </div>
     <details id="foot">
@@ -599,7 +632,7 @@
         <li><b>Police</b> (118) — OpenStreetMap <code>amenity=police</code> (SPF centres, posts, HQs, Coast Guard); non-SPF removed.</li>
         <li><b>Bus hubs</b> (54) — interchanges &amp; terminals derived from LTA stop names. <b>MRT/LRT lines &amp; stations</b> (8 lines, 182 stations) — OpenStreetMap; stations filtered to those on a drawn line (future CRL/RTS-Link stations omitted). Labels appear as you zoom in.</li>
         <li><b>Audience</b> — modelled opportunities-to-see = passenger taps (LTA DataMall, Passenger Volume by Bus Stops, Jun 2026) × catchment segment share (SingStat Census 2020: residents by planning area &amp; age; households by income). Planning areas: URA Master Plan 2019. Every figure is aggregate and modelled, not panel-measured; no individual-level data (PDPA).</li>
-        <li>Places shown as areas where they span 2+ buildings, else as points. Within-400 m counts use footprints. All layers clipped to the Singapore boundary. Data compiled Jul 2026.</li>
+        <li>Places shown as areas where they span 2+ buildings, else as points. Junior colleges without an OpenStreetMap footprint yet are drawn as dashed approximate campus extents (130 m radius). Within-400 m counts use footprints. All layers clipped to the Singapore boundary. Data compiled Jul 2026.</li>
         <li>Hover any place for its name; <b>Show place names</b> pins the names of what's in view (overlapping ones are dropped — zoom in for those). <b>Find one place by name</b> puts a single place on the map without its whole layer, and picked places can be ranked like any layer.</li>
         <li>Basemap © OpenStreetMap contributors © CARTO.</li>
       </ul>
@@ -760,7 +793,7 @@ const POI=[
   // (poi_schools.json) is decomposed into the six below, so it is not drawn as a layer itself.
   {key:'pri',label:'Primary schools',color:'#a78bfa',file:'data/poi_pri.json',cat:'edu'},
   {key:'sec',label:'Secondary schools',color:'#7c3aed',file:'data/poi_sec.json',cat:'edu'},
-  {key:'jcmi',label:'Junior colleges & Millennia Inst.',color:'#4c1d95',file:'data/poi_jcmi.json',cat:'edu'},
+  {key:'jcmi',label:'Junior colleges & Millennia Inst.',color:'#4c1d95',file:'data/poi_jcmi.json',cat:'edu',approxM:130},
   {key:'ip',label:'Integrated Programme schools',color:'#e879f9',file:'data/poi_ip.json',cat:'edu'},
   {key:'sis',label:'Specialised Independent Schools',color:'#14b8a6',file:'data/poi_sis.json',cat:'edu'},
   {key:'spec',label:'Specialised Schools',color:'#f43f5e',file:'data/poi_spec.json',cat:'edu'},
@@ -885,6 +918,16 @@ function poiLayer(p,color,letter,letterFg,off,cfg){
       icon:L.divIcon({className:'',iconSize:[0,0],
         html:`<span class="poi-letter" style="background:${color};color:${letterFg||'#fff'};transform:${tf}">${letter}</span>`})})
       .bindTooltip(tip,{direction:'top',offset:[0,-10],className:'poi-tip'});
+  }
+  if(cfg&&cfg.approxM){
+    // campus-scale place with no OSM footprint yet: an approximate extent reads better than a
+    // 3 px dot. Dashed outline + tooltip flag keep it honest — this is a radius, not a boundary.
+    const ly=L.circle([p.lat,p.lng],{renderer:rPoi,radius:cfg.approxM,color:color,weight:1.6,
+      opacity:.85,dashArray:'5 5',fillColor:color,fillOpacity:.16})
+      .bindTooltip(tip+'<br><span style="color:#94a3b8">campus extent approximate</span>',tOpt);
+    ly.on('mouseover',()=>ly.setStyle({weight:2.4,fillOpacity:.3}));
+    ly.on('mouseout',()=>ly.setStyle({weight:1.6,fillOpacity:.16}));
+    return ly;
   }
   const ly=L.circleMarker([p.lat,p.lng],{renderer:rPoi,radius:3,color:'#fff',weight:1,
     fillColor:color,fillOpacity:.92}).bindTooltip(tip,tOpt);
@@ -1302,7 +1345,17 @@ function buildPanel(){
   buildDemographics();
   buildSearch();
 }
-// ---------------- route clusters (curated presets) ----------------
+// ---------------- route clusters (curated packages) ----------------
+// A package button must say where its routes go — "Set 3" alone forces the seller to memorise
+// the rate card. Derive a coverage line from the termini named in the routes themselves.
+function clusterCoverage(routes){
+  const cnt={};
+  routes.forEach(n=>{const s=S.svcs[n];if(!s||!s.name)return;
+    s.name.split(/⇄|⟲/).forEach(t=>{
+      t=t.trim().replace(/ (Int|Ter)$/,'').replace(/ Stn Exit.*$/,'').replace(/ Stn$/,'');
+      if(t)cnt[t]=(cnt[t]||0)+1;});});
+  return Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]).join(' · ');
+}
 function buildClusters(){
   const host=$('clusterBtns');if(!host)return;host.innerHTML='';
   PRODUCTS.forEach((p,pi)=>{
@@ -1317,7 +1370,9 @@ function buildClusters(){
       const btn=document.createElement('button');btn.type='button';btn.className='clbtn';
       btn.dataset.k=key;btn.style.setProperty('--cc',c.color);btn.setAttribute('aria-pressed','false');
       btn.title=`${c.title} — ${c.routes.join(', ')}`;
-      btn.innerHTML=`<span class="cl-name">${c.label}</span><span class="cl-n">${n}</span>`;
+      const cov=clusterCoverage(c.routes);
+      btn.innerHTML=`<span class="cl-top"><span class="cl-name">${c.label}</span><span class="cl-n">${n}</span></span>`
+        +(cov?`<span class="cl-cov" title="${cov}">${cov}</span>`:'');
       btn.onclick=()=>selectCluster(key);
       row.appendChild(btn);
     });
@@ -2269,9 +2324,9 @@ function renderPoiChips(){
     host.appendChild(chip);});
 }
 
-// ---------------- McDonald's section: outlet toggles (overlay the heat) ----------
-// The four fast-food layers live here, not in the generic place picker, so the whole
-// McDonald's-competitive story sits in one section. Toggles overlay the density heat.
+// ---------------- fast-food insight: outlet toggles (overlay the heat) ----------
+// The four QSR brand layers live here, not in the generic place picker, so the whole
+// competitive story sits in one module. Toggles overlay the density heat.
 function renderMcdOutlets(){
   const host=$('mcdOutlets');if(!host)return;host.innerHTML='';
   POI.filter(c=>c.mcd&&S.pois[c.key]).forEach(cfg=>{
@@ -2288,12 +2343,17 @@ function renderMcdOutlets(){
 }
 function buildMcdSection(){renderMcdOutlets();buildCompDensity();}
 
-// ---------------- competitive density (McDonald's vs BK · KFC · Jollibee) --------
-// A continuous kernel-density surface. Two modes: "island" = competitor density across the whole
-// island; "mcd" = competitive pressure blooming around each McDonald's, scored by nearby rivals.
+// ---------------- competitive density (anchor brand vs the other QSR layers) --------
+// A continuous kernel-density surface. Two modes: "island" = rival density across the whole
+// island; "anchor" = competitive pressure blooming around each anchor-brand outlet, scored by
+// nearby rivals. The anchor is any of the four QSR brands — the module tells the same conquest
+// story for whichever brand is being pitched, not just McDonald's.
 // Radius (m) and decay kernel are live params; distance is geodesic (equirectangular metres).
 const CD_BOUNDS={lat0:1.205,lat1:1.480,lng0:103.585,lng1:104.10};   // SG grid frame
-const CD_COMPETITORS=['burgerking','kfc','jollibee'];
+const CD_BRANDS=['mcdonalds','kfc','burgerking','jollibee'];
+const cdBrandCfg=k=>POI.find(c=>c.key===k);
+const cdBrandName=k=>{const c=cdBrandCfg(k);return c?c.label.replace(/ outlets$/,''):k;};
+const cdRivals=()=>CD_BRANDS.filter(k=>k!==(S.cd&&S.cd.anchor));
 const CD_HEAT=[   // cold → hot ramp; [stop, [r,g,b,a]] — low end transparent so the basemap reads
   [0.00,[37,99,235,0]],[0.12,[37,99,235,95]],[0.30,[6,182,212,140]],[0.50,[132,204,22,170]],
   [0.68,[250,204,21,195]],[0.84,[234,88,12,215]],[1.00,[220,38,38,232]]];
@@ -2310,9 +2370,9 @@ function cdDecay(d,R,kind){if(d>=R)return 0;const t=1-d/R;
   if(kind==='linear')return t;
   if(kind==='gaussian'){const s=R*0.5;return Math.exp(-(d*d)/(2*s*s));}
   return t*t;}   // 'inverse' — inverse-square-like, sharp near
-function cdCompetitorPts(){return CD_COMPETITORS.flatMap(k=>S.pois[k]||[]);}
+function cdCompetitorPts(){return cdRivals().flatMap(k=>S.pois[k]||[]);}
 function buildCompField(){
-  S.cd=S.cd||{mode:'off',radius:500,decay:'inverse'};
+  S.cd=S.cd||{mode:'off',radius:500,decay:'inverse',anchor:'mcdonalds'};
   const cd=S.cd;
   if(cd.mode==='off'){if(S.cdLayer){map.removeLayer(S.cdLayer);S.cdLayer=null;}setCompLegend();return;}
   const R=cd.radius,decay=cd.decay,comp=cdCompetitorPts();
@@ -2320,9 +2380,9 @@ function buildCompField(){
   const nx=Math.max(1,Math.round((B.lng1-B.lng0)*mpd.x/cell));
   const ny=Math.max(1,Math.round((B.lat1-B.lat0)*mpd.y/cell));
   const dLat=R/mpd.y,dLng=R/mpd.x;   // bbox prefilter half-extents (degrees) to skip far points
-  // anchor mode: each McDonald's carries a competitive score = Σ inverse-distance-weighted rivals
+  // anchor mode: each anchor-brand outlet carries a score = Σ inverse-distance-weighted rivals
   let anchors=null;
-  if(cd.mode==='mcd'){anchors=(S.pois.mcdonalds||[]).map(m=>{let sc=0;
+  if(cd.mode==='anchor'){anchors=(S.pois[cd.anchor]||[]).map(m=>{let sc=0;
     for(const c of comp){if(Math.abs(c.lat-m.lat)>dLat||Math.abs(c.lng-m.lng)>dLng)continue;
       const d=cdDist(m.lat,m.lng,c.lat,c.lng);if(d<R)sc+=cdDecay(d,R,decay);}
     return {lat:m.lat,lng:m.lng,sc};}).filter(a=>a.sc>0);}
@@ -2351,20 +2411,28 @@ function setCompLegend(){
     `rgba(${s[1][0]},${s[1][1]},${s[1][2]},${(s[1][3]/255).toFixed(2)}) ${Math.round(s[0]*100)}%`).join(',')+')';
   el.innerHTML=`<div class="cd-bar" style="background:${grad}"></div>`
     +`<div class="cd-bl"><span>Low</span><span>competitor density</span><span>High</span></div>`;
-  const note=$('cdNote');if(note)note.textContent=
-    (cd.mode==='mcd'?'Heat blooms around each McDonald’s, weighted by nearby BK / KFC / Jollibee — hottest where a store faces the most close rivals.'
-     :'Continuous competitor density island-wide — hot zones show rival clustering even where no McDonald’s sits (white-space).')
-    +` Radius ${cd.radius>=1000?(cd.radius/1000)+' km':cd.radius+' m'} · ${({linear:'linear',inverse:'inverse-square',gaussian:'gaussian'})[cd.decay]} decay · straight-line. Tip: switch on McDonald’s outlets to read the pins against the heat.`;
+  const note=$('cdNote');if(!note)return;
+  const an=cdBrandName(cd.anchor),rv=cdRivals().map(cdBrandName).join(' / ');
+  note.textContent=
+    (cd.mode==='anchor'?`Heat blooms around each ${an} outlet, weighted by nearby ${rv} — hottest where a store faces the most close rivals.`
+     :`Continuous rival density island-wide (${rv}) — hot zones show competitor clustering even where no ${an} sits (white-space).`)
+    +` Radius ${cd.radius>=1000?(cd.radius/1000)+' km':cd.radius+' m'} · ${({linear:'linear',inverse:'inverse-square',gaussian:'gaussian'})[cd.decay]} decay · straight-line. Tip: switch on the ${an} outlets above to read the pins against the heat.`;
 }
 function buildCompDensity(){
   const host=$('compDens');if(!host)return;
-  S.cd=S.cd||{mode:'off',radius:500,decay:'inverse'};
+  S.cd=S.cd||{mode:'off',radius:500,decay:'inverse',anchor:'mcdonalds'};
+  if(!S.cd.anchor)S.cd.anchor='mcdonalds';
   host.innerHTML=`
     <div class="seg cd-mode" role="group" aria-label="Competitive density mode">
       <button type="button" data-m="off"${S.cd.mode==='off'?' class="on"':''}>Off</button>
-      <button type="button" data-m="mcd"${S.cd.mode==='mcd'?' class="on"':''}>McD Anchor</button>
+      <button type="button" data-m="anchor"${S.cd.mode==='anchor'?' class="on"':''}>Brand anchor</button>
       <button type="button" data-m="island"${S.cd.mode==='island'?' class="on"':''}>Islandwide</button></div>
     <div class="cd-params" ${S.cd.mode==='off'?'hidden':''}>
+      <div class="cd-row"><span class="cd-k">Anchor</span>
+        <div class="seg cd-anchor" role="group" aria-label="Anchor brand">
+          ${CD_BRANDS.map(k=>{const c=cdBrandCfg(k);
+            return `<button type="button" data-a="${k}"${S.cd.anchor===k?' class="on"':''} title="${c.label}">${c.letter}</button>`;}).join('')}
+        </div></div>
       <div class="cd-row"><span class="cd-k">Radius</span>
         <div class="seg cd-rad" role="group" aria-label="Search radius">
           <button type="button" data-r="300"${S.cd.radius===300?' class="on"':''}>300 m</button>
@@ -2378,6 +2446,9 @@ function buildCompDensity(){
   host.querySelectorAll('.cd-mode button').forEach(b=>b.onclick=()=>{
     host.querySelectorAll('.cd-mode button').forEach(x=>x.classList.toggle('on',x===b));
     S.cd.mode=b.dataset.m;params.hidden=(S.cd.mode==='off');buildCompField();});
+  host.querySelectorAll('.cd-anchor button').forEach(b=>b.onclick=()=>{
+    host.querySelectorAll('.cd-anchor button').forEach(x=>x.classList.toggle('on',x===b));
+    S.cd.anchor=b.dataset.a;buildCompField();});
   host.querySelectorAll('.cd-rad button').forEach(b=>b.onclick=()=>{
     host.querySelectorAll('.cd-rad button').forEach(x=>x.classList.toggle('on',x===b));
     S.cd.radius=+b.dataset.r;buildCompField();});
