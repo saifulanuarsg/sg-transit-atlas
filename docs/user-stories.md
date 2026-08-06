@@ -57,6 +57,19 @@ single slide**; (b) the client who receives it and judges the pitch by the map.
 | US-17 | As a seller exporting the JPG, I want the overlay card to sit on empty map, with the framing shifted so routes are never hidden behind it. | ✅ | Asymmetric fitBounds padding (avoidLeft = 42% of frame) shifts routes clear; card also lifted 56 px above the source strip. Verified on the rendered JPG. |
 | US-18 | As a Moove seller, I want the deck in our colours with our wordmark and the package code as the eyebrow — client-ready, not tool-branded. | ✅ | BRAND constant (pink F0245E · navy 1B2D8A · wordmark) drives pill, title, stats and footer; eyebrow reads "CORE CORRIDORS · CITY" from the selected package. |
 
+## 2026-08-06 · UI update: JPG export — sidebar replaces the floating card (user request)
+
+Context: user reviewed two current JPG generations. The floating card avoids overlapping the
+routes only by shifting the map fit (`avoidLeft` = 42 % of the frame), which shrinks the
+routes. Requested: a real sidebar with the map beside it (side chosen by best practice).
+
+| # | Story | Status | Check |
+|---|-------|--------|-------|
+| US-19 | As a seller sharing the exported JPG, I want the info panel *beside* the map, not floating over it, so stats never compete with the routes. | ✅ | Headless renders (Set 1 · Core corridors City · single 190): opaque full-height panel over the left 30 %, map canvas composited from the panel edge; nothing is drawn in the map column but the map and the source strip. |
+| US-20 | As a client reading the JPG, I want routes drawn as large as the frame allows — the map column fully used, with only fit padding. | ✅ | `avoidLeft` deleted (fit is symmetric) and capture uses `zoomSnap 0`, so `fitBounds` no longer rounds down a whole zoom level. Measured, Set 1: route bbox 322×261 px under the old framing → 672×543 px now, ≈ 2.1× larger linearly. |
+| US-21 | As a returning user, I want the export to mirror the app's own layout — panel left, map right — so the export reads like the tool. | ✅ | Sidebar placed on the left (matches the live left bar; eyebrow/title read before the map, LTR). |
+| US-22 | As a seller, I want everything the old card carried — badge/title, set label, routes legend, stops & coverage, place legend, impressions, attribution — intact in the sidebar. | ✅ | Verified on renders: 5/6-route sets show set label + ROUTES pills + STOPS & COVERAGE; single 190 shows badge, termini title, TRUNK chip, CORRIDOR (16 roads, wrapped + clamped), coverage and impressions; source strip still bottom-right over the map. |
+
 ### Follow-up defect (user screenshot, PR #5)
 
 | # | Story | Status | Check |

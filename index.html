@@ -2708,9 +2708,7 @@ function tilesReady(){
     setTimeout(fin,1800);});
 }
 // render the map at w×h px, framed on the selection, return a scale-2 canvas.
-// opts.avoidLeft (CSS px): extra left fit-padding so content clears an overlay card
-// stamped on the left of the frame — routes must never hide behind the card.
-async function captureFramed(w,h,opts){
+async function captureFramed(w,h){
   if(typeof html2canvas==='undefined')throw new Error('image library not loaded');
   const el=$('map');
   const view={c:map.getCenter(),z:map.getZoom()};
@@ -2720,11 +2718,12 @@ async function captureFramed(w,h,opts){
   el.style.flex='none';el.style.width=w+'px';el.style.height=h+'px';
   const savedMin=map.getMinZoom();   // relax the SG zoom/pan limits so island-wide framing isn't clipped
   map.setMaxBounds(null);map.setMinZoom(8);
+  const savedSnap=map.options.zoomSnap;
+  map.options.zoomSnap=0;   // fractional fit: frame the selection tight, not the next integer zoom out
   map.invalidateSize({animate:false});
   S.exportMode=true;                 // termini: show every one, at a smaller size
   const b=selectionBounds(),pad=Math.round(Math.min(w,h)*0.055);
-  const padL=pad+((opts&&opts.avoidLeft)||0);
-  if(b)map.fitBounds(b,{paddingTopLeft:[padL,pad],paddingBottomRight:[pad,pad],animate:false});
+  if(b)map.fitBounds(b,{padding:[pad,pad],animate:false});
   await new Promise(r=>{map.once('moveend',r);setTimeout(r,350);});
   if(S.selected.length)placeTermini();   // re-lay the termini at export sizing for this frame
   await tilesReady();
@@ -2739,6 +2738,7 @@ async function captureFramed(w,h,opts){
   }finally{
     S.exportMode=false;
     Object.assign(el.style,css);
+    map.options.zoomSnap=savedSnap;
     map.setMinZoom(savedMin);map.setMaxBounds(SG_BOUNDS);   // restore the SG limits
     map.invalidateSize({animate:false});
     map.setView(view.c,view.z,{animate:false});
@@ -2770,13 +2770,13 @@ function pillBlock(x,routes,xL,cyTop,maxW,u,draw){
     rx+=pw+gapX;});
   return rows*h+(rows-1)*gapY;
 }
-// stamp the un-branded title card. Blocks beyond the title are opt-in (S.exp.*).
-function stampCard(x,W,H){
-  H=H||W;   // JPG is square; card anchors to the bottom-left corner (over the sea, off the routes)
+// paint the un-branded sidebar panel: full frame height, the map starts where it ends —
+// panel and routes can never overlap. Blocks beyond the title are opt-in (S.exp.*).
+function stampSidebar(x,W,H,sbW){
   const info=titleInfo(),imp=impForExport(),u=W/1000,single=info.kind==='single';
   if(info.kind==='multi')info.badge='';   // "6 bus routes" already carries the count — no badge echo
   x.textBaseline='alphabetic';
-  const M=26*u,pad=20*u,cardW=Math.min(W-2*M,398*u),inW=cardW-2*pad;
+  const M=0,pad=22*u,cardW=sbW,inW=cardW-2*pad;
   const eyeF=12*u,badgeF=info.badge.length<=2?32*u:(info.badge.length<=3?26*u:20*u),
     mainF=single?17*u:20*u,chipF=11*u,labF=10*u,bodyF=12.5*u,statF=15*u;
   const badgeH=info.badge?46*u:0;
@@ -2786,8 +2786,8 @@ function stampCard(x,W,H){
   const mainMaxW=inW-(info.badge?badgeW+12*u:0);
   const mainLines=wrapLines(x,mainText,`800 ${mainF}px Inter,system-ui,sans-serif`,mainMaxW);
   const headH=Math.max(badgeH,mainLines.length*mainF*1.16);
-  // assemble optional blocks as {h, draw(cyTop)}
-  const G=11*u,blocks=[];
+  // assemble optional blocks as {h, draw(cyTop)} — a full-height panel affords airier gaps
+  const G=16*u,blocks=[];
   if(single&&info.type){const label=info.type.toUpperCase();
     x.font=`800 ${chipF}px Inter,system-ui,sans-serif`;const cw=x.measureText(label).width+16*u;
     blocks.push({h:19*u,draw:cy=>{const tc=TYPE_C[info.type]||TYPE_C.Trunk;
@@ -2853,14 +2853,11 @@ function stampCard(x,W,H){
     const l2='≈ '+cf(imp.w12)+' ',w2=x.measureText(l2).width;x.fillText(l2,M+pad,cy+statF*2+9*u);
     x.font=`600 ${statF}px Inter,system-ui,sans-serif`;x.fillStyle=CARD.grey;
     x.fillText('impressions · 12 weeks',M+pad+w2,cy+statF*2+9*u);}});}
-  const cardH=pad+eyeF+10*u+headH+blocks.reduce((a,b)=>a+G+b.h,0)+pad;
-  // bottom-left corner, lifted clear of the source strip so the two never collide
-  const topY=H-cardH-M-56*u;
-  // card background
-  x.save();x.shadowColor='rgba(15,23,42,.16)';x.shadowBlur=20*u;x.shadowOffsetY=5*u;
-  x.fillStyle='#ffffff';roundRect(x,M,topY,cardW,cardH,15*u);x.fill();x.restore();
-  x.strokeStyle=CARD.line;x.lineWidth=1*u;roundRect(x,M,topY,cardW,cardH,15*u);x.stroke();
-  let cy=topY+pad;
+  // opaque full-height panel with a hairline seam against the map
+  x.fillStyle='#ffffff';x.fillRect(0,0,sbW,H);
+  x.strokeStyle=CARD.line;x.lineWidth=2*u;
+  x.beginPath();x.moveTo(sbW-1*u,0);x.lineTo(sbW-1*u,H);x.stroke();
+  let cy=30*u;
   // eyebrow
   x.fillStyle=CARD.grey;x.font=`800 ${eyeF}px Inter,system-ui,sans-serif`;
   x.fillText(info.eyebrow.toUpperCase(),M+pad,cy+eyeF);cy+=eyeF+10*u;
@@ -2893,12 +2890,14 @@ async function exportJPG(){
   try{
     await ensureExportData();
     const side=Math.round(Math.max(680,Math.min(window.innerWidth-8,window.innerHeight-8,1080)));
-    // the card occupies the left ~42% strip — shift the framing so routes clear it entirely
-    const mc=await captureFramed(side,side,{avoidLeft:Math.round(side*0.42)});
-    const cv=document.createElement('canvas');cv.width=mc.width;cv.height=mc.height;
+    // sidebar left (matches the app's own layout), map right — the map keeps its whole
+    // column at full frame height, so routes are framed as large as the frame allows
+    const sbW=Math.round(side*0.30);
+    const mc=await captureFramed(side-sbW,side);
+    const cv=document.createElement('canvas');cv.width=side*2;cv.height=side*2;
     const x=cv.getContext('2d');
-    x.drawImage(mc,0,0);
-    stampCard(x,cv.width,cv.height);
+    x.drawImage(mc,sbW*2,0);
+    stampSidebar(x,cv.width,cv.height,sbW*2);
     stampSource(x,cv.width,cv.height);
     dl(cv.toDataURL('image/jpeg',0.95),fileBase()+'.jpg');
     if(typeof closeExport==='function')closeExport();
