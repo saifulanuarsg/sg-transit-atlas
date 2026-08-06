@@ -70,7 +70,19 @@ routes. Requested: a real sidebar with the map beside it (side chosen by best pr
 | US-21 | As a returning user, I want the export to mirror the app's own layout — panel left, map right — so the export reads like the tool. | ✅ | Sidebar placed on the left (matches the live left bar; eyebrow/title read before the map, LTR). |
 | US-22 | As a seller, I want everything the old card carried — badge/title, set label, routes legend, stops & coverage, place legend, impressions, attribution — intact in the sidebar. | ✅ | Verified on renders: 5/6-route sets show set label + ROUTES pills + STOPS & COVERAGE; single 190 shows badge, termini title, TRUNK chip, CORRIDOR (16 roads, wrapped + clamped), coverage and impressions; source strip still bottom-right over the map. |
 
-### Follow-up defect (user screenshot, PR #5)
+### Iteration 2 (user screenshot): map band on top, info bar below
+
+The sidebar column fixed the overlap but shaped the map wrong: a Wide-set generation still
+zoomed out to half of Johor, because a 0.7-aspect column fights Singapore's ~2:1-wide
+network. User asked for a bottom bar with the map as a thicker top band. Supersedes the
+panel-left placement verified in US-21.
+
+| # | Story | Status | Check |
+|---|-------|--------|-------|
+| US-23 | As a seller exporting an island-spanning set, I want the map region shaped like the network — wide — so the fit frames Singapore, not Malaysia. | ✅ | Wide sets · City outer (14 routes): route bbox 672×386 px in the sidebar column → 984×564 px in the full-width band (zoom 11.77 → 12.32); the frame stays on the island. |
+| US-24 | As a client reading the export, I want the info in a bottom bar that only takes the height its content needs, leaving the rest to the map. | ✅ | Bar height derived from measured content, clamped 19–34 % of the frame; all three test cases (14-route set, Set 1, single 190 with corridor + impressions) land at 19–21 %, so the map band keeps ~4/5 of the frame at full width. |
+| US-25 | As a seller who clicks a package and exports straight away, I want the framing to be deterministic — never half of an in-flight zoom animation. | ✅ | Found in headless runs: the live animated fit lands *after* the export fit and clobbers it (capture at zoom 12 instead of 13.14). Fixed by waiting out `_animatingZoom`, `map.stop()`, and re-asserting the fit after the settle waits; batch renders now capture at exactly the fitted zooms (12.32 / 12.45 / 13.14). |
+| US-26 | As a client, I never want the attribution strip covering a route end or terminus label. | ✅ | Set 1 render initially had "Kampong Bahru Ter" under the strip; `avoidBottom` fit-padding (≈ strip height) now keeps the bottom-most termini clear — verified on the re-render. |
 
 | # | Story | Status | Check |
 |---|-------|--------|-------|
