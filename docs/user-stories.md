@@ -143,3 +143,15 @@ became a story with a built solution, then the whole workflow was re-run headles
 | US-38 | (P3) As a promo planner, I want pin venue → rank against it → top routes → export to work as one unbroken flow. | ✅ | Headless end-to-end: pick "Singapore Expo", rank "your 1 picked place", Add top 5, export JPG — file renders with the pin + legend row and the 5 routes. |
 | US-39 | (P4) As a seller, I want my selection and focused lines in the URL, so the exact map can be sent to a colleague or reopened tomorrow. | ✅ | Hash state `#r=190,518&l=EWL,NSL` written on every change (replaceState, no history spam) and restored on load — verified by reloading the page on the deep link: 5 routes + 2 focused lines return. |
 | US-40 | (P5) As a deck builder, I want the full PPTX to actually generate — hero + summary + one slide per route. | ✅ | First-ever unstubbed run with the real pptxgenjs: Set 1 with summary + per-route on → .pptx unzips to 7 slides (hero, summary, 5 routes), 1 embedded map image. |
+
+### Follow-up defects (user report: "Lasalle has a few campuses" / "SIT has moved to Punggol")
+
+The US-32 audit was not good enough: it checked bounds, names and duplicates but never an
+entry's *internal* consistency, so a point and its own footprint from two different campuses
+sailed through. Both reported errors were exactly that class.
+
+| # | Story | Status | Check |
+|---|-------|--------|-------|
+| US-41 | As a user reading the arts layer, I want LASALLE's two campuses shown as two places — the old entry drew one footprint at Winstedt and nothing at the flagship McNally campus. | ✅ | Split into McNally Campus (point + 90 m approx extent, Rochor) and Winstedt Campus (the existing footprint, centroid point) in `poi_arts.json` and `poi_ihl.json`; both render, 1.4 km apart, each with its own tooltip. |
+| US-42 | As a user, I want SIT shown at Punggol — its point was right but the attached footprint was the old Dover campus, 19 km away, and the footprint is what the map draws. | ✅ | Stale Dover polygon dropped in `poi_uni.json` / `poi_ihl.json`; SIT now renders at Punggol with a 280 m approx extent and "Punggol campus" in the tooltip. |
+| US-43 | As the maintainer, I want the check that would have caught this to run on every data edit — not live in a throwaway script. | ✅ | `tools/qc_poi.py` committed: names, bounds, exact-dupe rows, and point↔footprint consistency (inside-or-within-150 m; big campuses pass, stitched entries fail loudly). CLAUDE.md now requires running it after any `poi_*.json` edit. All 36 layers pass; per-point `approxM` support added so footprint-less campuses render as honest extents. |

@@ -405,41 +405,10 @@
  },
  {
   "name": "Singapore Institute of Technology",
-  "kind": "University",
+  "kind": "University \u00b7 Punggol campus",
   "lng": 103.91061,
   "lat": 1.41477,
-  "poly": [
-   [
-    [
-     103.778,
-     1.30064
-    ],
-    [
-     103.781,
-     1.29879
-    ],
-    [
-     103.78172,
-     1.30005
-    ],
-    [
-     103.78047,
-     1.30164
-    ],
-    [
-     103.7787,
-     1.3013
-    ],
-    [
-     103.77857,
-     1.30091
-    ],
-    [
-     103.778,
-     1.30064
-    ]
-   ]
-  ]
+  "approxM": 280
  },
  {
   "name": "Singapore Management University",

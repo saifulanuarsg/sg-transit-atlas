@@ -668,7 +668,7 @@
       <ul id="srcList">
         <li><b>Bus network</b> — LTA stop &amp; route data; road-aligned via OSRM. Feeders (span &lt; 6 km) are searchable but not drawn. Dashed = express legs (no stops between).</li>
         <li><b>Schools</b> (337) — MOE school directory, geocoded via OneMap; footprints from OpenStreetMap.</li>
-        <li><b>IHLs</b> (16) — curated list (universities, polytechnics, ITE, arts); campus boundaries from OpenStreetMap / Nominatim.</li>
+        <li><b>IHLs</b> (17) — curated list (universities, polytechnics, ITE, arts); multi-campus institutions (LASALLE McNally + Winstedt) listed per campus; campus boundaries from OpenStreetMap / Nominatim.</li>
         <li><b>Transit hotspots</b> (35) — MRT/LRT interchange stations derived from this app's own rail data (stations on 2+ drawn lines). <b>Major event &amp; convention venues</b> (11) — curated list.</li>
         <li><b>Shopping malls</b> (237) — OpenStreetMap <code>shop=mall</code>, non-malls filtered out.</li>
         <li><b>Supermarkets</b> (532) — OpenStreetMap <code>shop=supermarket</code>, minimarts excluded.</li>
@@ -968,10 +968,11 @@ function poiLayer(p,color,letter,letterFg,off,cfg){
         html:`<span class="poi-letter" style="background:${color};color:${letterFg||'#fff'};transform:${tf}">${letter}</span>`})})
       .bindTooltip(tip,{direction:'top',offset:[0,-10],className:'poi-tip'});
   }
-  if(cfg&&cfg.approxM){
+  const am=p.approxM||(cfg&&cfg.approxM);   // per-place radius wins over the layer default
+  if(am){
     // campus-scale place with no OSM footprint yet: an approximate extent reads better than a
     // 3 px dot. Dashed outline + tooltip flag keep it honest — this is a radius, not a boundary.
-    const ly=L.circle([p.lat,p.lng],{renderer:rPoi,radius:cfg.approxM,color:color,weight:1.6,
+    const ly=L.circle([p.lat,p.lng],{renderer:rPoi,radius:am,color:color,weight:1.6,
       opacity:.85,dashArray:'5 5',fillColor:color,fillOpacity:.16})
       .bindTooltip(tip+'<br><span style="color:#94a3b8">campus extent approximate</span>',tOpt);
     ly.on('mouseover',()=>ly.setStyle({weight:2.4,fillOpacity:.3}));
