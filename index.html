@@ -664,6 +664,7 @@
         <li><b>Bus network</b> — LTA stop &amp; route data; road-aligned via OSRM. Feeders (span &lt; 6 km) are searchable but not drawn. Dashed = express legs (no stops between).</li>
         <li><b>Schools</b> (337) — MOE school directory, geocoded via OneMap; footprints from OpenStreetMap.</li>
         <li><b>IHLs</b> (16) — curated list (universities, polytechnics, ITE, arts); campus boundaries from OpenStreetMap / Nominatim.</li>
+        <li><b>Transit hotspots</b> (35) — MRT/LRT interchange stations derived from this app's own rail data (stations on 2+ drawn lines). <b>Major event &amp; convention venues</b> (11) — curated list.</li>
         <li><b>Shopping malls</b> (237) — OpenStreetMap <code>shop=mall</code>, non-malls filtered out.</li>
         <li><b>Supermarkets</b> (532) — OpenStreetMap <code>shop=supermarket</code>, minimarts excluded.</li>
         <li><b>Police</b> (118) — OpenStreetMap <code>amenity=police</code> (SPF centres, posts, HQs, Coast Guard); non-SPF removed.</li>
@@ -819,6 +820,7 @@ const rBus=L.canvas({pane:'bus',padding:.4}), rPoi=L.canvas({pane:'poi',padding:
 // POI categories — the 32 layers group under these 5 collapsible headers to save panel space
 // (28 are offered in the place picker; the 4 brand layers live in their own McDonald's section)
 const POI_CATS=[
+  {key:'transit',label:'Transit hotspots'},
   {key:'edu',   label:'Education'},
   {key:'retail',label:'Retail & dining'},
   {key:'health',label:'Health & care'},
@@ -826,6 +828,9 @@ const POI_CATS=[
   {key:'life',  label:'Lifestyle & services'},
 ];
 const POI=[
+  // Transit hotspots — the seller's commuter-reach stories. Interchanges are derived from
+  // this app's own rail data (stations on 2+ drawn lines), so they agree with the legend.
+  {key:'interchanges',label:'MRT/LRT interchange stations',color:'#0f766e',file:'data/poi_interchanges.json',cat:'transit'},
   // Education layers use MOE's own level and type terms. The 337-member MOE registry
   // (poi_schools.json) is decomposed into the six below, so it is not drawn as a layer itself.
   {key:'pri',label:'Primary schools',color:'#a78bfa',file:'data/poi_pri.json',cat:'edu'},
@@ -856,6 +861,7 @@ const POI=[
   {key:'cc',label:'Community clubs',color:'#ca8a04',file:'data/poi_cc.json',cat:'civic'},
   {key:'libraries',label:'Libraries',color:'#4f46e5',file:'data/poi_libraries.json',cat:'civic'},
   {key:'sport',label:'SportSG facilities',color:'#65a30d',file:'data/poi_sport.json',cat:'civic'},
+  {key:'events',label:'Major event & convention venues',color:'#0ea5e9',file:'data/poi_events.json',cat:'life'},
   {key:'hotels',label:'Hotels',color:'#b45309',file:'data/poi_hotels.json',cat:'life'},
   {key:'tourism',label:'Tourist attractions',color:'#c026d3',file:'data/poi_tourism.json',cat:'life'},
   {key:'cinemas',label:'Cinemas',color:'#831843',file:'data/poi_cinemas.json',cat:'life'},
@@ -1651,10 +1657,14 @@ S._rankCache={};
 S.rankScope='all';   // rank every trunk route by default; 'sel' narrows to the selection
 function buildRanking(){
   const sel=$('rankSel');
-  POI.forEach(cfg=>{
-    if(!S.pois[cfg.key])return;
-    const o=document.createElement('option');o.value=cfg.key;
-    o.textContent='Routes reaching '+cfg.label.toLowerCase();sel.appendChild(o);
+  // grouped like the add-layer picker — 30+ flat options force a seller to read every entry
+  POI_CATS.forEach(cat=>{
+    const cfgs=POI.filter(c=>c.cat===cat.key&&S.pois[c.key]);
+    if(!cfgs.length)return;
+    const g=document.createElement('optgroup');g.label=cat.label;
+    cfgs.forEach(cfg=>{const o=document.createElement('option');o.value=cfg.key;
+      o.textContent=cfg.label;g.appendChild(o);});
+    sel.appendChild(g);
   });
   sel.onchange=()=>rankBy(sel.value);
   document.querySelectorAll('#rankScopeSeg button').forEach(b=>b.onclick=()=>{
@@ -1668,7 +1678,9 @@ function syncRankPicksOption(){
   const sel=$('rankSel');if(!sel)return;
   let o=[...sel.options].find(x=>x.value==='__picks');
   if(S.picks.length){
-    if(!o){o=document.createElement('option');o.value='__picks';sel.insertBefore(o,sel.options[1]||null);}
+    // insert against sel's direct children — options[1] now lives inside an optgroup, and
+    // insertBefore against a nested node throws
+    if(!o){o=document.createElement('option');o.value='__picks';sel.insertBefore(o,sel.children[1]||null);}
     o.textContent=`Routes reaching your ${S.picks.length} picked place${S.picks.length>1?'s':''}`;
   }else if(o){
     const was=sel.value==='__picks';o.remove();
@@ -1748,7 +1760,7 @@ function rankBy(key){
     ?{color:'#1e40af',label:'your picked places'}
     :POI.find(c=>c.key===key);
   const what=key==='__picks'?`your ${S.picks.length} picked place${S.picks.length>1?'s':''}`
-    :cfg.label.toLowerCase();
+    :cfg.label;   // verbatim — lowercasing mangles MRT/LRT, KFC, McDonald's
   note.textContent=sel
     ?`Your ${S.selected.length} selected route${S.selected.length>1?'s':''}, ranked by ${what} within 400 m of their stops.`
     :`Every trunk route, ranked by ${what} within 400 m of its stops. Tap a route to add it to the selection.`;

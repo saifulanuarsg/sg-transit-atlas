@@ -108,3 +108,19 @@ QSR heat, export modal, rail focus, mobile).
 Known-minor (logged, not fixed): a terminus label can overlap a planning-area label when a
 choropleth is on (two independent decluttering passes); QSR fan-out pins can sit over heat
 maxima. Neither blocks a sell.
+
+## 2026-08-06 · Simulation: POI sweep — sales agent building audience stories (user request)
+
+Persona: a Moove Media seller who lives in the Places panel — every layer is an audience
+story ("routes hitting commuter hubs", "coverage around event venues"). Full data audit of
+all 34 POI files plus the gaps a seller would hit.
+
+| # | Story | Status | Check |
+|---|-------|--------|-------|
+| US-32 | As a seller quoting place counts to a client, I want every layer's data clean — no stray coordinates, unnamed places or accidental duplicates. | ✅ | Scripted audit of all 34 `poi_*.json`: 0 out-of-bounds points, 0 missing names; remaining dup names are real chains (FairPrice ×N), shared coordinates are same-building places. Only genuine gap (polyclinics 8→26) fixed in US-27. |
+| US-33 | As a seller pitching commuter reach, I want an MRT/LRT interchange layer I can rank routes against — "hits 6 interchanges" is a headline claim. | ✅ | `poi_interchanges.json` (35 stations on 2+ drawn lines) derived from the app's own rail data, so it agrees with the rail legend; appears under a new "Transit hotspots" category, rankable and 400 m-countable like any layer. |
+| US-34 | As a seller selling event-driven campaigns, I want the island's major event & convention venues as a layer. | ✅ | 11 curated venues (Expo, Suntec, Sands Expo, National Stadium, Indoor Stadium, Esplanade, Star Theatre, NS Square, Fort Canning, RWS Convention, Our Tampines Hub) with kind labels in tooltips; footer notes the list is curated. |
+| US-35 | As a seller scanning "Rank routes by…", I want the 30+ layers grouped by category — a flat alphabetical-ish list makes me read every entry. | ✅ | Ranking dropdown now uses the same category optgroups as the add-layer picker; also fixed the latent picked-places insert that would throw once optgroups exist (insert against a nested option). |
+
+Backlog (needs real data, not fabricatable offline): hawker centres (~118), petrol stations
+(~180) — both strong seller layers when a source is available.

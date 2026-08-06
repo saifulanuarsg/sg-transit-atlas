@@ -1,0 +1,68 @@
+[
+ {
+  "name": "Singapore Expo",
+  "lng": 103.9614,
+  "lat": 1.3354,
+  "kind": "Convention & exhibition centre"
+ },
+ {
+  "name": "Suntec Singapore Convention Centre",
+  "lng": 103.8575,
+  "lat": 1.2935,
+  "kind": "Convention centre"
+ },
+ {
+  "name": "Sands Expo & Convention Centre",
+  "lng": 103.86,
+  "lat": 1.2838,
+  "kind": "Convention centre"
+ },
+ {
+  "name": "National Stadium",
+  "lng": 103.8759,
+  "lat": 1.3044,
+  "kind": "Stadium \u00b7 Sports Hub"
+ },
+ {
+  "name": "Singapore Indoor Stadium",
+  "lng": 103.8744,
+  "lat": 1.3009,
+  "kind": "Arena \u00b7 Sports Hub"
+ },
+ {
+  "name": "Esplanade \u2013 Theatres on the Bay",
+  "lng": 103.8555,
+  "lat": 1.2899,
+  "kind": "Performing arts centre"
+ },
+ {
+  "name": "The Star Theatre",
+  "lng": 103.7885,
+  "lat": 1.307,
+  "kind": "Theatre \u00b7 The Star Vista"
+ },
+ {
+  "name": "NS Square",
+  "lng": 103.86,
+  "lat": 1.289,
+  "kind": "Marina Bay event stage"
+ },
+ {
+  "name": "Fort Canning Park",
+  "lng": 103.8465,
+  "lat": 1.2946,
+  "kind": "Outdoor concert venue"
+ },
+ {
+  "name": "Resorts World Convention Centre",
+  "lng": 103.8203,
+  "lat": 1.256,
+  "kind": "Convention centre \u00b7 Sentosa"
+ },
+ {
+  "name": "Our Tampines Hub",
+  "lng": 103.9402,
+  "lat": 1.3536,
+  "kind": "Community & event mega-hub"
+ }
+]

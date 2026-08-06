@@ -1,0 +1,212 @@
+[
+ {
+  "name": "Bayfront",
+  "lng": 103.85968,
+  "lat": 1.2826,
+  "kind": "MRT interchange \u00b7 CCL / DTL"
+ },
+ {
+  "name": "Bencoolen",
+  "lng": 103.85028,
+  "lat": 1.29852,
+  "kind": "MRT interchange \u00b7 NSL / CCL / DTL"
+ },
+ {
+  "name": "Bishan",
+  "lng": 103.84904,
+  "lat": 1.35099,
+  "kind": "MRT interchange \u00b7 NSL / CCL"
+ },
+ {
+  "name": "Boon Lay",
+  "lng": 103.70581,
+  "lat": 1.33855,
+  "kind": "MRT interchange \u00b7 EWL / JRL"
+ },
+ {
+  "name": "Botanic Gardens",
+  "lng": 103.81565,
+  "lat": 1.3221,
+  "kind": "MRT interchange \u00b7 CCL / DTL"
+ },
+ {
+  "name": "Bras Basah",
+  "lng": 103.85075,
+  "lat": 1.29688,
+  "kind": "MRT interchange \u00b7 EWL / NSL / CCL / DTL"
+ },
+ {
+  "name": "Bugis",
+  "lng": 103.85628,
+  "lat": 1.29995,
+  "kind": "MRT interchange \u00b7 EWL / DTL"
+ },
+ {
+  "name": "Buona Vista",
+  "lng": 103.79035,
+  "lat": 1.30663,
+  "kind": "MRT interchange \u00b7 EWL / CCL"
+ },
+ {
+  "name": "Caldecott",
+  "lng": 103.83981,
+  "lat": 1.33737,
+  "kind": "MRT interchange \u00b7 CCL / TEL"
+ },
+ {
+  "name": "Chinatown",
+  "lng": 103.84414,
+  "lat": 1.28469,
+  "kind": "MRT interchange \u00b7 NEL / DTL"
+ },
+ {
+  "name": "Choa Chu Kang",
+  "lng": 103.74433,
+  "lat": 1.38532,
+  "kind": "MRT interchange \u00b7 NSL / JRL"
+ },
+ {
+  "name": "City Hall",
+  "lng": 103.85262,
+  "lat": 1.29305,
+  "kind": "MRT interchange \u00b7 EWL / NSL / CCL"
+ },
+ {
+  "name": "Dhoby Ghaut",
+  "lng": 103.84555,
+  "lat": 1.2996,
+  "kind": "MRT interchange \u00b7 NSL / CCL / NEL"
+ },
+ {
+  "name": "Downtown",
+  "lng": 103.85279,
+  "lat": 1.27951,
+  "kind": "MRT interchange \u00b7 NSL / DTL"
+ },
+ {
+  "name": "Expo",
+  "lng": 103.96266,
+  "lat": 1.33508,
+  "kind": "MRT interchange \u00b7 EWL / DTL"
+ },
+ {
+  "name": "Fort Canning",
+  "lng": 103.84435,
+  "lat": 1.29249,
+  "kind": "MRT interchange \u00b7 NEL / DTL"
+ },
+ {
+  "name": "HarbourFront",
+  "lng": 103.82155,
+  "lat": 1.26536,
+  "kind": "MRT interchange \u00b7 CCL / NEL"
+ },
+ {
+  "name": "Jurong East",
+  "lng": 103.74229,
+  "lat": 1.33311,
+  "kind": "MRT interchange \u00b7 EWL / NSL / JRL"
+ },
+ {
+  "name": "Keppel",
+  "lng": 103.83071,
+  "lat": 1.27046,
+  "kind": "MRT interchange \u00b7 CCL / NEL"
+ },
+ {
+  "name": "Little India",
+  "lng": 103.84917,
+  "lat": 1.30688,
+  "kind": "MRT interchange \u00b7 NEL / DTL"
+ },
+ {
+  "name": "MacPherson",
+  "lng": 103.88956,
+  "lat": 1.32623,
+  "kind": "MRT interchange \u00b7 CCL / DTL"
+ },
+ {
+  "name": "Marina Bay",
+  "lng": 103.85531,
+  "lat": 1.27547,
+  "kind": "MRT interchange \u00b7 NSL / CCL / TEL"
+ },
+ {
+  "name": "Marina South Pier",
+  "lng": 103.86282,
+  "lat": 1.27145,
+  "kind": "MRT interchange \u00b7 NSL / TEL"
+ },
+ {
+  "name": "Marymount",
+  "lng": 103.83954,
+  "lat": 1.34863,
+  "kind": "MRT interchange \u00b7 CCL / TEL"
+ },
+ {
+  "name": "Newton",
+  "lng": 103.83784,
+  "lat": 1.31306,
+  "kind": "MRT interchange \u00b7 NSL / DTL"
+ },
+ {
+  "name": "Orchard",
+  "lng": 103.83142,
+  "lat": 1.30313,
+  "kind": "MRT interchange \u00b7 NSL / TEL"
+ },
+ {
+  "name": "Paya Lebar",
+  "lng": 103.89266,
+  "lat": 1.3175,
+  "kind": "MRT interchange \u00b7 EWL / CCL"
+ },
+ {
+  "name": "Promenade",
+  "lng": 103.86056,
+  "lat": 1.29311,
+  "kind": "MRT interchange \u00b7 CCL / DTL"
+ },
+ {
+  "name": "Raffles Place",
+  "lng": 103.85176,
+  "lat": 1.28348,
+  "kind": "MRT interchange \u00b7 EWL / NSL"
+ },
+ {
+  "name": "Sengkang",
+  "lng": 103.89548,
+  "lat": 1.3917,
+  "kind": "MRT interchange \u00b7 SKLRT / NEL"
+ },
+ {
+  "name": "Serangoon",
+  "lng": 103.87268,
+  "lat": 1.34981,
+  "kind": "MRT interchange \u00b7 CCL / NEL"
+ },
+ {
+  "name": "Stevens",
+  "lng": 103.82576,
+  "lat": 1.31998,
+  "kind": "MRT interchange \u00b7 DTL / TEL"
+ },
+ {
+  "name": "Tampines",
+  "lng": 103.94408,
+  "lat": 1.35423,
+  "kind": "MRT interchange \u00b7 EWL / DTL"
+ },
+ {
+  "name": "Toh Guan",
+  "lng": 103.7426,
+  "lat": 1.34005,
+  "kind": "MRT interchange \u00b7 NSL / JRL"
+ },
+ {
+  "name": "Woodlands",
+  "lng": 103.78746,
+  "lat": 1.43591,
+  "kind": "MRT interchange \u00b7 NSL / TEL"
+ }
+]
