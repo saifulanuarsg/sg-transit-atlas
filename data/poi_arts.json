@@ -1,9 +1,16 @@
 [
  {
-  "name": "LASALLE College of the Arts",
-  "kind": "Arts",
+  "name": "LASALLE College of the Arts (McNally Campus)",
+  "kind": "Arts \u00b7 flagship campus, Rochor",
   "lng": 103.85156,
   "lat": 1.30286,
+  "approxM": 90
+ },
+ {
+  "name": "LASALLE College of the Arts (Winstedt Campus)",
+  "kind": "Arts \u00b7 Newton",
+  "lng": 103.84101,
+  "lat": 1.31043,
   "poly": [
    [
     [
