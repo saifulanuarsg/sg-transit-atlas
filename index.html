@@ -601,8 +601,13 @@
   </div>
   <aside id="panel">
     <div class="p-head">
-      <h1 style="font-size:13px">Map layers</h1>
-      <div class="sub">what's drawn on the map</div>
+      <div class="ph-row">
+        <div>
+          <h1 style="font-size:13px">Map layers</h1>
+          <div class="sub">what's drawn on the map</div>
+        </div>
+        <button id="resetPanel" class="reset-btn" title="Clear every map layer — the route selection stays">Reset</button>
+      </div>
     </div>
     <div id="body">
       <div class="sec sec-net">
@@ -892,8 +897,10 @@ Promise.all([
   get('data/network.json'),get('data/stops.json'),get('data/rail_stations.json'),
   get('data/rail_lines.json'),get('data/planning_areas.geojson'),
   get('data/stop_area.json'),get('data/stop_volume.json'),get('data/context_indices.json'),
+  get('data/qc_report.json'),
   ...POI.map(p=>get(p.file))
-]).then(([net,stops,stations,railLines,areas,stopArea,stopVol,context,...pois])=>{
+]).then(([net,stops,stations,railLines,areas,stopArea,stopVol,context,qcReport,...pois])=>{
+  S.qcReport=qcReport;
   S.stops=stops||{};S.stations=stations||[];S.railLines=railLines||[];
   S.areas=areas;S.stopArea=stopArea||{};S.stopVol=stopVol||{};S.context=context||null;
   if(areas){FEATURES.demographics=true;
@@ -1408,6 +1415,13 @@ function buildPanel(){
   buildPropertyHeatmaps();
   buildDemographics();
   buildSearch();
+  // data-health line: generated from the committed checker report, never hand-written —
+  // a seller can quote the Atlas without double-checking, and see when it was last verified
+  if(S.qcReport){const li=document.createElement('li');
+    li.innerHTML=`<b>Data health</b> — ${S.qcReport.layers} place layers · ${fmt(S.qcReport.places)} places `
+      +`passed every consistency check (${(S.qcReport.checks||[]).join(' · ')}) on <b>${S.qcReport.verified_on}</b>. `
+      +`The checker re-runs on every data edit; this line comes from its report.`;
+    const src=$('srcList');if(src)src.prepend(li);}
 }
 // ---------------- route clusters (curated packages) ----------------
 // A package button must say where its routes go — "Set 3" alone forces the seller to memorise
@@ -2342,6 +2356,22 @@ function flashStop(lat,lng,color){   // brief ring so the eye lands on the right
   const m=L.circleMarker([lat,lng],{pane:'pill',radius:11,color,weight:3,fill:false,opacity:.95});
   m.addTo(map);setTimeout(()=>map.removeLayer(m),2200);
 }
+// right-bar Reset: unwind every map layer in one tap. The route selection deliberately
+// survives — clearing that is the left bar's Reset, and the two shouldn't share a blast radius.
+$('resetPanel').onclick=()=>{
+  POI.forEach(cfg=>{const g=groups[cfg.key];if(g&&map.hasLayer(g))map.removeLayer(g);});
+  clearPicks();
+  setPoiLabels(false);
+  S.poiScope='all';
+  document.querySelectorAll('#poiScopeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.s==='all'));
+  clearShades();S.segment='none';S.segHatch=null;paintChoro('none');
+  if(S.cd&&S.cd.mode!=='off'){S.cd.mode='off';buildCompDensity();buildCompField();}
+  if(S.railOn){setRailVisible(false);const r=$('railRow');
+    if(r){r.classList.remove('on');r.setAttribute('aria-checked','false');}}
+  [groups.trunk,groups.hubs].forEach(g=>{if(map.hasLayer(g))map.removeLayer(g);});
+  document.querySelectorAll('#netToggles .row').forEach(r=>{r.classList.remove('on');r.setAttribute('aria-checked','false');});
+  applyPoiScope();updateExportCta();
+};
 $('tglLeft').onclick=()=>{S.lbOpen=!S.lbOpen;lbSync();};
 $('tglRight').onclick=()=>{const p=$('panel'),hidden=p.style.display==='none';
   p.style.display=hidden?'':'none';$('tglRight').textContent=hidden?'›':'‹';
