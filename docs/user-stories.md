@@ -84,6 +84,27 @@ panel-left placement verified in US-21.
 | US-25 | As a seller who clicks a package and exports straight away, I want the framing to be deterministic — never half of an in-flight zoom animation. | ✅ | Found in headless runs: the live animated fit lands *after* the export fit and clobbers it (capture at zoom 12 instead of 13.14). Fixed by waiting out `_animatingZoom`, `map.stop()`, and re-asserting the fit after the settle waits; batch renders now capture at exactly the fitted zooms (12.32 / 12.45 / 13.14). |
 | US-26 | As a client, I never want the attribution strip covering a route end or terminus label. | ✅ | Set 1 render initially had "Kampong Bahru Ter" under the strip; `avoidBottom` fit-padding (≈ strip height) now keeps the bottom-most termini clear — verified on the re-render. |
 
+### Follow-up defect (user screenshot, PR #5)
+
 | # | Story | Status | Check |
 |---|-------|--------|-------|
 | US-13 | As a user of the left bar, I want package buttons to stay inside their card at any width — the coverage line must truncate, never push the layout apart. | ✅ | Root cause: flex items refuse to shrink below nowrap content (`min-width:auto`). Fixed with `min-width:0` on `.clbtn`. Headless check: 0 buttons outside the card bounds; five-route sets render 2×2 again; coverage lines ellipsize. |
+
+## 2026-08-06 · Simulation: QC pass — user + tester sweep of every surface (user request)
+
+Persona: the user themselves as QC tester, clicking through every surface; one seeded defect
+("the number of polyclinic is too small") plus everything else found on a 12-state headless
+walkthrough (initial, health layers, package, drill-down, ranking, shading, search, finder,
+QSR heat, export modal, rail focus, mobile).
+
+| # | Story | Status | Check |
+|---|-------|--------|-------|
+| US-27 | As a seller pitching health audiences, I want the polyclinic layer to be complete — 8 of Singapore's 26 polyclinics is a credibility hole a client will spot. | ✅ | `poi_polyclinics.json` 8 → 26 entries (all SingHealth / NHGP / NUP polyclinics); dropdown, chip, ranking and 400 m counts all pick the count up from data. |
+| US-28 | As a user scanning the island, I want sparse, high-value layers (hospitals, polyclinics, libraries, cinemas) visible at island zoom — not 3 px specks. | ✅ | Dot radius now scales with layer sparsity (≤60 places → 5.5 px, ≤200 → 4.25 px, else 3 px) with a matching hover size; screenshot before/after. |
+| US-29 | As a user closing a dropdown with Escape, I never want my route selection wiped as a side effect. | ✅ | Found on walkthrough: Esc in the place finder closed its list *and* cleared 5 routes. Finder now stops propagation, and the document Esc handler closes an open finder list before anything else. Headless: Esc with finder open → selection intact. |
+| US-30 | As a user reading the selection card, I want the "within 400 m" list to show what's actually nearby — not 30 rows padded with zeros. | ✅ | Zero-count layers fold into one muted line; non-zero rows unchanged. |
+| US-31 | As a user, I want the interface to feel smooth — hover and state changes eased, the export modal entering softly — without motion when I've asked the OS for less. | ✅ | Shared micro-transition on interactive rows/buttons/chips, modal fade+rise entrance, CTA hover lift; all disabled under `prefers-reduced-motion: reduce`. |
+
+Known-minor (logged, not fixed): a terminus label can overlap a planning-area label when a
+choropleth is on (two independent decluttering passes); QSR fan-out pins can sit over heat
+maxima. Neither blocks a sell.

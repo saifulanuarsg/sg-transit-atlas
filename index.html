@@ -503,6 +503,28 @@
   .leaflet-control-scale-line{background:rgba(255,255,255,.85);border:1.5px solid #64748b;
     border-top:none;color:#334155;font:600 10px/1.7 system-ui;
     box-shadow:0 1px 3px rgba(15,23,42,.18);border-radius:0 0 4px 4px}
+  /* ---------- motion: shared micro-transitions + modal entrance ---------- */
+  /* one eased transition for every interactive surface, so state changes feel continuous
+     rather than snapping; all of it collapses to nothing under prefers-reduced-motion */
+  .row,.rrow,.achip,.selchip,.exp-btn,.exp-dl,.res,.lb-route,.lb-stop,.poi-chip,.mcd-tgl,
+  .dir-tab,.rl-row,.rl-all,.reset-btn,.pk-res,.seg button,.modal-x,.xbtn,.lb-x,.pc-x,
+  .cta-export{transition:background-color .15s ease,border-color .15s ease,color .15s ease,
+    box-shadow .15s ease,transform .15s ease}
+  .cta-export:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(30,64,175,.35)}
+  .cta-export:active{transform:translateY(0)}
+  .clbtn:hover{transform:translateY(-1px)}
+  .clbtn:active,.clbtn.on{transform:none}
+  .modal-back{animation:mbIn .16s ease-out}
+  .modal{animation:mIn .18s cubic-bezier(.2,.9,.3,1.15)}
+  @keyframes mbIn{from{opacity:0}}
+  @keyframes mIn{from{opacity:0;transform:translateY(10px) scale(.97)}}
+  @media(prefers-reduced-motion:reduce){
+    .row,.rrow,.achip,.selchip,.exp-btn,.exp-dl,.res,.lb-route,.lb-stop,.poi-chip,.mcd-tgl,
+    .dir-tab,.rl-row,.rl-all,.reset-btn,.pk-res,.seg button,.modal-x,.xbtn,.lb-x,.pc-x,
+    .cta-export,.clbtn,.track,.track::after,.lb-route .lb-car{transition:none}
+    .modal-back,.modal{animation:none}
+    .cta-export:hover,.clbtn:hover{transform:none}
+  }
   #loading{position:absolute;inset:0;z-index:2000;background:rgba(248,250,252,.9);
     display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px}
   .spin{width:30px;height:30px;border:3px solid var(--line);border-top-color:var(--primary);
@@ -944,10 +966,14 @@ function poiLayer(p,color,letter,letterFg,off,cfg){
     ly.on('mouseout',()=>ly.setStyle({weight:1.6,fillOpacity:.16}));
     return ly;
   }
-  const ly=L.circleMarker([p.lat,p.lng],{renderer:rPoi,radius:3,color:'#fff',weight:1,
+  // sparse layers (hospitals, polyclinics, libraries…) are usually the pitch-critical ones —
+  // size their dots up so ~26 places still read at island zoom; dense layers stay small
+  const nPts=cfg?(S.pois[cfg.key]||[]).length:999;
+  const r=nPts<=60?5.5:nPts<=200?4.25:3, w=r>3?1.4:1;
+  const ly=L.circleMarker([p.lat,p.lng],{renderer:rPoi,radius:r,color:'#fff',weight:w,
     fillColor:color,fillOpacity:.92}).bindTooltip(tip,tOpt);
-  ly.on('mouseover',()=>ly.setStyle({radius:5.5,weight:1.6}));
-  ly.on('mouseout',()=>ly.setStyle({radius:3,weight:1}));
+  ly.on('mouseover',()=>ly.setStyle({radius:r+2.5,weight:w+.6}));
+  ly.on('mouseout',()=>ly.setStyle({radius:r,weight:w}));
   return ly;
 }
 // Outlets that share a postal code geocode to the SAME point, so their letter badges land on top
@@ -1146,7 +1172,9 @@ function buildPlaceFinder(){
   inp.oninput=draw;
   inp.onfocus=()=>{if(inp.value.trim())draw();};
   inp.onkeydown=e=>{
-    if(e.key==='Escape'){close();inp.blur();return;}
+    // Esc here only closes this list — stop it reaching the document handler, which would
+    // fall through to clearSel() and wipe a selection as a side effect (US-29)
+    if(e.key==='Escape'){e.stopPropagation();close();inp.blur();return;}
     if(!rows.length)return;
     if(e.key==='ArrowDown'||e.key==='ArrowUp'){
       e.preventDefault();cur=(cur+(e.key==='ArrowDown'?1:rows.length-1))%rows.length;
@@ -2035,8 +2063,13 @@ function renderSelection(opt){
   const unique=uCodes.size;
   const km=sel.reduce((a,s)=>a+routeLen(s),0);
   const stopsLL=[...uCodes].map(cd=>[S.stops[cd][0],S.stops[cd][1]]);
+  // only layers with something nearby get a row — 30 rows padded with zeros is noise (US-30)
+  let zeroLayers=0;
   const poiRows=POI.map(cfg=>{const n=near(S.pois[cfg.key],stopsLL,.4);
-    return n==null?'':`<div class="poirow"><span class="dot" style="background:${cfg.color}"></span>${cfg.label}<span class="n">${n}</span></div>`;}).join('');
+    if(n==null)return '';
+    if(!n){zeroLayers++;return '';}
+    return `<div class="poirow"><span class="dot" style="background:${cfg.color}"></span>${cfg.label}<span class="n">${n}</span></div>`;}).join('')
+    +(zeroLayers?`<div class="note" style="margin-top:4px">Nothing within 400 m from ${zeroLayers} other place layer${zeroLayers>1?'s':''}.</div>`:'');
   const single=sel.length===1?sel[0]:null;
   const header=single
     ? `<span class="badge" style="background:${colOf[single.n]}">${single.n}</span>
@@ -2606,6 +2639,7 @@ function buildSearch(){
   document.addEventListener('click',e=>{if(!e.target.closest('.searchwrap'))res.style.display='none';});
   document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;
     const m=$('expModal');if(m&&!m.hidden){m.hidden=true;return;}   // Esc closes the export modal first
+    const pf=$('poiFindRes');if(pf&&!pf.hidden){pf.hidden=true;return;}   // then the place-finder list
     if(res.style.display==='block'){res.style.display='none';return;}   // then the results list
     clearSel();});
 }
