@@ -503,6 +503,28 @@
   .leaflet-control-scale-line{background:rgba(255,255,255,.85);border:1.5px solid #64748b;
     border-top:none;color:#334155;font:600 10px/1.7 system-ui;
     box-shadow:0 1px 3px rgba(15,23,42,.18);border-radius:0 0 4px 4px}
+  /* ---------- motion: shared micro-transitions + modal entrance ---------- */
+  /* one eased transition for every interactive surface, so state changes feel continuous
+     rather than snapping; all of it collapses to nothing under prefers-reduced-motion */
+  .row,.rrow,.achip,.selchip,.exp-btn,.exp-dl,.res,.lb-route,.lb-stop,.poi-chip,.mcd-tgl,
+  .dir-tab,.rl-row,.rl-all,.reset-btn,.pk-res,.seg button,.modal-x,.xbtn,.lb-x,.pc-x,
+  .cta-export{transition:background-color .15s ease,border-color .15s ease,color .15s ease,
+    box-shadow .15s ease,transform .15s ease}
+  .cta-export:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(30,64,175,.35)}
+  .cta-export:active{transform:translateY(0)}
+  .clbtn:hover{transform:translateY(-1px)}
+  .clbtn:active,.clbtn.on{transform:none}
+  .modal-back{animation:mbIn .16s ease-out}
+  .modal{animation:mIn .18s cubic-bezier(.2,.9,.3,1.15)}
+  @keyframes mbIn{from{opacity:0}}
+  @keyframes mIn{from{opacity:0;transform:translateY(10px) scale(.97)}}
+  @media(prefers-reduced-motion:reduce){
+    .row,.rrow,.achip,.selchip,.exp-btn,.exp-dl,.res,.lb-route,.lb-stop,.poi-chip,.mcd-tgl,
+    .dir-tab,.rl-row,.rl-all,.reset-btn,.pk-res,.seg button,.modal-x,.xbtn,.lb-x,.pc-x,
+    .cta-export,.clbtn,.track,.track::after,.lb-route .lb-car{transition:none}
+    .modal-back,.modal{animation:none}
+    .cta-export:hover,.clbtn:hover{transform:none}
+  }
   #loading{position:absolute;inset:0;z-index:2000;background:rgba(248,250,252,.9);
     display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px}
   .spin{width:30px;height:30px;border:3px solid var(--line);border-top-color:var(--primary);
@@ -642,6 +664,7 @@
         <li><b>Bus network</b> — LTA stop &amp; route data; road-aligned via OSRM. Feeders (span &lt; 6 km) are searchable but not drawn. Dashed = express legs (no stops between).</li>
         <li><b>Schools</b> (337) — MOE school directory, geocoded via OneMap; footprints from OpenStreetMap.</li>
         <li><b>IHLs</b> (16) — curated list (universities, polytechnics, ITE, arts); campus boundaries from OpenStreetMap / Nominatim.</li>
+        <li><b>Transit hotspots</b> (35) — MRT/LRT interchange stations derived from this app's own rail data (stations on 2+ drawn lines). <b>Major event &amp; convention venues</b> (11) — curated list.</li>
         <li><b>Shopping malls</b> (237) — OpenStreetMap <code>shop=mall</code>, non-malls filtered out.</li>
         <li><b>Supermarkets</b> (532) — OpenStreetMap <code>shop=supermarket</code>, minimarts excluded.</li>
         <li><b>Police</b> (118) — OpenStreetMap <code>amenity=police</code> (SPF centres, posts, HQs, Coast Guard); non-SPF removed.</li>
@@ -797,6 +820,7 @@ const rBus=L.canvas({pane:'bus',padding:.4}), rPoi=L.canvas({pane:'poi',padding:
 // POI categories — the 32 layers group under these 5 collapsible headers to save panel space
 // (28 are offered in the place picker; the 4 brand layers live in their own McDonald's section)
 const POI_CATS=[
+  {key:'transit',label:'Transit hotspots'},
   {key:'edu',   label:'Education'},
   {key:'retail',label:'Retail & dining'},
   {key:'health',label:'Health & care'},
@@ -804,6 +828,9 @@ const POI_CATS=[
   {key:'life',  label:'Lifestyle & services'},
 ];
 const POI=[
+  // Transit hotspots — the seller's commuter-reach stories. Interchanges are derived from
+  // this app's own rail data (stations on 2+ drawn lines), so they agree with the legend.
+  {key:'interchanges',label:'MRT/LRT interchange stations',color:'#0f766e',file:'data/poi_interchanges.json',cat:'transit'},
   // Education layers use MOE's own level and type terms. The 337-member MOE registry
   // (poi_schools.json) is decomposed into the six below, so it is not drawn as a layer itself.
   {key:'pri',label:'Primary schools',color:'#a78bfa',file:'data/poi_pri.json',cat:'edu'},
@@ -834,6 +861,7 @@ const POI=[
   {key:'cc',label:'Community clubs',color:'#ca8a04',file:'data/poi_cc.json',cat:'civic'},
   {key:'libraries',label:'Libraries',color:'#4f46e5',file:'data/poi_libraries.json',cat:'civic'},
   {key:'sport',label:'SportSG facilities',color:'#65a30d',file:'data/poi_sport.json',cat:'civic'},
+  {key:'events',label:'Major event & convention venues',color:'#0ea5e9',file:'data/poi_events.json',cat:'life'},
   {key:'hotels',label:'Hotels',color:'#b45309',file:'data/poi_hotels.json',cat:'life'},
   {key:'tourism',label:'Tourist attractions',color:'#c026d3',file:'data/poi_tourism.json',cat:'life'},
   {key:'cinemas',label:'Cinemas',color:'#831843',file:'data/poi_cinemas.json',cat:'life'},
@@ -944,10 +972,14 @@ function poiLayer(p,color,letter,letterFg,off,cfg){
     ly.on('mouseout',()=>ly.setStyle({weight:1.6,fillOpacity:.16}));
     return ly;
   }
-  const ly=L.circleMarker([p.lat,p.lng],{renderer:rPoi,radius:3,color:'#fff',weight:1,
+  // sparse layers (hospitals, polyclinics, libraries…) are usually the pitch-critical ones —
+  // size their dots up so ~26 places still read at island zoom; dense layers stay small
+  const nPts=cfg?(S.pois[cfg.key]||[]).length:999;
+  const r=nPts<=60?5.5:nPts<=200?4.25:3, w=r>3?1.4:1;
+  const ly=L.circleMarker([p.lat,p.lng],{renderer:rPoi,radius:r,color:'#fff',weight:w,
     fillColor:color,fillOpacity:.92}).bindTooltip(tip,tOpt);
-  ly.on('mouseover',()=>ly.setStyle({radius:5.5,weight:1.6}));
-  ly.on('mouseout',()=>ly.setStyle({radius:3,weight:1}));
+  ly.on('mouseover',()=>ly.setStyle({radius:r+2.5,weight:w+.6}));
+  ly.on('mouseout',()=>ly.setStyle({radius:r,weight:w}));
   return ly;
 }
 // Outlets that share a postal code geocode to the SAME point, so their letter badges land on top
@@ -1146,7 +1178,9 @@ function buildPlaceFinder(){
   inp.oninput=draw;
   inp.onfocus=()=>{if(inp.value.trim())draw();};
   inp.onkeydown=e=>{
-    if(e.key==='Escape'){close();inp.blur();return;}
+    // Esc here only closes this list — stop it reaching the document handler, which would
+    // fall through to clearSel() and wipe a selection as a side effect (US-29)
+    if(e.key==='Escape'){e.stopPropagation();close();inp.blur();return;}
     if(!rows.length)return;
     if(e.key==='ArrowDown'||e.key==='ArrowUp'){
       e.preventDefault();cur=(cur+(e.key==='ArrowDown'?1:rows.length-1))%rows.length;
@@ -1623,10 +1657,14 @@ S._rankCache={};
 S.rankScope='all';   // rank every trunk route by default; 'sel' narrows to the selection
 function buildRanking(){
   const sel=$('rankSel');
-  POI.forEach(cfg=>{
-    if(!S.pois[cfg.key])return;
-    const o=document.createElement('option');o.value=cfg.key;
-    o.textContent='Routes reaching '+cfg.label.toLowerCase();sel.appendChild(o);
+  // grouped like the add-layer picker — 30+ flat options force a seller to read every entry
+  POI_CATS.forEach(cat=>{
+    const cfgs=POI.filter(c=>c.cat===cat.key&&S.pois[c.key]);
+    if(!cfgs.length)return;
+    const g=document.createElement('optgroup');g.label=cat.label;
+    cfgs.forEach(cfg=>{const o=document.createElement('option');o.value=cfg.key;
+      o.textContent=cfg.label;g.appendChild(o);});
+    sel.appendChild(g);
   });
   sel.onchange=()=>rankBy(sel.value);
   document.querySelectorAll('#rankScopeSeg button').forEach(b=>b.onclick=()=>{
@@ -1640,7 +1678,9 @@ function syncRankPicksOption(){
   const sel=$('rankSel');if(!sel)return;
   let o=[...sel.options].find(x=>x.value==='__picks');
   if(S.picks.length){
-    if(!o){o=document.createElement('option');o.value='__picks';sel.insertBefore(o,sel.options[1]||null);}
+    // insert against sel's direct children — options[1] now lives inside an optgroup, and
+    // insertBefore against a nested node throws
+    if(!o){o=document.createElement('option');o.value='__picks';sel.insertBefore(o,sel.children[1]||null);}
     o.textContent=`Routes reaching your ${S.picks.length} picked place${S.picks.length>1?'s':''}`;
   }else if(o){
     const was=sel.value==='__picks';o.remove();
@@ -1720,7 +1760,7 @@ function rankBy(key){
     ?{color:'#1e40af',label:'your picked places'}
     :POI.find(c=>c.key===key);
   const what=key==='__picks'?`your ${S.picks.length} picked place${S.picks.length>1?'s':''}`
-    :cfg.label.toLowerCase();
+    :cfg.label;   // verbatim — lowercasing mangles MRT/LRT, KFC, McDonald's
   note.textContent=sel
     ?`Your ${S.selected.length} selected route${S.selected.length>1?'s':''}, ranked by ${what} within 400 m of their stops.`
     :`Every trunk route, ranked by ${what} within 400 m of its stops. Tap a route to add it to the selection.`;
@@ -2035,8 +2075,13 @@ function renderSelection(opt){
   const unique=uCodes.size;
   const km=sel.reduce((a,s)=>a+routeLen(s),0);
   const stopsLL=[...uCodes].map(cd=>[S.stops[cd][0],S.stops[cd][1]]);
+  // only layers with something nearby get a row — 30 rows padded with zeros is noise (US-30)
+  let zeroLayers=0;
   const poiRows=POI.map(cfg=>{const n=near(S.pois[cfg.key],stopsLL,.4);
-    return n==null?'':`<div class="poirow"><span class="dot" style="background:${cfg.color}"></span>${cfg.label}<span class="n">${n}</span></div>`;}).join('');
+    if(n==null)return '';
+    if(!n){zeroLayers++;return '';}
+    return `<div class="poirow"><span class="dot" style="background:${cfg.color}"></span>${cfg.label}<span class="n">${n}</span></div>`;}).join('')
+    +(zeroLayers?`<div class="note" style="margin-top:4px">Nothing within 400 m from ${zeroLayers} other place layer${zeroLayers>1?'s':''}.</div>`:'');
   const single=sel.length===1?sel[0]:null;
   const header=single
     ? `<span class="badge" style="background:${colOf[single.n]}">${single.n}</span>
@@ -2606,6 +2651,7 @@ function buildSearch(){
   document.addEventListener('click',e=>{if(!e.target.closest('.searchwrap'))res.style.display='none';});
   document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;
     const m=$('expModal');if(m&&!m.hidden){m.hidden=true;return;}   // Esc closes the export modal first
+    const pf=$('poiFindRes');if(pf&&!pf.hidden){pf.hidden=true;return;}   // then the place-finder list
     if(res.style.display==='block'){res.style.display='none';return;}   // then the results list
     clearSel();});
 }
@@ -2708,10 +2754,14 @@ function tilesReady(){
     setTimeout(fin,1800);});
 }
 // render the map at w×h px, framed on the selection, return a scale-2 canvas.
-// opts.avoidLeft (CSS px): extra left fit-padding so content clears an overlay card
-// stamped on the left of the frame — routes must never hide behind the card.
+// opts.avoidBottom (CSS px): extra bottom fit-padding so routes and termini labels
+// stay clear of the source strip stamped along the bottom edge of the map band.
 async function captureFramed(w,h,opts){
   if(typeof html2canvas==='undefined')throw new Error('image library not loaded');
+  // a live animated fit (package click, route toggle) may still be in flight; its zoom
+  // transition would land AFTER our export fit and clobber the framing — let it finish
+  if(map._animatingZoom)await new Promise(r=>{map.once('zoomend',r);setTimeout(r,600);});
+  map.stop();   // and cancel any pan animation outright
   const el=$('map');
   const view={c:map.getCenter(),z:map.getZoom()};
   const css={position:el.style.position,left:el.style.left,top:el.style.top,
@@ -2720,14 +2770,23 @@ async function captureFramed(w,h,opts){
   el.style.flex='none';el.style.width=w+'px';el.style.height=h+'px';
   const savedMin=map.getMinZoom();   // relax the SG zoom/pan limits so island-wide framing isn't clipped
   map.setMaxBounds(null);map.setMinZoom(8);
+  const savedSnap=map.options.zoomSnap;
+  map.options.zoomSnap=0;   // fractional fit: frame the selection tight, not the next integer zoom out
   map.invalidateSize({animate:false});
   S.exportMode=true;                 // termini: show every one, at a smaller size
   const b=selectionBounds(),pad=Math.round(Math.min(w,h)*0.055);
-  const padL=pad+((opts&&opts.avoidLeft)||0);
-  if(b)map.fitBounds(b,{paddingTopLeft:[padL,pad],paddingBottomRight:[pad,pad],animate:false});
+  const padB=pad+((opts&&opts.avoidBottom)||0);
+  const refit=()=>{if(b)map.fitBounds(b,{paddingTopLeft:[pad,pad],paddingBottomRight:[pad,padB],animate:false});};
+  refit();
   await new Promise(r=>{map.once('moveend',r);setTimeout(r,350);});
   if(S.selected.length)placeTermini();   // re-lay the termini at export sizing for this frame
   await tilesReady();
+  // a live animation queued before the resize (package click / route toggle) can re-frame
+  // the map behind our back during the waits above; it only lands once, so one re-assert
+  // right before the snapshot makes the framing deterministic
+  const zFit=map.getZoom();refit();
+  if(map.getZoom()!==zFit){await new Promise(r=>setTimeout(r,150));
+    if(S.selected.length)placeTermini();}
   let canvas;
   try{
     canvas=await html2canvas(el,{useCORS:true,backgroundColor:'#e8ecef',scale:2,logging:false,
@@ -2739,6 +2798,7 @@ async function captureFramed(w,h,opts){
   }finally{
     S.exportMode=false;
     Object.assign(el.style,css);
+    map.options.zoomSnap=savedSnap;
     map.setMinZoom(savedMin);map.setMaxBounds(SG_BOUNDS);   // restore the SG limits
     map.invalidateSize({animate:false});
     map.setView(view.c,view.z,{animate:false});
@@ -2770,113 +2830,137 @@ function pillBlock(x,routes,xL,cyTop,maxW,u,draw){
     rx+=pw+gapX;});
   return rows*h+(rows-1)*gapY;
 }
-// stamp the un-branded title card. Blocks beyond the title are opt-in (S.exp.*).
-function stampCard(x,W,H){
-  H=H||W;   // JPG is square; card anchors to the bottom-left corner (over the sea, off the routes)
+// truncate t with an ellipsis so it fits maxW
+function ellip(x,t,font,maxW){x.font=font;if(x.measureText(t).width<=maxW)return t;
+  while(t.length>1&&x.measureText(t+'…').width>maxW)t=t.slice(0,-1);return t+'…';}
+// build the un-branded info bar for the bottom of the frame. The map band above keeps the
+// full frame width — Singapore's network is wide, so a wide band frames it far tighter
+// than a side column ever could. Measure first (barH), then draw(topY). The header column
+// carries the identity; blocks beyond it are opt-in (S.exp.*) and flow left→right as
+// separated columns.
+function buildBar(x,W){
   const info=titleInfo(),imp=impForExport(),u=W/1000,single=info.kind==='single';
   if(info.kind==='multi')info.badge='';   // "6 bus routes" already carries the count — no badge echo
   x.textBaseline='alphabetic';
-  const M=26*u,pad=20*u,cardW=Math.min(W-2*M,398*u),inW=cardW-2*pad;
-  const eyeF=12*u,badgeF=info.badge.length<=2?32*u:(info.badge.length<=3?26*u:20*u),
+  const F=w=>`${w}px Inter,system-ui,sans-serif`;
+  const pad=26*u,gap=30*u;
+  const eyeF=12*u,badgeF=info.badge.length<=2?30*u:(info.badge.length<=3?24*u:19*u),
     mainF=single?17*u:20*u,chipF=11*u,labF=10*u,bodyF=12.5*u,statF=15*u;
-  const badgeH=info.badge?46*u:0;
-  x.font=`800 ${badgeF}px Inter,system-ui,sans-serif`;
-  const badgeW=info.badge?Math.max(46*u,x.measureText(info.badge).width+26*u):0;
-  const mainText=single?info.termini:info.title;
-  const mainMaxW=inW-(info.badge?badgeW+12*u:0);
-  const mainLines=wrapLines(x,mainText,`800 ${mainF}px Inter,system-ui,sans-serif`,mainMaxW);
+  const lab=(bx,by,t)=>{x.fillStyle=CARD.grey;x.font=F(`700 ${labF}`);x.fillText(t,bx,by+labF);};
+  // ---- header column: eyebrow · badge + title · set label · type chip ----
+  const badgeH=info.badge?42*u:0;
+  x.font=F(`800 ${badgeF}`);
+  const badgeW=info.badge?Math.max(42*u,x.measureText(info.badge).width+24*u):0;
+  x.font=F(`800 ${mainF}`);const titleNeed=single?0:x.measureText(info.title).width;
+  x.font=F(`600 ${bodyF*0.92}`);const setNeed=info.setLabel?x.measureText(info.setLabel).width:0;
+  const headerW=single?300*u:Math.min(320*u,Math.max(180*u,Math.max(titleNeed,setNeed)+4*u));
+  const mainLines=wrapLines(x,single?info.termini:info.title,F(`800 ${mainF}`),
+    headerW-(info.badge?badgeW+12*u:0));
   const headH=Math.max(badgeH,mainLines.length*mainF*1.16);
-  // assemble optional blocks as {h, draw(cyTop)}
-  const G=11*u,blocks=[];
-  if(single&&info.type){const label=info.type.toUpperCase();
-    x.font=`800 ${chipF}px Inter,system-ui,sans-serif`;const cw=x.measureText(label).width+16*u;
-    blocks.push({h:19*u,draw:cy=>{const tc=TYPE_C[info.type]||TYPE_C.Trunk;
-      x.fillStyle=tc.bg;roundRect(x,M+pad,cy,cw,19*u,6*u);x.fill();
-      x.fillStyle=tc.fg;x.font=`800 ${chipF}px Inter,system-ui,sans-serif`;x.textBaseline='middle';
-      x.fillText(label,M+pad+8*u,cy+9.5*u);x.textBaseline='alphabetic';}});}
-  if(info.setLabel){blocks.push({h:bodyF*1.2,draw:cy=>{x.fillStyle=CARD.grey;
-    x.font=`600 ${bodyF*0.92}px Inter,system-ui,sans-serif`;
-    x.fillText(info.setLabel,M+pad,cy+bodyF);}});}
-  if(S.exp.legend&&info.routes.length>1){
-    const lh=pillBlock(x,info.routes,M+pad,0,inW,u,false);
-    blocks.push({h:labF+7*u+lh,draw:cy=>{x.fillStyle=CARD.grey;
-      x.font=`700 ${labF}px Inter,system-ui,sans-serif`;
-      x.fillText('ROUTES',M+pad,cy+labF);
-      pillBlock(x,info.routes,M+pad,cy+labF+7*u,inW,u,true);}});}
-  if(S.exp.corridor&&single){const roads=routeCorridor(info.badge);
-    if(roads.length){const txt=roads.join('  ·  ');
-      let lines=wrapLines(x,txt,`600 ${bodyF}px Inter,system-ui,sans-serif`,inW);
-      if(lines.length>5){lines=lines.slice(0,5);lines[4]+=' …';}
-      blocks.push({h:labF+6*u+lines.length*bodyF*1.32,draw:cy=>{x.fillStyle=CARD.grey;
-        x.font=`700 ${labF}px Inter,system-ui,sans-serif`;
-        x.fillText('CORRIDOR · '+roads.length+' ROADS',M+pad,cy+labF);
-        x.fillStyle=CARD.sub;x.font=`600 ${bodyF}px Inter,system-ui,sans-serif`;
-        lines.forEach((l,i)=>x.fillText(l,M+pad,cy+labF+6*u+(i+1)*bodyF*1.32-bodyF*0.3));}});}}
-  if(S.exp.stops){const ag=selAgg();
-    // the three coverage stats: unique stops, stops covered/day (× 2 dirs × 7 trips), avg per route
-    const uni=single?S.svcs[info.badge].sc:ag.unique, cov=uni*DIRS*TRIPS_DAY, avg=single?uni:ag.avg;
-    const rows=[['Unique bus stops',fmt(uni)],['Stops covered / day',fmt(cov)]];
-    if(!single)rows.push(['Avg stops / route',fmt(avg)]);
-    const rowH=bodyF*1.55, noteF=bodyF*0.82;
-    blocks.push({h:labF+8*u+rows.length*rowH+noteF*1.4,draw:cy=>{
-      x.fillStyle=CARD.grey;x.font=`700 ${labF}px Inter,system-ui,sans-serif`;
-      x.fillText('STOPS & COVERAGE',M+pad,cy+labF);
-      let ry=cy+labF+8*u;
-      rows.forEach(r=>{ry+=rowH;
-        x.fillStyle=CARD.sub;x.font=`600 ${bodyF}px Inter,system-ui,sans-serif`;
-        x.fillText(r[0],M+pad,ry);
-        x.fillStyle=CARD.ink;x.font=`800 ${bodyF}px Inter,system-ui,sans-serif`;
-        x.textAlign='right';x.fillText(r[1],M+pad+inW,ry);x.textAlign='left';});
-      ry+=noteF*1.4;x.fillStyle=CARD.grey;x.font=`500 ${noteF}px Inter,system-ui,sans-serif`;
-      x.fillText('Covered / day = unique × '+DIRS+' directions × '+TRIPS_DAY+' trips.',M+pad,ry);}});}
+  let headerH=eyeF+10*u+headH;
+  if(info.setLabel)headerH+=8*u+bodyF*1.05;
+  if(single&&info.type)headerH+=10*u+19*u;
+  // ---- opt-in blocks, each a {h, draw(bx, byTop)} laid into a column of width colW ----
   const aps=activePoiLayers();
-  if(aps.length){const rowH=17*u,sw=15*u;   // legend for the place layers on the map
-    blocks.push({h:labF+8*u+aps.length*rowH,draw:cy=>{
-      x.fillStyle=CARD.grey;x.font=`700 ${labF}px Inter,system-ui,sans-serif`;
-      x.fillText('LEGEND',M+pad,cy+labF);
-      let ry=cy+labF+8*u;
-      aps.forEach(l=>{ry+=rowH;const bx=M+pad+sw/2,by=ry-bodyF*0.34;
-        x.fillStyle=l.color;x.beginPath();x.arc(bx,by,sw/2,0,2*Math.PI);x.fill();
-        if(l.letter){x.fillStyle=l.letterFg||'#fff';x.font=`800 ${10*u}px Inter,system-ui,sans-serif`;
-          x.textAlign='center';x.textBaseline='middle';x.fillText(l.letter,bx,by);
-          x.textAlign='left';x.textBaseline='alphabetic';}
-        x.fillStyle=CARD.ink;x.font=`600 ${bodyF}px Inter,system-ui,sans-serif`;
-        x.fillText(l.label,M+pad+sw+8*u,ry);
-        x.fillStyle=CARD.grey;x.font=`700 ${bodyF}px Inter,system-ui,sans-serif`;
-        x.textAlign='right';x.fillText(String(l.count),M+pad+inW,ry);x.textAlign='left';});}});}
-  if(imp){blocks.push({h:statF*2+9*u,draw:cy=>{
-    x.font=`800 ${statF}px Inter,system-ui,sans-serif`;x.fillStyle=CARD.ink;
-    const l1='≈ '+fmt(imp.wd)+' ',w1=x.measureText(l1).width;x.fillText(l1,M+pad,cy+statF);
-    x.font=`600 ${statF}px Inter,system-ui,sans-serif`;x.fillStyle=CARD.grey;
-    x.fillText('daily impressions',M+pad+w1,cy+statF);
-    x.font=`800 ${statF}px Inter,system-ui,sans-serif`;x.fillStyle=CARD.ink;
-    const l2='≈ '+cf(imp.w12)+' ',w2=x.measureText(l2).width;x.fillText(l2,M+pad,cy+statF*2+9*u);
-    x.font=`600 ${statF}px Inter,system-ui,sans-serif`;x.fillStyle=CARD.grey;
-    x.fillText('impressions · 12 weeks',M+pad+w2,cy+statF*2+9*u);}});}
-  const cardH=pad+eyeF+10*u+headH+blocks.reduce((a,b)=>a+G+b.h,0)+pad;
-  // bottom-left corner, lifted clear of the source strip so the two never collide
-  const topY=H-cardH-M-56*u;
-  // card background
-  x.save();x.shadowColor='rgba(15,23,42,.16)';x.shadowBlur=20*u;x.shadowOffsetY=5*u;
-  x.fillStyle='#ffffff';roundRect(x,M,topY,cardW,cardH,15*u);x.fill();x.restore();
-  x.strokeStyle=CARD.line;x.lineWidth=1*u;roundRect(x,M,topY,cardW,cardH,15*u);x.stroke();
-  let cy=topY+pad;
-  // eyebrow
-  x.fillStyle=CARD.grey;x.font=`800 ${eyeF}px Inter,system-ui,sans-serif`;
-  x.fillText(info.eyebrow.toUpperCase(),M+pad,cy+eyeF);cy+=eyeF+10*u;
-  // header: badge + main text
-  let tx=M+pad;
-  if(info.badge){x.fillStyle=info.color;
-    roundRect(x,tx,cy+(headH-badgeH)/2,badgeW,badgeH,11*u);x.fill();
-    x.fillStyle='#fff';x.font=`800 ${badgeF}px Inter,system-ui,sans-serif`;
-    x.textAlign='center';x.textBaseline='middle';
-    x.fillText(info.badge,tx+badgeW/2,cy+headH/2);x.textAlign='left';x.textBaseline='alphabetic';
-    tx+=badgeW+12*u;}
-  x.fillStyle=CARD.ink;x.font=`800 ${mainF}px Inter,system-ui,sans-serif`;
-  const mTop=cy+headH/2-(mainLines.length*mainF*1.16)/2+mainF*0.82;
-  mainLines.forEach((l,i)=>x.fillText(l,tx,mTop+i*mainF*1.16));
-  cy+=headH;
-  blocks.forEach(bl=>{cy+=G;bl.draw(cy);cy+=bl.h;});
+  const defs=[];
+  if(S.exp.legend&&info.routes.length>1)defs.push('routes');
+  if(S.exp.corridor&&single&&routeCorridor(info.badge).length)defs.push('corridor');
+  if(S.exp.stops)defs.push('stops');
+  if(aps.length)defs.push('legend');
+  if(imp)defs.push('imp');
+  const n=defs.length;
+  const colW=n?Math.min(280*u,Math.max(150*u,(W-2*pad-headerW-n*gap)/n)):0;
+  const blocks=defs.map(kind=>{
+    if(kind==='routes'){
+      const lh=pillBlock(x,info.routes,0,0,colW,u,false);
+      return {h:labF+8*u+lh,draw:(bx,by)=>{lab(bx,by,'ROUTES');
+        pillBlock(x,info.routes,bx,by+labF+8*u,colW,u,true);}};}
+    if(kind==='corridor'){const roads=routeCorridor(info.badge);
+      let lines=wrapLines(x,roads.join('  ·  '),F(`600 ${bodyF}`),colW);
+      if(lines.length>4){lines=lines.slice(0,4);lines[3]+=' …';}
+      return {h:labF+6*u+lines.length*bodyF*1.32,draw:(bx,by)=>{
+        lab(bx,by,'CORRIDOR · '+roads.length+' ROADS');
+        x.fillStyle=CARD.sub;x.font=F(`600 ${bodyF}`);
+        lines.forEach((l,i)=>x.fillText(l,bx,by+labF+6*u+(i+1)*bodyF*1.32-bodyF*0.3));}};}
+    if(kind==='stops'){const ag=selAgg();
+      // the three coverage stats: unique stops, stops covered/day (× 2 dirs × 7 trips), avg per route
+      const uni=single?S.svcs[info.badge].sc:ag.unique, cov=uni*DIRS*TRIPS_DAY, avg=single?uni:ag.avg;
+      const rows=[['Unique bus stops',fmt(uni)],['Stops covered / day',fmt(cov)]];
+      if(!single)rows.push(['Avg stops / route',fmt(avg)]);
+      const rowH=bodyF*1.55,noteF=bodyF*0.82;
+      const note=wrapLines(x,'Covered / day = unique × '+DIRS+' directions × '+TRIPS_DAY+' trips.',
+        F(`500 ${noteF}`),colW).slice(0,2);
+      return {h:labF+8*u+rows.length*rowH+note.length*noteF*1.4,draw:(bx,by)=>{
+        lab(bx,by,'STOPS & COVERAGE');
+        let ry=by+labF+8*u;
+        rows.forEach(r=>{ry+=rowH;
+          x.fillStyle=CARD.sub;x.font=F(`600 ${bodyF}`);x.fillText(r[0],bx,ry);
+          x.fillStyle=CARD.ink;x.font=F(`800 ${bodyF}`);
+          x.textAlign='right';x.fillText(r[1],bx+colW,ry);x.textAlign='left';});
+        x.fillStyle=CARD.grey;x.font=F(`500 ${noteF}`);
+        note.forEach(l=>{ry+=noteF*1.4;x.fillText(l,bx,ry);});}};}
+    if(kind==='legend'){const rowH=17*u,sw=15*u;   // legend for the place layers on the map
+      return {h:labF+8*u+aps.length*rowH,draw:(bx,by)=>{
+        lab(bx,by,'LEGEND');
+        let ry=by+labF+8*u;
+        aps.forEach(l=>{ry+=rowH;const cx0=bx+sw/2,cy0=ry-bodyF*0.34;
+          x.fillStyle=l.color;x.beginPath();x.arc(cx0,cy0,sw/2,0,2*Math.PI);x.fill();
+          if(l.letter){x.fillStyle=l.letterFg||'#fff';x.font=F(`800 ${10*u}`);
+            x.textAlign='center';x.textBaseline='middle';x.fillText(l.letter,cx0,cy0);
+            x.textAlign='left';x.textBaseline='alphabetic';}
+          x.font=F(`700 ${bodyF}`);const cw=x.measureText(String(l.count)).width;
+          x.fillStyle=CARD.ink;
+          x.fillText(ellip(x,l.label,F(`600 ${bodyF}`),colW-sw-12*u-cw),bx+sw+8*u,ry);
+          x.fillStyle=CARD.grey;x.font=F(`700 ${bodyF}`);
+          x.textAlign='right';x.fillText(String(l.count),bx+colW,ry);x.textAlign='left';});}};}
+    // imp — stacked value/label pairs so they fit a narrow column
+    const rows=[['≈ '+fmt(imp.wd),'daily impressions'],['≈ '+cf(imp.w12),'impressions · 12 weeks']];
+    return {h:labF+8*u+2*(statF*1.1+bodyF*1.25+6*u)-6*u,draw:(bx,by)=>{
+      lab(bx,by,'IMPRESSIONS');
+      let ry=by+labF+8*u;
+      rows.forEach(r=>{ry+=statF*1.1;
+        x.fillStyle=CARD.ink;x.font=F(`800 ${statF}`);x.fillText(r[0],bx,ry);
+        ry+=bodyF*1.25;
+        x.fillStyle=CARD.grey;x.font=F(`600 ${bodyF*0.95}`);x.fillText(r[1],bx,ry);
+        ry+=6*u;});}};
+  });
+  const tallest=blocks.reduce((a,b)=>Math.max(a,b.h),0);
+  let barH=Math.round(Math.max(190*u,Math.min(340*u,2*pad+Math.max(headerH,tallest))));
+  if(barH%2)barH++;   // even canvas px so the map band above is an integer CSS-pixel height
+  return {barH,draw:topY=>{
+    // opaque bar with a hairline seam against the map band
+    x.fillStyle='#ffffff';x.fillRect(0,topY,W,barH);
+    x.strokeStyle=CARD.line;x.lineWidth=2*u;
+    x.beginPath();x.moveTo(0,topY+1*u);x.lineTo(W,topY+1*u);x.stroke();
+    const cy0=topY+pad;
+    x.fillStyle=CARD.grey;x.font=F(`800 ${eyeF}`);
+    x.fillText(info.eyebrow.toUpperCase(),pad,cy0+eyeF);
+    let cy=cy0+eyeF+10*u,tx=pad;
+    if(info.badge){x.fillStyle=info.color;
+      roundRect(x,tx,cy+(headH-badgeH)/2,badgeW,badgeH,10*u);x.fill();
+      x.fillStyle='#fff';x.font=F(`800 ${badgeF}`);
+      x.textAlign='center';x.textBaseline='middle';
+      x.fillText(info.badge,tx+badgeW/2,cy+headH/2);x.textAlign='left';x.textBaseline='alphabetic';
+      tx+=badgeW+12*u;}
+    x.fillStyle=CARD.ink;x.font=F(`800 ${mainF}`);
+    const mTop=cy+headH/2-(mainLines.length*mainF*1.16)/2+mainF*0.82;
+    mainLines.forEach((l,i)=>x.fillText(l,tx,mTop+i*mainF*1.16));
+    cy+=headH;
+    if(info.setLabel){cy+=8*u+bodyF*1.05;x.fillStyle=CARD.grey;
+      x.font=F(`600 ${bodyF*0.92}`);x.fillText(info.setLabel,pad,cy);}
+    if(single&&info.type){cy+=10*u;const label=info.type.toUpperCase();
+      x.font=F(`800 ${chipF}`);const cw=x.measureText(label).width+16*u;
+      const tc=TYPE_C[info.type]||TYPE_C.Trunk;
+      x.fillStyle=tc.bg;roundRect(x,pad,cy,cw,19*u,6*u);x.fill();
+      x.fillStyle=tc.fg;x.font=F(`800 ${chipF}`);x.textBaseline='middle';
+      x.fillText(label,pad+8*u,cy+9.5*u);x.textBaseline='alphabetic';cy+=19*u;}
+    let bx=pad+headerW+gap;
+    blocks.forEach(bl=>{
+      x.strokeStyle=CARD.line;x.lineWidth=1*u;   // hairline between columns
+      x.beginPath();x.moveTo(bx-gap/2,cy0+2*u);x.lineTo(bx-gap/2,topY+barH-pad);x.stroke();
+      bl.draw(bx,cy0);
+      bx+=colW+gap;});
+  }};
 }
 // source strip along the bottom (data attribution — not branding; stays)
 function stampSource(x,W,H){
@@ -2893,13 +2977,16 @@ async function exportJPG(){
   try{
     await ensureExportData();
     const side=Math.round(Math.max(680,Math.min(window.innerWidth-8,window.innerHeight-8,1080)));
-    // the card occupies the left ~42% strip — shift the framing so routes clear it entirely
-    const mc=await captureFramed(side,side,{avoidLeft:Math.round(side*0.42)});
-    const cv=document.createElement('canvas');cv.width=mc.width;cv.height=mc.height;
+    const cv=document.createElement('canvas');cv.width=side*2;cv.height=side*2;
     const x=cv.getContext('2d');
+    // info bar along the bottom, sized to its content; the map band above keeps the full
+    // frame width — the network is wide, so this frames routes far tighter than a column
+    const bar=buildBar(x,cv.width);
+    const mapH=cv.height-bar.barH;
+    const mc=await captureFramed(side,mapH/2,{avoidBottom:Math.round(side*0.062)});
     x.drawImage(mc,0,0);
-    stampCard(x,cv.width,cv.height);
-    stampSource(x,cv.width,cv.height);
+    bar.draw(mapH);
+    stampSource(x,cv.width,mapH);
     dl(cv.toDataURL('image/jpeg',0.95),fileBase()+'.jpg');
     if(typeof closeExport==='function')closeExport();
   }catch(e){alert('Image export failed: '+e.message);}

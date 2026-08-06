@@ -57,8 +57,70 @@ single slide**; (b) the client who receives it and judges the pitch by the map.
 | US-17 | As a seller exporting the JPG, I want the overlay card to sit on empty map, with the framing shifted so routes are never hidden behind it. | ✅ | Asymmetric fitBounds padding (avoidLeft = 42% of frame) shifts routes clear; card also lifted 56 px above the source strip. Verified on the rendered JPG. |
 | US-18 | As a Moove seller, I want the deck in our colours with our wordmark and the package code as the eyebrow — client-ready, not tool-branded. | ✅ | BRAND constant (pink F0245E · navy 1B2D8A · wordmark) drives pill, title, stats and footer; eyebrow reads "CORE CORRIDORS · CITY" from the selected package. |
 
+## 2026-08-06 · UI update: JPG export — sidebar replaces the floating card (user request)
+
+Context: user reviewed two current JPG generations. The floating card avoids overlapping the
+routes only by shifting the map fit (`avoidLeft` = 42 % of the frame), which shrinks the
+routes. Requested: a real sidebar with the map beside it (side chosen by best practice).
+
+| # | Story | Status | Check |
+|---|-------|--------|-------|
+| US-19 | As a seller sharing the exported JPG, I want the info panel *beside* the map, not floating over it, so stats never compete with the routes. | ✅ | Headless renders (Set 1 · Core corridors City · single 190): opaque full-height panel over the left 30 %, map canvas composited from the panel edge; nothing is drawn in the map column but the map and the source strip. |
+| US-20 | As a client reading the JPG, I want routes drawn as large as the frame allows — the map column fully used, with only fit padding. | ✅ | `avoidLeft` deleted (fit is symmetric) and capture uses `zoomSnap 0`, so `fitBounds` no longer rounds down a whole zoom level. Measured, Set 1: route bbox 322×261 px under the old framing → 672×543 px now, ≈ 2.1× larger linearly. |
+| US-21 | As a returning user, I want the export to mirror the app's own layout — panel left, map right — so the export reads like the tool. | ✅ | Sidebar placed on the left (matches the live left bar; eyebrow/title read before the map, LTR). |
+| US-22 | As a seller, I want everything the old card carried — badge/title, set label, routes legend, stops & coverage, place legend, impressions, attribution — intact in the sidebar. | ✅ | Verified on renders: 5/6-route sets show set label + ROUTES pills + STOPS & COVERAGE; single 190 shows badge, termini title, TRUNK chip, CORRIDOR (16 roads, wrapped + clamped), coverage and impressions; source strip still bottom-right over the map. |
+
+### Iteration 2 (user screenshot): map band on top, info bar below
+
+The sidebar column fixed the overlap but shaped the map wrong: a Wide-set generation still
+zoomed out to half of Johor, because a 0.7-aspect column fights Singapore's ~2:1-wide
+network. User asked for a bottom bar with the map as a thicker top band. Supersedes the
+panel-left placement verified in US-21.
+
+| # | Story | Status | Check |
+|---|-------|--------|-------|
+| US-23 | As a seller exporting an island-spanning set, I want the map region shaped like the network — wide — so the fit frames Singapore, not Malaysia. | ✅ | Wide sets · City outer (14 routes): route bbox 672×386 px in the sidebar column → 984×564 px in the full-width band (zoom 11.77 → 12.32); the frame stays on the island. |
+| US-24 | As a client reading the export, I want the info in a bottom bar that only takes the height its content needs, leaving the rest to the map. | ✅ | Bar height derived from measured content, clamped 19–34 % of the frame; all three test cases (14-route set, Set 1, single 190 with corridor + impressions) land at 19–21 %, so the map band keeps ~4/5 of the frame at full width. |
+| US-25 | As a seller who clicks a package and exports straight away, I want the framing to be deterministic — never half of an in-flight zoom animation. | ✅ | Found in headless runs: the live animated fit lands *after* the export fit and clobbers it (capture at zoom 12 instead of 13.14). Fixed by waiting out `_animatingZoom`, `map.stop()`, and re-asserting the fit after the settle waits; batch renders now capture at exactly the fitted zooms (12.32 / 12.45 / 13.14). |
+| US-26 | As a client, I never want the attribution strip covering a route end or terminus label. | ✅ | Set 1 render initially had "Kampong Bahru Ter" under the strip; `avoidBottom` fit-padding (≈ strip height) now keeps the bottom-most termini clear — verified on the re-render. |
+
 ### Follow-up defect (user screenshot, PR #5)
 
 | # | Story | Status | Check |
 |---|-------|--------|-------|
 | US-13 | As a user of the left bar, I want package buttons to stay inside their card at any width — the coverage line must truncate, never push the layout apart. | ✅ | Root cause: flex items refuse to shrink below nowrap content (`min-width:auto`). Fixed with `min-width:0` on `.clbtn`. Headless check: 0 buttons outside the card bounds; five-route sets render 2×2 again; coverage lines ellipsize. |
+
+## 2026-08-06 · Simulation: QC pass — user + tester sweep of every surface (user request)
+
+Persona: the user themselves as QC tester, clicking through every surface; one seeded defect
+("the number of polyclinic is too small") plus everything else found on a 12-state headless
+walkthrough (initial, health layers, package, drill-down, ranking, shading, search, finder,
+QSR heat, export modal, rail focus, mobile).
+
+| # | Story | Status | Check |
+|---|-------|--------|-------|
+| US-27 | As a seller pitching health audiences, I want the polyclinic layer to be complete — 8 of Singapore's 26 polyclinics is a credibility hole a client will spot. | ✅ | `poi_polyclinics.json` 8 → 26 entries (all SingHealth / NHGP / NUP polyclinics); dropdown, chip, ranking and 400 m counts all pick the count up from data. |
+| US-28 | As a user scanning the island, I want sparse, high-value layers (hospitals, polyclinics, libraries, cinemas) visible at island zoom — not 3 px specks. | ✅ | Dot radius now scales with layer sparsity (≤60 places → 5.5 px, ≤200 → 4.25 px, else 3 px) with a matching hover size; screenshot before/after. |
+| US-29 | As a user closing a dropdown with Escape, I never want my route selection wiped as a side effect. | ✅ | Found on walkthrough: Esc in the place finder closed its list *and* cleared 5 routes. Finder now stops propagation, and the document Esc handler closes an open finder list before anything else. Headless: Esc with finder open → selection intact. |
+| US-30 | As a user reading the selection card, I want the "within 400 m" list to show what's actually nearby — not 30 rows padded with zeros. | ✅ | Zero-count layers fold into one muted line; non-zero rows unchanged. |
+| US-31 | As a user, I want the interface to feel smooth — hover and state changes eased, the export modal entering softly — without motion when I've asked the OS for less. | ✅ | Shared micro-transition on interactive rows/buttons/chips, modal fade+rise entrance, CTA hover lift; all disabled under `prefers-reduced-motion: reduce`. |
+
+Known-minor (logged, not fixed): a terminus label can overlap a planning-area label when a
+choropleth is on (two independent decluttering passes); QSR fan-out pins can sit over heat
+maxima. Neither blocks a sell.
+
+## 2026-08-06 · Simulation: POI sweep — sales agent building audience stories (user request)
+
+Persona: a Moove Media seller who lives in the Places panel — every layer is an audience
+story ("routes hitting commuter hubs", "coverage around event venues"). Full data audit of
+all 34 POI files plus the gaps a seller would hit.
+
+| # | Story | Status | Check |
+|---|-------|--------|-------|
+| US-32 | As a seller quoting place counts to a client, I want every layer's data clean — no stray coordinates, unnamed places or accidental duplicates. | ✅ | Scripted audit of all 34 `poi_*.json`: 0 out-of-bounds points, 0 missing names; remaining dup names are real chains (FairPrice ×N), shared coordinates are same-building places. Only genuine gap (polyclinics 8→26) fixed in US-27. |
+| US-33 | As a seller pitching commuter reach, I want an MRT/LRT interchange layer I can rank routes against — "hits 6 interchanges" is a headline claim. | ✅ | `poi_interchanges.json` (35 stations on 2+ drawn lines) derived from the app's own rail data, so it agrees with the rail legend; appears under a new "Transit hotspots" category, rankable and 400 m-countable like any layer. |
+| US-34 | As a seller selling event-driven campaigns, I want the island's major event & convention venues as a layer. | ✅ | 11 curated venues (Expo, Suntec, Sands Expo, National Stadium, Indoor Stadium, Esplanade, Star Theatre, NS Square, Fort Canning, RWS Convention, Our Tampines Hub) with kind labels in tooltips; footer notes the list is curated. |
+| US-35 | As a seller scanning "Rank routes by…", I want the 30+ layers grouped by category — a flat alphabetical-ish list makes me read every entry. | ✅ | Ranking dropdown now uses the same category optgroups as the add-layer picker; also fixed the latent picked-places insert that would throw once optgroups exist (insert against a nested option). |
+
+Backlog (needs real data, not fabricatable offline): hawker centres (~118), petrol stations
+(~180) — both strong seller layers when a source is available.
