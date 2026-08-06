@@ -441,6 +441,11 @@
   .rct{font:800 13px/1 system-ui;font-variant-numeric:tabular-nums;flex:none}
   .rbar-wrap{height:4px;background:var(--line);border-radius:2px;margin-top:4px;overflow:hidden}
   .rbar{height:100%;border-radius:2px}
+  .rank-add{width:100%;font:700 11.5px/1 system-ui;color:var(--primary);background:var(--primary-soft);
+    border:1px solid #c9d4ee;border-radius:8px;padding:8px;cursor:pointer;margin:2px 0 6px;
+    transition:background-color .15s ease,border-color .15s ease}
+  .rank-add:hover{background:#e3eafb}
+  .rank-add:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
   /* a ranked route that is already in the selection — the list now spans the whole network,
      so it has to say which of these 20 you are already carrying */
   .rrow.on{background:var(--primary-soft)}
@@ -604,7 +609,7 @@
         <div class="sec-lab">Transit network</div>
         <div id="netToggles"></div>
         <details class="rail-acc" id="railAcc">
-          <summary class="sub-lab" id="railSub">Rail lines <span class="hint-txt">tap a line to focus its stations</span></summary>
+          <summary class="sub-lab" id="railSub">Rail lines <span class="hint-txt">tap lines to focus &middot; combine several</span></summary>
           <div id="railLegend"></div>
         </details>
       </div>
@@ -869,7 +874,7 @@ const POI=[
 ];
 const S={svcs:{},stops:{},areas:null,pois:{},
   stopArea:{},areaStats:{},selected:[],selLayers:[],termLayers:[],_areaLayer:null,
-  railLayers:[],stationItems:[],activeLine:null,showImp:true};
+  railLayers:[],stationItems:[],showImp:true};
 const isSel=n=>S.selected.includes(n);
 const RAIL_NAME={EWL:'East–West Line',NSL:'North–South Line',NEL:'North East Line',
   CCL:'Circle Line',DTL:'Downtown Line',TEL:'Thomson–East Coast Line',
@@ -898,6 +903,7 @@ Promise.all([
   POI.forEach((p,i)=>S.pois[p.key]=pois[i]);
   buildBus();buildRailLines();buildPois();buildHubs();buildStations();buildAreas();buildPanel();
   renderSelection();   // show the empty-state onboarding hint
+  applyHash();         // then restore a shared / reopened pitch from the URL
   gateLabels();map.on('zoomend',gateLabels);
   $('loading').remove();
 });
@@ -1211,28 +1217,35 @@ function buildRailLines(){
   });
   // rail off by default (opt-in via the toggle; legend controls focus)
 }
-// isolate one line (its stations appear, others desaturate) — null = show all, no stations
+// focus one OR SEVERAL lines (their stations appear, the rest desaturate) — a corridor
+// pitch is often two spines at once (EWL + NSL), so legend rows toggle independently.
+// Empty set = all lines full colour, no stations.
+S.activeLines=new Set();
 function setActiveLine(code){
   if(S.railOn===false)return;   // legend inert while rail is switched off
-  S.activeLine=(S.activeLine===code)?null:code;
-  const a=S.activeLine;
+  S.activeLines.has(code)?S.activeLines.delete(code):S.activeLines.add(code);
+  applyLineFocus();
+}
+function clearActiveLines(){S.activeLines.clear();applyLineFocus();}
+function applyLineFocus(){
+  const a=S.activeLines;
   S.railLayers.forEach(l=>{
-    if(a===null)l.setStyle({color:l._color,weight:2.8,opacity:.92});
-    else if(l._code===a)l.setStyle({color:l._color,weight:4,opacity:1});
+    if(!a.size)l.setStyle({color:l._color,weight:2.8,opacity:.92});
+    else if(a.has(l._code))l.setStyle({color:l._color,weight:4,opacity:1});
     else l.setStyle({color:'#c7ccd1',weight:1.3,opacity:.5});   // desaturate non-focused
   });
   groups.stations.clearLayers();
-  if(a!==null){
-    S.stationItems.forEach(it=>{if(it.lines.includes(a)){
+  if(a.size){
+    S.stationItems.forEach(it=>{if(it.lines.some(c=>a.has(c))){
       groups.stations.addLayer(it.circle);groups.stations.addLayer(it.label);}});
     if(!map.hasLayer(groups.stations))groups.stations.addTo(map);
   }
-  updateRailLegend();gateLabels();
+  updateRailLegend();gateLabels();syncHash();
 }
 function buildRailLegend(){
   const host=$('railLegend');if(!host)return;host.innerHTML='';
   const all=document.createElement('button');all.className='rl-all';all.type='button';
-  all.textContent='All lines';all.onclick=()=>{if(S.activeLine)setActiveLine(S.activeLine);};
+  all.textContent='All lines';all.onclick=clearActiveLines;
   host.appendChild(all);
   (S.railLines||[]).forEach(ln=>{
     const n=(S.stations||[]).filter(s=>(s.lines||[]).includes(ln.code)).length;
@@ -1249,9 +1262,9 @@ function buildRailLegend(){
 function updateRailLegend(){
   const host=$('railLegend');if(!host)return;
   host.querySelectorAll('.rl-row').forEach(r=>{
-    const on=r.dataset.code===S.activeLine;
+    const on=S.activeLines.has(r.dataset.code);
     r.classList.toggle('active',on);r.setAttribute('aria-pressed',String(on));});
-  const all=host.querySelector('.rl-all');if(all)all.classList.toggle('on',!S.activeLine);
+  const all=host.querySelector('.rl-all');if(all)all.classList.toggle('on',!S.activeLines.size);
 }
 // master show/hide for the whole rail layer (legend below controls focus)
 S.railOn=false;
@@ -1260,7 +1273,8 @@ function setRailVisible(on){
   if(on){groups.rail.addTo(map);
     S.railLayers.forEach(l=>l.setStyle({color:l._color,weight:2.8,opacity:.92}));}
   else{map.removeLayer(groups.rail);map.removeLayer(groups.stations);
-    S.activeLine=null;updateRailLegend();}
+    S.activeLines.clear();updateRailLegend();}
+  syncHash();
   const host=$('railLegend');if(host)host.classList.toggle('rail-off',!on);
   const sub=document.getElementById('railSub');if(sub)sub.classList.toggle('rail-off',!on);
   const acc=$('railAcc');if(acc)acc.open=on;   // reveal the line list when rail turns on, tuck it away when off
@@ -1303,7 +1317,7 @@ function gateLabels(){
   const z=map.getZoom();
   map.getPane('label').style.display='';
   document.querySelectorAll('.hublab').forEach(e=>e.style.opacity=z>=LBL_HUB?1:0);
-  const stnZ=S.activeLine?12:LBL_STN;   // a focused line has few stations — reveal earlier
+  const stnZ=S.activeLines.size?12:LBL_STN;   // focused lines have few stations — reveal earlier
   document.querySelectorAll('.stnlab').forEach(e=>e.style.opacity=z>=stnZ?1:0);
 }
 
@@ -1347,7 +1361,7 @@ function buildPanel(){
   // master on/off for rail lines (the legend below controls per-line focus)
   if(S.railLines&&S.railLines.length){
     S.railOn=false;   // rail off by default (opt-in)
-    const rR=document.createElement('div');
+    const rR=document.createElement('div');rR.id='railRow';
     rR.className='row';rR.setAttribute('role','switch');rR.setAttribute('aria-checked','false');
     rR.setAttribute('aria-label','MRT / LRT lines');rR.tabIndex=0;
     rR.innerHTML='<span class="dot" style="background:linear-gradient(90deg,#d42e12,#009645,#9900aa,#fa9e0d)"></span>'
@@ -1772,6 +1786,16 @@ function rankBy(key){
     if(!scored.length){
       list.innerHTML=`<div class="placeholder">No ${sel?'selected ':''}route passes within 400 m of ${what}.</div>`;
       return;}
+    // one tap takes the ranked shortlist into the selection — five taps means five re-fits
+    const topN=Math.min(5,scored.length);
+    const cand=scored.slice(0,topN).map(r=>r.s.n).filter(n=>!isSel(n));
+    if(cand.length&&!sel){
+      const b=document.createElement('button');b.type='button';b.className='rank-add';
+      b.textContent=`＋ Add top ${topN} to selection`;
+      b.title='Adds the '+cand.length+' of the top '+topN+' not already selected';
+      b.onclick=()=>addRoutes(cand);
+      list.appendChild(b);
+    }
     scored.slice(0,20).forEach((r,i)=>{
       const row=document.createElement('div');row.className='rrow'+(isSel(r.s.n)?' on':'');
       row.title=(isSel(r.s.n)?'In your selection — tap to remove':'Tap to add to your selection');
@@ -1787,6 +1811,30 @@ function rankBy(key){
       list.appendChild(row);
     });
   },20);
+}
+
+// ---------------- shareable state: the URL carries the pitch ----------------
+// A seller mid-call needs to send THIS map to a colleague, or reopen it tomorrow —
+// selection and focused rail lines live in the hash (#r=190,518&l=EWL,NSL), written on
+// every change and restored on load. replaceState, so Back is never hijacked.
+const BOOT_HASH=location.hash.slice(1);   // captured before any render can overwrite it
+function syncHash(){
+  const parts=[];
+  if(S.selected.length)parts.push('r='+S.selected.join(','));
+  if(S.railOn&&S.activeLines.size)parts.push('l='+[...S.activeLines].join(','));
+  try{history.replaceState(null,'',parts.length?'#'+parts.join('&'):location.pathname+location.search);}
+  catch(e){}
+}
+function applyHash(){
+  if(!BOOT_HASH)return;
+  const q={};BOOT_HASH.split('&').forEach(kv=>{const i=kv.indexOf('=');
+    if(i>0)q[kv.slice(0,i)]=decodeURIComponent(kv.slice(i+1));});
+  if(q.r){const ks=q.r.split(',').map(resolveSvc).filter(Boolean);if(ks.length)addRoutes(ks);}
+  if(q.l){const codes=q.l.split(',').filter(c=>RAIL_NAME[c]);
+    if(codes.length){
+      if(!S.railOn){setRailVisible(true);const row=$('railRow');
+        if(row){row.classList.add('on');row.setAttribute('aria-checked','true');}}
+      codes.forEach(c=>{if(!S.activeLines.has(c))setActiveLine(c);});}}
 }
 
 // ---------------- selection helpers ----------------
@@ -2064,6 +2112,7 @@ function renderSelection(opt){
     c.innerHTML='<div class="sel-empty">Switch on a layer below, or search a bus service, to begin. '
       +'Tap a route for its stops, nearby places and audience — pick several to compare coverage.</div>';
     renderLeftbar();applyPoiScope();if(typeof syncExportUI==="function")syncExportUI();
+    syncHash();
     return;
   }
   const sel=S.selected.map(n=>S.svcs[n]);
@@ -2111,6 +2160,7 @@ function renderSelection(opt){
   c.classList.add('show');
   wireCard(c);
   renderLeftbar();applyPoiScope();if(typeof syncExportUI==="function")syncExportUI();
+  syncHash();
   $('leftBody').scrollTop=0;
 }
 // stub: wired to overlay demographics relative to the selection once data lands

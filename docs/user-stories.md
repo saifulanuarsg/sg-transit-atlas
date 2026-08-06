@@ -124,3 +124,22 @@ all 34 POI files plus the gaps a seller would hit.
 
 Backlog (needs real data, not fabricatable offline): hawker centres (~118), petrol stations
 (~180) — both strong seller layers when a source is available.
+
+## 2026-08-06 · Simulation: five sales personas, full workflows (user request — "beta test yourself")
+
+Each persona was walked through their real workflow against the live app; every wall they hit
+became a story with a built solution, then the whole workflow was re-run headless.
+
+**P1 · Corridor planner** — sells "your ad rides the north–south AND east–west spines".
+**P2 · QSR account manager** — anchor-brand heat → rank by rival outlets → top routes → deck.
+**P3 · Event promo planner** — pin Singapore Expo → rank routes reaching it → top routes → JPG.
+**P4 · Seller mid-pitch** — shares the exact map with a colleague; reopens it next morning.
+**P5 · Deck builder** — package → summary + per-route slides → client-ready PPTX.
+
+| # | Story | Status | Check |
+|---|-------|--------|-------|
+| US-36 | (P1) As a corridor planner, I want several rail lines focused at once — tapping EWL must not unfocus NSL; the two-spine story needs both lit. | ✅ | Rail focus is now a set: legend rows toggle independently, focused lines full-colour w4, others desaturate, stations shown for the union, "All lines" clears. Headless: EWL+NSL both active, union stations drawn, CCL desaturated. |
+| US-37 | (P2/P3) As a seller who just ranked routes, I want the top 5 in my selection in one tap — not five taps, five map re-fits. | ✅ | "＋ Add top 5" button above the ranked list (hidden once the top 5 are all selected; adapts to <5 results); one tap → one addRoutes → one re-fit. Headless: rank by KFC outlets → tap → 5 routes selected, rows marked. |
+| US-38 | (P3) As a promo planner, I want pin venue → rank against it → top routes → export to work as one unbroken flow. | ✅ | Headless end-to-end: pick "Singapore Expo", rank "your 1 picked place", Add top 5, export JPG — file renders with the pin + legend row and the 5 routes. |
+| US-39 | (P4) As a seller, I want my selection and focused lines in the URL, so the exact map can be sent to a colleague or reopened tomorrow. | ✅ | Hash state `#r=190,518&l=EWL,NSL` written on every change (replaceState, no history spam) and restored on load — verified by reloading the page on the deep link: 5 routes + 2 focused lines return. |
+| US-40 | (P5) As a deck builder, I want the full PPTX to actually generate — hero + summary + one slide per route. | ✅ | First-ever unstubbed run with the real pptxgenjs: Set 1 with summary + per-route on → .pptx unzips to 7 slides (hero, summary, 5 routes), 1 embedded map image. |
