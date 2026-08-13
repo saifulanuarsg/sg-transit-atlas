@@ -1,0 +1,15 @@
+[
+ {"name": "Causeway Point", "region": "North", "kind": "FCT-owned · Woodlands", "lat": 1.43609, "lng": 103.78601},
+ {"name": "Northpoint City", "region": "North", "kind": "FCT-owned, both wings · Yishun", "lat": 1.42874, "lng": 103.83595},
+ {"name": "nex", "region": "North-East", "kind": "FCT 50%-owned · Serangoon", "lat": 1.35068, "lng": 103.87186},
+ {"name": "Hougang Mall", "region": "North-East", "kind": "FCT-owned · Hougang", "lat": 1.37244, "lng": 103.89372},
+ {"name": "Waterway Point", "region": "North-East", "kind": "FCT 50%-owned · Punggol", "lat": 1.40643, "lng": 103.90224},
+ {"name": "Century Square", "region": "East", "kind": "FCT-owned · Tampines", "lat": 1.35236, "lng": 103.94378},
+ {"name": "Tampines 1", "region": "East", "kind": "FCT-owned · Tampines", "lat": 1.35418, "lng": 103.94513},
+ {"name": "White Sands", "region": "East", "kind": "FCT-owned · Pasir Ris", "lat": 1.3724, "lng": 103.94975},
+ {"name": "Eastpoint Mall", "region": "East", "kind": "NTUC Income-owned, Frasers-managed · Simei", "lat": 1.34259, "lng": 103.95307},
+ {"name": "The Centrepoint", "region": "Central", "kind": "Frasers Property-owned · Orchard", "lat": 1.30193, "lng": 103.83981},
+ {"name": "Tiong Bahru Plaza", "region": "Central", "kind": "FCT-owned · Tiong Bahru", "lat": 1.28647, "lng": 103.82716},
+ {"name": "Valley Point", "region": "Central", "kind": "Frasers-managed · River Valley", "lat": 1.29304, "lng": 103.82707},
+ {"name": "Robertson Walk", "region": "Central", "kind": "Frasers-managed · Robertson Quay", "lat": 1.29187, "lng": 103.84145}
+]

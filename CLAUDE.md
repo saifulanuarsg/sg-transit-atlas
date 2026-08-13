@@ -13,4 +13,8 @@
 - Test locally with `python3 -m http.server` + Playwright/Chromium; CDN assets (Leaflet,
   html2canvas, pptxgen) must be stubbed or served locally — this environment's proxy blocks
   most non-GitHub hosts, including unpkg, cdnjs, OSM/Overpass and OneMap.
+- **Need a Singapore geocode when OneMap is blocked?** GitHub is reachable: clone
+  `xkjyeah/singapore-postal-codes` and look the postal address up in `buildings.json` — it is a
+  OneMap dump (address → lat/lng for every postal code). Used to place the Frasers malls; it
+  caught a 134 m error on Robertson Walk that a from-the-address estimate had missed.
 - Deploys are GitHub Pages from `main`; merging a PR is the deploy.
