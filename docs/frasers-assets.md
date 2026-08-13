@@ -17,8 +17,8 @@ Frasers Property Singapore manages twelve malls; `nex` is the thirteenth entry �
 | Mall | Region | Ownership · area | Stops within 400 m | Services at the door |
 | --- | --- | --- | ---: | ---: |
 | Causeway Point | North | FCT-owned · Woodlands | 10 | 50 |
-| Northpoint City | North | FCT-owned, both wings · Yishun | 12 | 46 |
-| nex | North-East | FCT 50%-owned · Serangoon | 16 | 38 |
+| Northpoint City | North | FCT-owned, both wings · Yishun | 14 | 46 |
+| nex | North-East | FCT 50%-owned · Serangoon | 13 | 38 |
 | Hougang Mall | North-East | FCT-owned · Hougang | 13 | 37 |
 | Waterway Point | North-East | FCT 50%-owned · Punggol | 10 | 34 |
 | Century Square | East | FCT-owned · Tampines | 9 | 48 |
@@ -28,7 +28,7 @@ Frasers Property Singapore manages twelve malls; `nex` is the thirteenth entry �
 | The Centrepoint | Central | Frasers Property-owned · Orchard | 6 | 35 |
 | Tiong Bahru Plaza | Central | FCT-owned · Tiong Bahru | 7 | 18 |
 | Valley Point | Central | Frasers-managed · River Valley | 8 | 9 |
-| Robertson Walk | Central | Frasers-managed · Robertson Quay | 6 | 10 |
+| Robertson Walk | Central | Frasers-managed · Robertson Quay | 8 | 11 |
 
 ## Packages
 
@@ -40,13 +40,13 @@ Each package is the region's top 12 services: most of the region's malls covered
 
 | Service | Malls covered | Weekday boardings at those stops | Route |
 | --- | ---: | ---: | --- |
-| **856** | 2 of 2 | 154,291 | Yishun Int ⇄ Woodlands Int |
-| **169** | 2 of 2 | 133,937 | Woodlands Int ⇄ Ang Mo Kio Int |
-| **858** | 2 of 2 | 133,937 | Woodlands Int ⟲ Changi Airport Ter 1 |
-| **969** | 2 of 2 | 133,937 | Woodlands Int ⇄ Tampines Int |
+| **856** | 2 of 2 | 156,093 | Yishun Int ⇄ Woodlands Int |
+| **169** | 2 of 2 | 137,734 | Woodlands Int ⇄ Ang Mo Kio Int |
+| **858** | 2 of 2 | 135,739 | Woodlands Int ⟲ Changi Airport Ter 1 |
+| **969** | 2 of 2 | 135,739 | Woodlands Int ⇄ Tampines Int |
 | **169A** | 2 of 2 | 115,079 | Woodlands Int → Opp Yishun Stn |
 | **858A**† | 2 of 2 | 115,079 | Woodlands Int → Opp Yishun Stn |
-| **965** | 2 of 2 | 43,764 | Woodlands Temp Int ⇄ Buangkok Int |
+| **965** | 2 of 2 | 47,561 | Woodlands Temp Int ⇄ Buangkok Int |
 | **965A** | 2 of 2 | 24,454 | Woodlands Temp Int → Opp Yishun Stn |
 | **912**† | 1 of 2 | 126,291 | Woodlands Int ⟲ Rosewood |
 | **912B**† | 1 of 2 | 124,563 | Woodlands Int → Woodlands Int |
@@ -69,23 +69,23 @@ Selection string: `856, 169, 858, 969, 169A, 858A, 965, 965A, 912, 912B, 912A, 9
 | **82** | 3 of 3 | 53,089 | Punggol Int ⟲ S'goon Stn Exit E |
 | **43** | 2 of 3 | 72,635 | Punggol Int ⇄ Upp East Coast Ter |
 | **43A** | 2 of 3 | 50,794 | Punggol Int → S'goon Stn Exit C/Blk 201 |
-| **147** | 2 of 3 | 47,592 | Hougang Ctrl Int ⇄ Clementi Int |
+| **147** | 2 of 3 | 46,691 | Hougang Ctrl Int ⇄ Clementi Int |
 | **116**† | 2 of 3 | 46,159 | Hougang Ctrl Int ⟲ S'goon Stn Exit C/Blk 201 |
-| **107** | 2 of 3 | 39,054 | Hougang Ctrl Int ⇄ Shenton Way Ter |
-| **107M** | 2 of 3 | 39,054 | Hougang Ctrl Int ⇄ Opp Suntec Convention Ctr / Promenade Stn/Pan Pacific |
-| **153** | 2 of 3 | 37,969 | Bt Merah Int ⇄ Hougang Ctrl Int |
+| **107** | 2 of 3 | 38,153 | Hougang Ctrl Int ⇄ Shenton Way Ter |
+| **107M** | 2 of 3 | 38,153 | Hougang Ctrl Int ⇄ Opp Suntec Convention Ctr / Promenade Stn/Pan Pacific |
 | **101**† | 2 of 3 | 37,455 | Serangoon Int ⟲ Blk 991B |
-| **147A** | 2 of 3 | 36,402 | Hougang Ctrl Int → Aft Duxton Plain Pk |
+| **153** | 2 of 3 | 37,068 | Bt Merah Int ⇄ Hougang Ctrl Int |
+| **147A** | 2 of 3 | 35,501 | Hougang Ctrl Int → Aft Duxton Plain Pk |
 | **62** | 2 of 3 | 32,381 | Punggol Int ⟲ Aft Sims Way |
-| **119**† | 2 of 3 | 30,990 | Punggol Int ⟲ Kovan Stn Exit C |
+| **136** | 2 of 3 | 32,080 | Ang Mo Kio Int ⇄ Punggol Int |
 
 Reaching each mall:
 
 - **nex** — 10 of the 12: 101, 107, 107M, 116, 147, 147A, 153, 43, 43A, 82
-- **Hougang Mall** — 10 of the 12: 101, 107, 107M, 116, 119, 147, 147A, 153, 62, 82
-- **Waterway Point** — 5 of the 12: 119, 43, 43A, 62, 82
+- **Hougang Mall** — 10 of the 12: 101, 107, 107M, 116, 136, 147, 147A, 153, 62, 82
+- **Waterway Point** — 5 of the 12: 136, 43, 43A, 62, 82
 
-Selection string: `82, 43, 43A, 147, 116, 107, 107M, 153, 101, 147A, 62, 119`
+Selection string: `82, 43, 43A, 147, 116, 107, 107M, 101, 153, 147A, 62, 136`
 
 ### East — Century Square, Tampines 1, White Sands, Eastpoint Mall
 
@@ -117,20 +117,20 @@ Selection string: `3, 68, 81, 38, 3A, 20, 15, 21, 15A, 293, 19, 37`
 
 ### Central — The Centrepoint, Tiong Bahru Plaza, Valley Point, Robertson Walk
 
-53 services pass at least one of these malls; the package takes 12.
+54 services pass at least one of these malls; the package takes 12.
 
 | Service | Malls covered | Weekday boardings at those stops | Route |
 | --- | ---: | ---: | --- |
 | **123** | 3 of 4 | 51,492 | Bt Merah Int ⇄ Beach Stn Ter |
 | **14** | 3 of 4 | 30,487 | Bedok Int ⇄ Clementi Int |
 | **65** | 3 of 4 | 30,487 | Tampines Int ⇄ HarbourFront Int |
-| **32** | 3 of 4 | 13,416 | Bedok Int ⇄ Buona Vista Ter |
+| **32** | 3 of 4 | 14,899 | Bedok Int ⇄ Buona Vista Ter |
 | **64** | 3 of 4 | 10,620 | Sims Pl Ter ⟲ Blk 157 |
 | **16** | 2 of 4 | 48,263 | Bedok Int ⇄ Bt Merah Int |
 | **16M** | 2 of 4 | 48,263 | Bedok Int ⇄ Bt Merah Int |
+| **195** | 2 of 4 | 35,425 | Aft S'pore Flyer → Promenade Stn/Pan Pacific |
 | **121**† | 2 of 4 | 35,123 | Shenton Way Ter ⟲ Blk 28 |
-| **195** | 2 of 4 | 33,942 | Aft S'pore Flyer → Promenade Stn/Pan Pacific |
-| **195A** | 2 of 4 | 32,734 | Aft S'pore Flyer → Tiong Bahru Stn/Plaza |
+| **195A** | 2 of 4 | 33,406 | Aft S'pore Flyer → Tiong Bahru Stn/Plaza |
 | **143** | 2 of 4 | 18,104 | Toa Payoh Int ⇄ Jurong East Int |
 | **139** | 2 of 4 | 10,567 | Toa Payoh Int ⇄ Bt Merah Int |
 
@@ -141,19 +141,19 @@ Reaching each mall:
 - **Valley Point** — 6 of the 12: 121, 139, 14, 32, 64, 65
 - **Robertson Walk** — 7 of the 12: 123, 139, 143, 195, 195A, 32, 64
 
-Selection string: `123, 14, 65, 32, 64, 16, 16M, 121, 195, 195A, 143, 139`
+Selection string: `123, 14, 65, 32, 64, 16, 16M, 195, 121, 195A, 143, 139`
 
 ## Every service, mall by mall
 
 **Causeway Point** (50) — 912†, 912B†, 912A†, 913†, 913M†, 913T†, 911†, 911T†, 161, 168, 901†, 901M†, 962†, 178, 168A, 178A†, 169, 169A, 169B†, 187, 856, 856A†, 856B, 858, 858A†, 900†, 902†, 903†, 903M†, 904†, 960, 960e, 963, 963e, 964†, 966, 966A, 969, 911A†, 965, 965A, 925, 925A†, 925M, 950†, 961, 961M, 967†, S51, 665
 
-**Northpoint City** (46) — 812†, 811†, 801†, 800†, 803†, 806†, 807†, 804†, 859†, 859T†, 811A†, 103, 39, 805†, 85, 851, 851e, 852, 854, 854e, 855, 857, 857A†, 857B, 85A, 860, 807A†, 807B†, 860T, 853, 853M, 171, 856, 883†, 117, 117M, 169, 858, 965, 969, 969A, 883B†, 169A, 858A†, 965A, 883M†
+**Northpoint City** (46) — 812†, 811†, 801†, 800†, 803†, 806†, 807†, 804†, 859†, 859T†, 811A†, 103, 39, 805†, 85, 851, 851e, 852, 854, 854e, 855, 857, 857A†, 857B, 85A, 860, 807A†, 807B†, 171, 856, 860T, 853, 853M, 883†, 117, 117M, 169, 965, 858, 969, 883B†, 969A, 169A, 858A†, 965A, 883M†
 
-**nex** (38) — 315†, 22, 43, 53, 70, 70M, 104, 101†, 103, 317†, 158, 58, 116†, 53M†, 70A, 105, 45, 81, 82, 116A†, 43A, 70B†, 109, 147, 853, 853M, 100, 100A†, 506, 109A†, 107, 107M, 153, 147A, 133, 135, 58A, 45A†
+**nex** (38) — 315†, 22, 43, 53, 70, 70M, 104, 101†, 103, 317†, 158, 58, 116†, 53M†, 70A, 105, 45, 81, 82, 116A†, 43A, 70B†, 109, 147, 853, 853M, 100, 100A†, 109A†, 506, 107, 107M, 153, 147A, 133, 135, 58A, 45A†
 
 **Hougang Mall** (37) — 113†, 325†, 89, 89e, 161, 27, 102, 112†, 147, 324†, 74, 112A†, 112B†, 147A, 107, 107M, 116†, 165, 329†, 132, 151, 153, 51, 80, 87, 681, 101†, 72, 457†, 80A, 72A†, 82, 62, 119†, 136, 672, 62A
 
-**Waterway Point** (34) — 381†, 118, 384†, 43, 43e, 118A, 43A, 382†, 50, 382G†, 382W†, 84W†, 84G†, 119†, 136, 3, 382A†, 386†, 386A†, 62, 62A, 82, 83†, 83T†, 85, 34, 39, 44, 459, 34A, 39B, 39A, 117, 117M
+**Waterway Point** (34) — 381†, 118, 384†, 43, 43e, 118A, 43A, 382†, 84W†, 50, 136, 3, 386†, 386A†, 83†, 83T†, 84G†, 85, 382G†, 382W†, 119†, 382A†, 62, 62A, 82, 34, 39, 44, 459, 34A, 39B, 39A, 117, 117M
 
 **Century Square** (48) — 3, 3A†, 10, 20†, 23, 292†, 293†, 31, 65, 67, 31A†, 127†, 127A†, 19, 28, 29, 291†, 296†, 29A†, 37†, 38†, 4†, 460†, 68†, 68A†, 68B†, 69†, 72, 8, 81, 969, 969A, 129, 298†, 15, 168, 21, 27, 299†, 454†, 34, 34B, 39, 15A, 27A, 34A, S41, 168A
 
@@ -169,4 +169,4 @@ Selection string: `123, 14, 65, 32, 64, 16, 16M, 121, 195, 195A, 143, 139`
 
 **Valley Point** (9) — 139, 32, 970, 14, 65, 121†, 186, 51, 64
 
-**Robertson Walk** (10) — 123, 64, 139, 195, 32, 54, 186, 51, 143, 195A
+**Robertson Walk** (11) — 123, 64, 195, 32, 54, 139, 186, 51, 195A, 143, S42
