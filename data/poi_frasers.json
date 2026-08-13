@@ -1,7 +1,6 @@
 [
  {"name": "Causeway Point", "region": "North", "kind": "FCT-owned · Woodlands", "lat": 1.43609, "lng": 103.78601},
  {"name": "Northpoint City", "region": "North", "kind": "FCT-owned, both wings · Yishun", "lat": 1.42874, "lng": 103.83595},
- {"name": "nex", "region": "North-East", "kind": "FCT 50%-owned · Serangoon", "lat": 1.35068, "lng": 103.87186},
  {"name": "Hougang Mall", "region": "North-East", "kind": "FCT-owned · Hougang", "lat": 1.37244, "lng": 103.89372},
  {"name": "Waterway Point", "region": "North-East", "kind": "FCT 50%-owned · Punggol", "lat": 1.40643, "lng": 103.90224},
  {"name": "Century Square", "region": "East", "kind": "FCT-owned · Tampines", "lat": 1.35236, "lng": 103.94378},
