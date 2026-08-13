@@ -30,7 +30,7 @@ EXPECT_MIN = {
     'poi_polyclinics.json': 26, 'poi_uni.json': 6, 'poi_poly.json': 5, 'poi_ite.json': 3,
     'poi_jcmi.json': 11, 'poi_libraries.json': 25, 'poi_hospitals.json': 25,
     'poi_interchanges.json': 26, 'poi_arts.json': 3, 'poi_events.json': 10,
-    'poi_frasers.json': 12,
+    'poi_frasers.json': 11,
 }
 CHECKS = ['names', 'singapore-bounds', 'point-footprint-consistency',
           'exact-duplicates', 'known-complete floors']

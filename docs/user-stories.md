@@ -210,3 +210,18 @@ in is an FCT-ownership pitch, not this one. Removed.
 |---|-------|--------|-------|
 | US-58 | As the client-facing owner of this list, I want it to be exactly what Frasers publishes as their malls — a thirteenth mall I reasoned my way into is a thirteenth thing to defend in the meeting. | ✅ | nex dropped; layer is the FRx twelve, and the sources panel now cites FRx as the list's authority rather than a reconstruction. Completeness floor 13 → 12. Headless: 12/12 malls, "✓ Frasers malls · 12" in the picker, all four packages match the regenerated doc, 0 buttons outside their card at 1024–1920 px, no console errors. |
 | US-59 | As a seller, I want the North-East package to still be worth buying once nex leaves it — nex was carrying that set. | ⚠ | It is thinner and honestly so. The set was anchored on three malls, of which nex was the busiest; on Hougang Mall + Waterway Point only 6 services serve both, so the package now runs 82, 62, 136, 119, 62A, 381 and then fills with Waterway-only services. Reach is lopsided: **Waterway Point 11 of the 12, Hougang Mall 6 of the 12** — printed under the package in the generated doc. Worth a look at whether North-East should be two single-mall stories instead of one regional set. |
+
+### Follow-up (user: "Robertson Walk permanently closed on May 31, 2025")
+
+Correct, and the miss was mine. I checked two things about this list — is each mall Frasers',
+and is each point where I say it is — and never the third: **is it still open?** Robertson Walk
+was on Frasers' own portfolio and FRx pages, and is still tagged `shop=mall` in OpenStreetMap,
+months after it ceased operations on 31 May 2025 (FRx benefits stopped 30 April 2025; the site
+goes to a Frasers / Sekisui House residential redevelopment by 2028). Every source I checked
+agreed with itself and was stale. Eleven malls, not twelve.
+
+| # | Story | Status | Check |
+|---|-------|--------|-------|
+| US-60 | As a seller, I never want a closed mall in a package. A shut mall in a Frasers pitch is worse than a missing one — it is the client's own asset, and they know exactly when it shut. | ✅ | Robertson Walk removed; layer is 11. Central regenerates to The Centrepoint · Tiong Bahru Plaza · Valley Point (14, 65, 16, 16M, 123, 121, 32, 64, 122, 123M, 195, 195A). North, North-East and East unchanged. Headless: 11/11, "✓ Frasers malls · 11", all four packages match the regenerated doc, 0 buttons outside their card at 1024–1920 px, no console errors. |
+| US-61 | As a seller, I want to know a mall is about to be redeveloped *while I am looking at it*, not after I have sold a campaign into it. | ✅ | Optional `note` on a mall renders in its tooltip as an amber ⚑ line. **Valley Point** carries "redevelopment approved — trading now" — it trades today but has written permission for a full-site redevelopment. Also a `Watch` column in the generated doc. |
+| US-62 | As the maintainer, I want the check I skipped written down, so the next client layer does not repeat it. | ✅ | Three places: CLAUDE.md gains the rule ("a client/venue layer needs two checks, not one: is it theirs, and is it still open?"); the generated doc leads with it and names the three malls deliberately absent (Robertson Walk closed, Changi City Point divested, nex not theirs) so their absence reads as a decision rather than a gap; the sources panel dates the trading check (Aug 2026). Completeness floor 12 → 11. |

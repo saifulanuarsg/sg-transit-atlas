@@ -12,22 +12,27 @@ trunk layer, but they are real Moove inventory and are selectable.
 
 ## The malls
 
-Frasers Property Singapore manages twelve malls; `nex` is the thirteenth entry — Frasers Centrepoint Trust half-owns it but it is not one of the managed twelve.
+Frasers Property Singapore's own malls, per their FRx directory. **Two questions, not one: is it theirs, and is it open?** Robertson Walk was on the portfolio pages long after it ceased operations on 31 May 2025 — being listed is not the same fact as trading. Anything added here needs both answered.
 
-| Mall | Region | Ownership · area | Stops within 400 m | Services at the door |
-| --- | --- | --- | ---: | ---: |
-| Causeway Point | North | FCT-owned · Woodlands | 10 | 50 |
-| Northpoint City | North | FCT-owned, both wings · Yishun | 14 | 46 |
-| Hougang Mall | North-East | FCT-owned · Hougang | 13 | 37 |
-| Waterway Point | North-East | FCT 50%-owned · Punggol | 10 | 34 |
-| Century Square | East | FCT-owned · Tampines | 9 | 48 |
-| Tampines 1 | East | FCT-owned · Tampines | 14 | 44 |
-| White Sands | East | FCT-owned · Pasir Ris | 13 | 30 |
-| Eastpoint Mall | East | NTUC Income-owned, Frasers-managed · Simei | 12 | 9 |
-| The Centrepoint | Central | Frasers Property-owned · Orchard | 6 | 35 |
-| Tiong Bahru Plaza | Central | FCT-owned · Tiong Bahru | 7 | 18 |
-| Valley Point | Central | Frasers-managed · River Valley | 8 | 9 |
-| Robertson Walk | Central | Frasers-managed · Robertson Quay | 8 | 11 |
+| Mall | Region | Ownership · area | Stops within 400 m | Services at the door | Watch |
+| --- | --- | --- | ---: | ---: | --- |
+| Causeway Point | North | FCT-owned · Woodlands | 10 | 50 | — |
+| Northpoint City | North | FCT-owned, both wings · Yishun | 14 | 46 | — |
+| Hougang Mall | North-East | FCT-owned · Hougang | 13 | 37 | — |
+| Waterway Point | North-East | FCT 50%-owned · Punggol | 10 | 34 | — |
+| Century Square | East | FCT-owned · Tampines | 9 | 48 | — |
+| Tampines 1 | East | FCT-owned · Tampines | 14 | 44 | — |
+| White Sands | East | FCT-owned · Pasir Ris | 13 | 30 | — |
+| Eastpoint Mall | East | NTUC Income-owned, Frasers-managed · Simei | 12 | 9 | — |
+| The Centrepoint | Central | Frasers Property-owned · Orchard | 6 | 35 | — |
+| Tiong Bahru Plaza | Central | FCT-owned · Tiong Bahru | 7 | 18 | — |
+| Valley Point | Central | Frasers-managed · River Valley | 8 | 9 | redevelopment approved — trading now |
+
+**Deliberately absent** — each is a reasonable thing to expect, so each is named:
+
+- **Robertson Walk** — ceased operations 31 May 2025 (FRx benefits stopped 30 Apr 2025); the site goes to a Frasers / Sekisui House residential redevelopment by 2028. Still tagged in OpenStreetMap.
+- **Changi City Point** — divested by FCT in 2023. Still tagged in OpenStreetMap.
+- **nex** — Frasers Centrepoint Trust half-owns it, but it is not one of Frasers Property Singapore's malls.
 
 ## Packages
 
@@ -113,33 +118,32 @@ Reaching each mall:
 
 Selection string: `3, 68, 81, 38, 3A, 20, 15, 21, 15A, 293, 19, 37`
 
-### Central — The Centrepoint, Tiong Bahru Plaza, Valley Point, Robertson Walk
+### Central — The Centrepoint, Tiong Bahru Plaza, Valley Point
 
-54 services pass at least one of these malls; the package takes 12.
+52 services pass at least one of these malls; the package takes 12.
 
 | Service | Malls covered | Weekday boardings at those stops | Route |
 | --- | ---: | ---: | --- |
-| **123** | 3 of 4 | 51,492 | Bt Merah Int ⇄ Beach Stn Ter |
-| **14** | 3 of 4 | 30,487 | Bedok Int ⇄ Clementi Int |
-| **65** | 3 of 4 | 30,487 | Tampines Int ⇄ HarbourFront Int |
-| **32** | 3 of 4 | 14,899 | Bedok Int ⇄ Buona Vista Ter |
-| **64** | 3 of 4 | 10,620 | Sims Pl Ter ⟲ Blk 157 |
-| **16** | 2 of 4 | 48,263 | Bedok Int ⇄ Bt Merah Int |
-| **16M** | 2 of 4 | 48,263 | Bedok Int ⇄ Bt Merah Int |
-| **195** | 2 of 4 | 35,425 | Aft S'pore Flyer → Promenade Stn/Pan Pacific |
-| **121**† | 2 of 4 | 35,123 | Shenton Way Ter ⟲ Blk 28 |
-| **195A** | 2 of 4 | 33,406 | Aft S'pore Flyer → Tiong Bahru Stn/Plaza |
-| **143** | 2 of 4 | 18,104 | Toa Payoh Int ⇄ Jurong East Int |
-| **139** | 2 of 4 | 10,567 | Toa Payoh Int ⇄ Bt Merah Int |
+| **14** | 3 of 3 | 30,487 | Bedok Int ⇄ Clementi Int |
+| **65** | 3 of 3 | 30,487 | Tampines Int ⇄ HarbourFront Int |
+| **16** | 2 of 3 | 48,263 | Bedok Int ⇄ Bt Merah Int |
+| **16M** | 2 of 3 | 48,263 | Bedok Int ⇄ Bt Merah Int |
+| **123** | 2 of 3 | 47,166 | Bt Merah Int ⇄ Beach Stn Ter |
+| **121**† | 2 of 3 | 35,123 | Shenton Way Ter ⟲ Blk 28 |
+| **32** | 2 of 3 | 10,632 | Bedok Int ⇄ Buona Vista Ter |
+| **64** | 2 of 3 | 6,294 | Sims Pl Ter ⟲ Blk 157 |
+| **122**† | 1 of 3 | 31,678 | Kampong Bahru Ter ⟲ Blk 92 |
+| **123M**† | 1 of 3 | 31,158 | HarbourFront Int ⟲ Blk 1 |
+| **195** | 1 of 3 | 31,158 | Aft S'pore Flyer → Promenade Stn/Pan Pacific |
+| **195A** | 1 of 3 | 31,158 | Aft S'pore Flyer → Tiong Bahru Stn/Plaza |
 
 Reaching each mall:
 
-- **The Centrepoint** — 6 of the 12: 123, 14, 143, 16, 16M, 65
-- **Tiong Bahru Plaza** — 10 of the 12: 121, 123, 14, 16, 16M, 195, 195A, 32, 64, 65
-- **Valley Point** — 6 of the 12: 121, 139, 14, 32, 64, 65
-- **Robertson Walk** — 7 of the 12: 123, 139, 143, 195, 195A, 32, 64
+- **The Centrepoint** — 5 of the 12: 123, 14, 16, 16M, 65
+- **Tiong Bahru Plaza** — 12 of the 12: 121, 122, 123, 123M, 14, 16, 16M, 195, 195A, 32, 64, 65
+- **Valley Point** — 5 of the 12: 121, 14, 32, 64, 65
 
-Selection string: `123, 14, 65, 32, 64, 16, 16M, 195, 121, 195A, 143, 139`
+Selection string: `14, 65, 16, 16M, 123, 121, 32, 64, 122, 123M, 195, 195A`
 
 ## Every service, mall by mall
 
@@ -164,5 +168,3 @@ Selection string: `123, 14, 65, 32, 64, 16, 16M, 195, 121, 195A, 143, 139`
 **Tiong Bahru Plaza** (18) — 121†, 122†, 123, 123M†, 195, 195A, 5, 16, 16M, 33, 63, 851, 33A, 14, 65, 32, 64, 120†
 
 **Valley Point** (9) — 139, 32, 970, 14, 65, 121†, 186, 51, 64
-
-**Robertson Walk** (11) — 123, 64, 195, 32, 54, 139, 186, 51, 195A, 143, S42

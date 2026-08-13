@@ -13,6 +13,12 @@
 - Test locally with `python3 -m http.server` + Playwright/Chromium; CDN assets (Leaflet,
   html2canvas, pptxgen) must be stubbed or served locally — this environment's proxy blocks
   most non-GitHub hosts, including unpkg, cdnjs, OSM/Overpass and OneMap.
+- **A client/venue layer needs two checks, not one: is it theirs, and is it still open?**
+  Membership of a portfolio page is not evidence of trading — Robertson Walk sat on Frasers'
+  own mall pages long after it closed on 31 May 2025, and both it and the divested Changi City
+  Point are still tagged `shop=mall` in OpenStreetMap. Check each entry's closure/redevelopment
+  status, date the check in the layer's sources line, and flag a site with a redevelopment
+  hanging over it (`note` field → tooltip) rather than leaving a seller to find out in a meeting.
 - **Need a Singapore geocode when OneMap is blocked?** GitHub is reachable: clone
   `xkjyeah/singapore-postal-codes` and look the postal address up in `buildings.json` — it is a
   OneMap dump (address → lat/lng for every postal code). Used to place the Frasers malls; it
