@@ -677,7 +677,7 @@
         <li><b>IHLs</b> (17) — curated list (universities, polytechnics, ITE, arts); multi-campus institutions (LASALLE McNally + Winstedt) listed per campus; campus boundaries from OpenStreetMap / Nominatim.</li>
         <li><b>Transit hotspots</b> (35) — MRT/LRT interchange stations derived from this app's own rail data (stations on 2+ drawn lines). <b>Major event &amp; convention venues</b> (11) — curated list.</li>
         <li><b>Shopping malls</b> (237) — OpenStreetMap <code>shop=mall</code>, non-malls filtered out.</li>
-        <li><b>Frasers malls</b> (11) — Frasers Property Singapore's own malls, per the Frasers Experience (FRx) directory: Causeway Point, Century Square, Eastpoint Mall, Hougang Mall, Northpoint City, Tampines 1, The Centrepoint, Tiong Bahru Plaza, Valley Point, Waterway Point, White Sands. Every one checked as still trading, Aug 2026 — membership of a portfolio is not the same question as whether a mall is open. Three malls a reader might expect are deliberately absent: <b>Robertson Walk</b> ceased operations 31 May 2025 and is being redeveloped by Frasers and Sekisui House; <b>Changi City Point</b> was divested in 2023; <b>nex</b> is half-owned by Frasers Centrepoint Trust but is not one of Frasers Property Singapore's malls. The first two are still in the OpenStreetMap mall layer, which is why this list is its own file and not a filter over it — and two of the eleven can't be found there by name anyway (Eastpoint Mall is tagged <code>East Point</code>). <b>Valley Point</b> trades today but has written permission for a full-site redevelopment; the map flags it. Ownership notes as at Aug 2026 (FCT took the Northpoint City South Wing in May 2025). Every point is the OneMap geocode of the mall's own postal address; Northpoint City is the midpoint of its two wings, which are 160 m apart. Its route packages are <b>derived, not curated</b>: every service with a stop within 400 m of a mall, ranked by malls covered then by weekday boardings at those stops, top 12 per region. Feeder services are included — the advertising asset is the bus, not its trunk/feeder class — so a package can hold services the trunk layer doesn't draw until they are selected. Full mall-by-mall mapping: <code>docs/frasers-assets.md</code>.</li>
+        <li><b>Frasers</b> (16) — every Frasers Property Singapore space: eleven malls, per the Frasers Experience (FRx) directory — Causeway Point, Century Square, Eastpoint Mall, Hougang Mall, Northpoint City, Tampines 1, The Centrepoint, Tiong Bahru Plaza, Valley Point, Waterway Point, White Sands — and five office / business-park properties: Frasers Tower, 51 Cuppage Road, Central Plaza, Alexandra Point and Alexandra Technopark. Every one checked as still theirs and still open, Aug 2026 — membership of a portfolio is not the same question as whether a mall is open. Three malls a reader might expect are deliberately absent: <b>Robertson Walk</b> ceased operations 31 May 2025 and is being redeveloped by Frasers and Sekisui House; <b>Changi City Point</b> was divested in 2023; <b>nex</b> is half-owned by Frasers Centrepoint Trust but is not one of Frasers Property Singapore's malls; <b>Cross Street Exchange</b> was divested to PAG in March 2022. The first two are still in the OpenStreetMap mall layer, which is why this list is its own file and not a filter over it — and two of the eleven can't be found there by name anyway (Eastpoint Mall is tagged <code>East Point</code>). <b>Valley Point</b> trades today but has written permission for a full-site redevelopment; the map flags it. Ownership notes as at Aug 2026 (FCT took the Northpoint City South Wing in May 2025). Every point is the OneMap geocode of the mall's own postal address; Northpoint City is the midpoint of its two wings, which are 160 m apart. Its route packages are <b>derived, not curated</b>: every service with a stop within 400 m of a space, ranked by spaces covered then by weekday boardings at those stops, top 12 per region — plus an <b>All 16</b> package, the smallest set of services that reaches every space (5 of them, and an exhaustive search confirms 5 is the floor). Feeder services are included — the advertising asset is the bus, not its trunk/feeder class — so a package can hold services the trunk layer doesn't draw until they are selected. Full mall-by-mall mapping: <code>docs/frasers-assets.md</code>.</li>
         <li><b>Supermarkets</b> (532) — OpenStreetMap <code>shop=supermarket</code>, minimarts excluded.</li>
         <li><b>Police</b> (118) — OpenStreetMap <code>amenity=police</code> (SPF centres, posts, HQs, Coast Guard); non-SPF removed.</li>
         <li><b>Bus hubs</b> (54) — interchanges &amp; terminals derived from LTA stop names. <b>MRT/LRT lines &amp; stations</b> (8 lines, 182 stations) — OpenStreetMap; stations filtered to those on a drawn line (future CRL/RTS-Link stations omitted). Labels appear as you zoom in.</li>
@@ -847,8 +847,28 @@ function mapFrasersAssets(){
     return {ck:r.ck,label:r.label,color:r.color,routes,places:ms};
   }).filter(st=>st.routes.length);
   if(!sets.length)return;
-  addProduct({key:'frasers',name:'Frasers malls',
-    spec:`routes at ${malls.length} malls`,poi:'frasers',sets});
+  // Smallest set of services that puts at least one stop within FRASERS_R of EVERY space.
+  // Greedy (take the service covering most of what is still uncovered, ties by boardings) —
+  // for the current portfolio it lands on 5, which an exhaustive search confirms is the floor.
+  const uncovered=new Set(malls.map(m=>m.name)), minCover=[];
+  const reach={};
+  malls.forEach(m=>Object.keys(S.frasers[m.name].routes).forEach(n=>{
+    (reach[n]=reach[n]||new Set()).add(m.name);}));
+  const load=n=>malls.reduce((a,m)=>a+(S.frasers[m.name].routes[n]||0),0);
+  while(uncovered.size){
+    let best=null,bn=0;
+    for(const n in reach){
+      let c=0;reach[n].forEach(x=>{if(uncovered.has(x))c++;});
+      if(c>bn||(c===bn&&c>0&&load(n)>load(best)))
+        {best=n;bn=c;}
+    }
+    if(!best||!bn)break;
+    minCover.push(best);reach[best].forEach(x=>uncovered.delete(x));
+  }
+  if(minCover.length)sets.unshift({ck:'all',label:`All ${malls.length}`,color:'#B91C1C',
+    routes:minCover,places:malls.map(m=>m.name)});
+  addProduct({key:'frasers',name:'Frasers',
+    spec:`routes at ${malls.length} spaces`,poi:'frasers',sets});
 }
 const FEATURES={demographics:false};   // flipped on when planning-area data is present
 
@@ -914,14 +934,15 @@ const POI=[
   {key:'pei',label:'Private education (PEI)',color:'#6366f1',file:'data/poi_pei.json',cat:'edu'},
   {key:'studentcare',label:'Student care',color:'#f59e0b',file:'data/poi_studentcare.json',cat:'edu'},
   {key:'malls',label:'Shopping malls',color:'#db2777',file:'data/poi_malls.json',cat:'retail'},
-  // Client layer: Frasers Property Singapore's own eleven, from their FRx mall directory, each
-  // checked as still trading (Robertson Walk closed 31 May 2025 and is out; being on a portfolio
-  // page is not the same fact as being open).
+  // Client layer: every Frasers Property Singapore space — the eleven malls from their FRx
+  // directory plus their office and business-park properties — each checked as still theirs and
+  // still open (Robertson Walk closed 31 May 2025 and Cross Street Exchange was divested in 2022;
+  // being on a portfolio page is not the same fact as being current).
   // Kept separate from the OpenStreetMap mall layer — this list is the landlord's own portfolio,
   // not an OSM tag: two of the eleven can't be found there by name, and two malls that have
   // closed or been divested are still in it. nex is out too — FCT half-owns it, but it is not
   // one of Frasers Property Singapore's malls.
-  {key:'frasers',label:'Frasers malls',color:'#1E40AF',file:'data/poi_frasers.json',cat:'retail'},
+  {key:'frasers',label:'Frasers',color:'#1E40AF',file:'data/poi_frasers.json',cat:'retail'},
   {key:'supermarkets',label:'Supermarkets',color:'#16a34a',file:'data/poi_supermarkets.json',cat:'retail'},
   {key:'fnb',label:'F&B (healthier eateries)',color:'#ea580c',file:'data/poi_fnb.json',cat:'retail'},
   {key:'sephora',label:'Sephora outlets',color:'#171717',file:'data/poi_sephora.json',cat:'retail'},
