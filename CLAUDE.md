@@ -1,5 +1,11 @@
 # Working notes for Claude
 
+- **Before exploring `data/` or the loading code, read [`docs/data-model.md`](docs/data-model.md).**
+  It has every file's exact shape, row counts, join keys and traps (`[lng,lat]` order,
+  stop codes are strings with leading zeros, the three stop-keyed files cover different
+  stop sets, `poi_schools.json` is a registry and not a drawn layer). Reading it is faster
+  and more reliable than re-deriving the shapes; if you change a data file's shape, update
+  that doc in the same commit.
 - **Simulation → user stories → verify.** Whenever a change is driven by simulating a user
   (persona walkthrough, UX critique), first write the user stories to `docs/user-stories.md`
   under a dated simulation heading, then build, then check every story against the real app
