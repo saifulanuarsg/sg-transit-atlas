@@ -85,14 +85,25 @@ def main():
            'trunk layer, but they are real Moove inventory and are selectable.', '']
 
     out += ['## The malls', '',
-            'Frasers Property Singapore manages twelve malls; `nex` is the thirteenth entry — '
-            'Frasers Centrepoint Trust half-owns it but it is not one of the managed twelve.', '',
-            '| Mall | Region | Ownership · area | Stops within 400 m | Services at the door |',
-            '| --- | --- | --- | ---: | ---: |']
+            "Frasers Property Singapore's own malls, per their FRx directory. **Two questions, "
+            'not one: is it theirs, and is it open?** Robertson Walk was on the portfolio pages '
+            'long after it ceased operations on 31 May 2025 — being listed is not the same fact '
+            'as trading. Anything added here needs both answered.', '',
+            '| Mall | Region | Ownership · area | Stops within 400 m | Services at the door | Watch |',
+            '| --- | --- | --- | ---: | ---: | --- |']
     for m in malls:
         d = per_mall[m['name']]
-        out.append(f"| {m['name']} | {m['region']} | {m['kind']} | {len(d['stops'])} | {len(d['routes'])} |")
-    out.append('')
+        out.append(f"| {m['name']} | {m['region']} | {m['kind']} | {len(d['stops'])} | "
+                   f"{len(d['routes'])} | {m.get('note', '—')} |")
+    out += ['',
+            '**Deliberately absent** — each is a reasonable thing to expect, so each is named:',
+            '',
+            '- **Robertson Walk** — ceased operations 31 May 2025 (FRx benefits stopped 30 Apr '
+            '2025); the site goes to a Frasers / Sekisui House residential redevelopment by 2028. '
+            'Still tagged in OpenStreetMap.',
+            '- **Changi City Point** — divested by FCT in 2023. Still tagged in OpenStreetMap.',
+            '- **nex** — Frasers Centrepoint Trust half-owns it, but it is not one of Frasers '
+            'Property Singapore\'s malls.', '']
 
     out += ['## Packages', '',
             f'Each package is the region\'s top {PACK_MAX} services: most of the region\'s malls '
