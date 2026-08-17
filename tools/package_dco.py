@@ -68,8 +68,10 @@ DETAIL = {
 
 # Daypart windows — ASSUMPTIONS, from when the institutions in the zone are open.
 DAYPARTS = {
-    'children': ('Weekday 13:00–16:00', 'Primary dismissal and student-care pickup',
-                 'Parent-facing: "Worried about your child? Talk to someone."'),
+    # the audience here is the child riding the bus in uniform, not the parent —
+    # which puts the morning school run in the belt as well as dismissal
+    'children': ('Weekday 06:30–07:45 & 13:00–15:30', 'The school run, both directions',
+                 'Child-facing: "Mind feeling under the weather?"'),
     'seniors':  ('Weekday 08:00–11:00', 'Polyclinic and senior-activity morning peak',
                  'Large type, dialect-friendly: the number, and that it is free.'),
     'working':  ('Weekday 07:30–09:30 & 17:30–19:30', 'Interchange and CBD commute peaks',

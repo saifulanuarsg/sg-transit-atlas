@@ -330,3 +330,24 @@ all three from `tools/build_package_deck.js` over `tools/package_dco.py <code>`.
 one data tool, so the shared shortlist, audience index and region table cannot disagree between
 decks — which is what US-89 and US-93 exist to protect. Clarity checked by rendering all 42 slides
 and reading them cold; the defects found that way are listed against the stories above.
+
+### Follow-up (user: "I need C2 to be selected. dont compare. just sell it." · two slides · 1771 artwork supplied)
+
+The client supplied the five approved **1771** executions and corrected one definition: the young-children
+audience is **the child**, not the parent. That correction is upstream of everything — it moves the
+children belt to cover the morning school run as well as dismissal, so it was applied to
+`tools/package_dco.py` and all three long decks were regenerated, not just patched into the pitch.
+
+The ask is a two-slide sell with no comparison. The risk in "just sell it" is that it becomes "just
+make it up", so the pitch is still generated from the same measured data — DBP C2's absolute counts
+are strong without needing a rival to look good against.
+
+| # | Story | Status | Check |
+|---|-------|--------|-------|
+| US-94 | As the seller, two slides only — no shortlist, no index, no other package named. | ✅ | `docs/DBP-C2-pitch.pptx`, 2 slides. Text dump greps clean for "DBP C1", "DBP L2", "Set 1–4", "index", "score", "third", "alternative" and "recommend" — zero hits. |
+| US-95 | As the client, show me DBP C2 works for **all five** categories, on one slide. | ✅ | Slide 1 — five persona cards left to right in the artwork's own order, each with its hero count: 48 primary schools · 21 interchanges · 84 caregiving stops · 27 community clubs · 38 secondary schools. |
+| US-96 | As the client, the children category is **children**, not parents. | ✅ | Card reads "The child on the bus in uniform — not the parent", carries the child-facing 1771 line, and the belt on slide 2 is 06:30–07:45 · 13:00–15:30 — the school run in both directions. Also corrected upstream in `package_dco.py`. |
+| US-97 | As the seller, each card should sit against the creative it belongs to, so the client reads it beside their own artwork. | ✅ | Each card carries that execution's own tagline verbatim, and card order matches the five posters as supplied. |
+| US-98 | As the seller, show an example of geofencing and time belting — we go deeper on yes. | ✅ | Slide 2 — creative × geofence × a 06:00–22:00 day rail with each belt drawn on it, weekend flags for sandwich and youth. Framed as "worked example… the full zone-by-zone plan is built on confirmation." |
+| US-99 | As the client, do not ask me to pay for new artwork. | ✅ | Slide 2 closes on "Five creatives already exist. Nothing here needs new artwork — only a schedule." |
+| US-100 | As a reviewer, the pitch must not overflow or collide. | ✅ | Three render-and-fix rounds. Found and fixed: the third header stat written off the right edge of the slide; the sandwich card's support text overflowing into its WHERE block; "Sandwich generation" wrapping to two lines and throwing that card out of alignment; the slide-2 footnote falling below the slide edge; the "Time belt" column head colliding with the 06:00 axis label. Final: schema clean, no shape out of bounds. |
