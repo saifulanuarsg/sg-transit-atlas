@@ -233,3 +233,121 @@ agreed with itself and was stale. Eleven malls, not twelve.
 | US-63 | As a seller pitching Frasers, I want their whole footprint in one layer — the offices and the business park are the same client and the same meeting as the malls. | ✅ | Layer renamed **Frasers** and widened to 16 spaces: the 11 FRx malls plus Frasers Tower, 51 Cuppage Road, Central Plaza, Alexandra Point and Alexandra Technopark, each carrying a `type` (Retail / Commercial). **Cross Street Exchange is not in it** — FLCT divested it to PAG on 31 Mar 2022; the two-question rule (is it theirs, is it open?) caught it before it shipped. Headless: 16/16 load, picker reads "✓ Frasers · 16". |
 | US-64 | As a seller, I want the smallest buy that reaches every Frasers space — "how many buses do I actually need?" is the question I get asked, and I should not answer it by eye. | ✅ | **Five services reach all 16: 65, 963, 39, 107, 38.** Derived in-app by greedy set cover (most still-uncovered spaces first, ties by boardings) and shipped as an **All 16** package button. Proven minimal offline: an exhaustive search over every 4-service combination, seeded on Eastpoint Mall (the scarcest space, only 9 services reach it), finds none. 65 alone carries 7 of the 16. |
 | US-65 | As a reviewer, I want the minimum buy in the audit doc too, not only as a button. | ✅ | `docs/frasers-assets.md` gains a "minimum buy" section listing each service and the spaces it brings in, plus the selection string. The app's derived set matches it exactly in a headless run. |
+
+---
+
+## 2026-08-17 · Simulation: mindline.sg hotline sell-in deck — DBP C1 (user request)
+
+User: *"lets go with set 2, call it dbp c1 · create slides to justify the choice and include dynamic
+creative optimisations by geofencing, time parting the different target audience · present all of
+these clearly with moove branding · run simuation to check clarity"*
+
+Two personas walked the deck cold, before it was built:
+
+**P1 · Moove Media account manager** presenting to the client. Needs a package code the client can
+quote back, the recommendation up front, and a creative plan concrete enough to brief a studio from.
+
+**P2 · mindline.sg campaign lead (MOH Office for Healthcare Transformation).** Publicly funded, so
+needs to see the reasoning, not just the answer — which audiences are served, what was rejected and
+why, and where the plan is weak. Will not sign off on a number they cannot trace.
+
+*Statuses recorded after the build, from rendered slide images — never from intention.*
+
+| # | Story | Status | Check |
+|---|-------|--------|-------|
+| US-66 | As a seller, I want the package code **DBP C1** on the cover and on every slide, so the client quotes the code and not "that Set 2 thing". | ✅ | Pink pill carries **DBP C1** on all 14 rendered slides; cover title is DBP C1 with the five plates beneath. Eyebrows shortened after the first render — "DBP C1 · THE HARDEST AUDIENCE" wrapped out of its pill. |
+| US-67 | As the client, I want the recommendation and its five routes on the first slide — not built up to over ten. | ✅ | Slide 1: recommendation, the five route plates (190 · 70 · 133 · 198 · 85) and four headline figures, before any argument. |
+| US-68 | As the client, I want to see why the other three sets lost. A winner with no losers is a sales claim, not an evaluation. | ✅ | Slide 5 gives each rejected set its own card, score and named failure — Set 1 seniors 67.4, Set 3 zero North + 6% duplicates, Set 4 seniors 70.4. |
+| US-69 | As the client, I want each of my five audiences addressed individually, with the number that carries it. | ✅ | Slide 2 names the five and how each is reached; slide 6 gives each an index bar and the places carrying it (45 primary · 37 eldercare · 21 interchanges · 99 caregiving · 33 secondary). |
+| US-70 | As the client, the sandwich generation is the audience nobody can ever reach — show me it was actually measured, not hand-waved. | ✅ | Slide 7 — the 99 co-location stops as the hero figure, with the rule stated ("a long route cannot fake it") and the three rival sets alongside (87 / 84 / 77). |
+| US-71 | As the client, we are a *national* service. Show me the coverage map before I sign anything. | ✅ | Slide 8 — region matrix with the two zero cells drawn as dashed pink outlines. Reads at a glance that Sets 3 and 4 have a hole in the North. |
+| US-72 | As a seller, I want the geofence plan as a legible grid — zone, what's in it, which creative — so a studio can be briefed straight off the slide. | ✅ | Slide 10 — one row per audience, top four zones with place counts, and the real anchor sites named. Zones now sorted by the number printed on them, after the first render ordered them by a hidden blend. |
+| US-73 | As a seller, I want dayparting to say what runs at which hour for which audience, not "time-targeted creative". | ✅ | Slide 11 — audience × window × creative, each window carrying the reason it is that window. Rebuilt once: five rows originally overflowed into the footer. |
+| US-74 | As the client, I must be able to tell measured data from planning assumption at a glance. If a daypart is an assumption, say so on the slide. | ✅ | Slide 9 separates the two explicitly; slide 10 is stamped **MEASURED**, slide 11 **PLANNING ASSUMPTION**, and slide 13 repeats it as a limit. |
+| US-75 | As a seller, every slide must be Moove-branded — our colours, our wordmark, client-ready, not tool-branded. | ✅ | BRAND pink F0245E / navy 1B2D8A and the MOOVE MEDIA wordmark on all 14 slides, taken from index.html’s own BRAND constant rather than invented. |
+| US-76 | As a reviewer, no slide may overflow its frame or collide its text. A clipped figure is worse than no figure. | ✅ | Three render-and-fix rounds. Found and fixed: pill text overflowing on 3 slides; slide 11 rows running off the bottom; footnotes colliding with the page number on slides 6, 10 and 12; slide 12’s last row overflowing its card. Final pass — schema validation clean, no shape out of bounds, no footer collision on any slide. |
+| US-77 | As the client, tell me where this plan is *weak* on the same slide you tell me it is strong. | ✅ | Slide 13 leads with "DBP C1 has no East Region coverage" in the highlighted card, above boardings≠impressions, area-average cohorts and the daypart assumption. |
+
+Deck: `docs/DBP-C1-mindline.pptx` (14 slides, 16:9), generated by `tools/build_dbp_c1_deck.js`
+from `tools/dbp_c1_dco.py` — so every number on a slide is derived, not typed. Clarity was
+checked by rendering all 14 slides to images through LibreOffice and reading them cold; the
+defects listed above were found that way and fixed before this table was filled in.
+
+---
+
+## 2026-08-17 · Simulation: DBP L2 — the alternative package deck (user request)
+
+User: *"do the same for set 3 - rename DBP L2"*
+
+Set 3 becomes **DBP L2**. The danger in this one is obvious and worth naming: the same deck
+template, run for a package that did *not* win, will read as a second recommendation unless the
+copy is rewritten. Both personas returned, plus a third:
+
+**P1 · Moove account manager** — needs to be able to put L2 in front of a client without
+contradicting the C1 deck they saw last week.
+
+**P2 · mindline.sg campaign lead** — will ask the only question that matters about an
+alternative: *what do I gain, and what do I give up?*
+
+**P3 · a reviewer holding both decks side by side** — the two share a four-set comparison, an
+audience index and a region table. If any figure disagrees between them, both decks are dead.
+
+*Statuses recorded after the build, from rendered slide images — never from intention.*
+
+| # | Story | Status | Check |
+|---|-------|--------|-------|
+| US-78 | As a seller, I want **DBP L2** on the cover and every slide, exactly as DBP C1 was. | ✅ | Pink pill reads **DBP L2** on all 14 rendered slides; cover title is DBP L2 with its five plates. |
+| US-79 | As the client, this must not read like a second "recommended" deck. Say on the cover that it is the alternative. | ✅ | Cover pill reads **ALTERNATIVE PACKAGE**, not "recommended", and the cover note says "Second of four on the index… what it trades away is on slide 8." |
+| US-80 | As the client, show me where L2 actually beats C1 — otherwise there is no reason to look at it. | ✅ | Slide 5 is a purpose-built trade slide: seniors 97.7 vs 90.6, East 28.8% vs 0.0%, 1,290,629 weekday vs 467/396 stops — set against what it costs. |
+| US-81 | As the client, L2's zero North coverage must be as prominent here as it was when it counted against it in the C1 deck. Do not soften it because it is now our own package. | ✅ | Slide 8 draws L2's own North cell as a dashed pink zero, identically to how it was drawn against it in the C1 deck. Title is "Strong in the East, blind in the North"; the callout says "Woodlands, Sembawang and Yishun see nothing on this buy." |
+| US-82 | As a seller, I want the 28 duplicate stops on the slide. The client will find them; better they hear it from us. | ✅ | On slide 5 as a cost ("Duplicate stops 28 vs 5") and again as limit #2 on slide 13, naming the Toa Payoh–Bukit Merah spine as the cause. |
+| US-83 | As the client, all five audiences delivered individually, with the numbers behind each. | ✅ | Slide 6 — five audiences, each with its index bar and derived detail line (44 primary · 62 student-care, 38 eldercare · 33 CCs · 7 polyclinics, and so on). |
+| US-84 | As a seller, I want L2's *own* geofence zones — it runs a different half of the island from C1, so the zone list cannot be recycled. | ✅ | Slide 10 zones are computed from L2's own stops. Children and youth share **no** top-four area with the C1 deck (Bukit Panjang, Bedok, Ang Mo Kio, Bukit Merah vs Sengkang, Serangoon, Punggol, Choa Chu Kang); working adults share one. Seniors deliberately overlap in three of four — both packages run the same mature-estate spine, and pretending otherwise would be the recycled list this story is guarding against. Anchors are real sites (THK SAC @ Beo Crescent, Anglican High School). |
+| US-85 | As a seller, I want per-vehicle creative for L2's five buses, derived not guessed. | ✅ | Slide 12 — 31→Youth, 5→Seniors, 143→Working adults, 76→Sandwich, 972→Young children. Derived by share-matching in `assign_leads`, not typed; pink bar marks each lead. |
+| US-86 | As the client, measured and assumed still marked apart. | ✅ | Slide 9 separates them; slide 10 stamped MEASURED, slide 11 PLANNING ASSUMPTION, slide 13 repeats it as limit #5. |
+| US-87 | As a seller, Moove branding on every slide, identical system to C1. | ✅ | Same BRAND pink/navy and MOOVE MEDIA wordmark on all 14, from the shared generator. |
+| US-88 | As a reviewer, no slide may overflow or collide. | ✅ | Schema validation clean; programmatic audit found no shape out of bounds and no footer collision on any of the 14 slides. |
+| US-89 | As a reviewer holding both decks, every shared figure must agree between them. | ✅ | All three decks are generated from one tool. A diff of the shared four-set comparison across the three JSON payloads is byte-identical once the per-deck `is_this` flag is excluded, and each deck flags exactly its own set. |
+
+### Follow-up (user: "do for set 4 also - C2")
+
+Set 4 becomes **DBP C2**. It is the one package that genuinely lost — third of four, and beaten
+by both contenders under all six weightings. A deck for it is only worth making if it is honest
+about that, so the simulation added a fourth persona:
+
+**P4 · the client's procurement reviewer**, who will read all three decks and reject the lot if
+one of them oversells a package the other two describe as third-best.
+
+| # | Story | Status | Check |
+|---|-------|--------|-------|
+| US-90 | As the client, do not sell me DBP C2 as a winner. Say on the cover that it is third of four. | ✅ | Cover pill reads **THIRD OPTION** and the note says "Third of four on the index. Bought for schools and spread, not for seniors." Limit #2 on slide 13 states it loses to both contenders under all six weightings. |
+| US-91 | As the client, then tell me why it is on the table at all — what does it cover that the other two do not? | ✅ | Slide 5 gains column: 48 primary + 38 secondary + 4 JCs (most of the four), 28 planning areas · 129 malls (widest spread, most retail), 3 duplicate stops vs C1's 5 (cleanest inventory). |
+| US-92 | As a seller, DBP C2 is the only package with a stop near the Institute of Mental Health. For a mental-health hotline that is worth a line, and worth a caveat about who it reaches there. | ✅ | Next-steps item 3 on slide 14: "Use the IMH corridor deliberately — creative there should assume an audience already in care, not one being introduced to the service." IMH presence is read from the evaluator, not asserted. |
+| US-93 | As the procurement reviewer, all three decks must label the shared shortlist identically — no deck calling a row "Set 4" that another calls "DBP C2". | ✅ | Shared rows are labelled by package code everywhere via one `label()` helper. Verified by text-dump: the C1 deck contains zero "Set 3" references; its rejected slide reads Set 1 / DBP L2 / DBP C2. Set 1 stays "Set 1" because it has no package code. |
+
+Decks: `docs/DBP-C1-mindline.pptx` · `docs/DBP-L2-mindline.pptx` · `docs/DBP-C2-mindline.pptx`,
+all three from `tools/build_package_deck.js` over `tools/package_dco.py <code>`. One generator and
+one data tool, so the shared shortlist, audience index and region table cannot disagree between
+decks — which is what US-89 and US-93 exist to protect. Clarity checked by rendering all 42 slides
+and reading them cold; the defects found that way are listed against the stories above.
+
+### Follow-up (user: "I need C2 to be selected. dont compare. just sell it." · two slides · 1771 artwork supplied)
+
+The client supplied the five approved **1771** executions and corrected one definition: the young-children
+audience is **the child**, not the parent. That correction is upstream of everything — it moves the
+children belt to cover the morning school run as well as dismissal, so it was applied to
+`tools/package_dco.py` and all three long decks were regenerated, not just patched into the pitch.
+
+The ask is a two-slide sell with no comparison. The risk in "just sell it" is that it becomes "just
+make it up", so the pitch is still generated from the same measured data — DBP C2's absolute counts
+are strong without needing a rival to look good against.
+
+| # | Story | Status | Check |
+|---|-------|--------|-------|
+| US-94 | As the seller, two slides only — no shortlist, no index, no other package named. | ✅ | `docs/DBP-C2-pitch.pptx`, 2 slides. Text dump greps clean for "DBP C1", "DBP L2", "Set 1–4", "index", "score", "third", "alternative" and "recommend" — zero hits. |
+| US-95 | As the client, show me DBP C2 works for **all five** categories, on one slide. | ✅ | Slide 1 — five persona cards left to right in the artwork's own order, each with its hero count: 48 primary schools · 21 interchanges · 84 caregiving stops · 27 community clubs · 38 secondary schools. |
+| US-96 | As the client, the children category is **children**, not parents. | ✅ | Card reads "The child on the bus in uniform — not the parent", carries the child-facing 1771 line, and the belt on slide 2 is 06:30–07:45 · 13:00–15:30 — the school run in both directions. Also corrected upstream in `package_dco.py`. |
+| US-97 | As the seller, each card should sit against the creative it belongs to, so the client reads it beside their own artwork. | ✅ | Each card carries that execution's own tagline verbatim, and card order matches the five posters as supplied. |
+| US-98 | As the seller, show an example of geofencing and time belting — we go deeper on yes. | ✅ | Slide 2 — creative × geofence × a 06:00–22:00 day rail with each belt drawn on it, weekend flags for sandwich and youth. Framed as "worked example… the full zone-by-zone plan is built on confirmation." |
+| US-99 | As the client, do not ask me to pay for new artwork. | ✅ | Slide 2 closes on "Five creatives already exist. Nothing here needs new artwork — only a schedule." |
+| US-100 | As a reviewer, the pitch must not overflow or collide. | ✅ | Three render-and-fix rounds. Found and fixed: the third header stat written off the right edge of the slide; the sandwich card's support text overflowing into its WHERE block; "Sandwich generation" wrapping to two lines and throwing that card out of alignment; the slide-2 footnote falling below the slide edge; the "Time belt" column head colliding with the 06:00 axis label. Final: schema clean, no shape out of bounds. |
