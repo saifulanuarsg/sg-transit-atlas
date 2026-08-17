@@ -233,3 +233,42 @@ agreed with itself and was stale. Eleven malls, not twelve.
 | US-63 | As a seller pitching Frasers, I want their whole footprint in one layer — the offices and the business park are the same client and the same meeting as the malls. | ✅ | Layer renamed **Frasers** and widened to 16 spaces: the 11 FRx malls plus Frasers Tower, 51 Cuppage Road, Central Plaza, Alexandra Point and Alexandra Technopark, each carrying a `type` (Retail / Commercial). **Cross Street Exchange is not in it** — FLCT divested it to PAG on 31 Mar 2022; the two-question rule (is it theirs, is it open?) caught it before it shipped. Headless: 16/16 load, picker reads "✓ Frasers · 16". |
 | US-64 | As a seller, I want the smallest buy that reaches every Frasers space — "how many buses do I actually need?" is the question I get asked, and I should not answer it by eye. | ✅ | **Five services reach all 16: 65, 963, 39, 107, 38.** Derived in-app by greedy set cover (most still-uncovered spaces first, ties by boardings) and shipped as an **All 16** package button. Proven minimal offline: an exhaustive search over every 4-service combination, seeded on Eastpoint Mall (the scarcest space, only 9 services reach it), finds none. 65 alone carries 7 of the 16. |
 | US-65 | As a reviewer, I want the minimum buy in the audit doc too, not only as a button. | ✅ | `docs/frasers-assets.md` gains a "minimum buy" section listing each service and the spaces it brings in, plus the selection string. The app's derived set matches it exactly in a headless run. |
+
+---
+
+## 2026-08-17 · Simulation: mindline.sg hotline sell-in deck — DBP C1 (user request)
+
+User: *"lets go with set 2, call it dbp c1 · create slides to justify the choice and include dynamic
+creative optimisations by geofencing, time parting the different target audience · present all of
+these clearly with moove branding · run simuation to check clarity"*
+
+Two personas walked the deck cold, before it was built:
+
+**P1 · Moove Media account manager** presenting to the client. Needs a package code the client can
+quote back, the recommendation up front, and a creative plan concrete enough to brief a studio from.
+
+**P2 · mindline.sg campaign lead (MOH Office for Healthcare Transformation).** Publicly funded, so
+needs to see the reasoning, not just the answer — which audiences are served, what was rejected and
+why, and where the plan is weak. Will not sign off on a number they cannot trace.
+
+*Statuses recorded after the build, from rendered slide images — never from intention.*
+
+| # | Story | Status | Check |
+|---|-------|--------|-------|
+| US-66 | As a seller, I want the package code **DBP C1** on the cover and on every slide, so the client quotes the code and not "that Set 2 thing". | ✅ | Pink pill carries **DBP C1** on all 14 rendered slides; cover title is DBP C1 with the five plates beneath. Eyebrows shortened after the first render — "DBP C1 · THE HARDEST AUDIENCE" wrapped out of its pill. |
+| US-67 | As the client, I want the recommendation and its five routes on the first slide — not built up to over ten. | ✅ | Slide 1: recommendation, the five route plates (190 · 70 · 133 · 198 · 85) and four headline figures, before any argument. |
+| US-68 | As the client, I want to see why the other three sets lost. A winner with no losers is a sales claim, not an evaluation. | ✅ | Slide 5 gives each rejected set its own card, score and named failure — Set 1 seniors 67.4, Set 3 zero North + 6% duplicates, Set 4 seniors 70.4. |
+| US-69 | As the client, I want each of my five audiences addressed individually, with the number that carries it. | ✅ | Slide 2 names the five and how each is reached; slide 6 gives each an index bar and the places carrying it (45 primary · 37 eldercare · 21 interchanges · 99 caregiving · 33 secondary). |
+| US-70 | As the client, the sandwich generation is the audience nobody can ever reach — show me it was actually measured, not hand-waved. | ✅ | Slide 7 — the 99 co-location stops as the hero figure, with the rule stated ("a long route cannot fake it") and the three rival sets alongside (87 / 84 / 77). |
+| US-71 | As the client, we are a *national* service. Show me the coverage map before I sign anything. | ✅ | Slide 8 — region matrix with the two zero cells drawn as dashed pink outlines. Reads at a glance that Sets 3 and 4 have a hole in the North. |
+| US-72 | As a seller, I want the geofence plan as a legible grid — zone, what's in it, which creative — so a studio can be briefed straight off the slide. | ✅ | Slide 10 — one row per audience, top four zones with place counts, and the real anchor sites named. Zones now sorted by the number printed on them, after the first render ordered them by a hidden blend. |
+| US-73 | As a seller, I want dayparting to say what runs at which hour for which audience, not "time-targeted creative". | ✅ | Slide 11 — audience × window × creative, each window carrying the reason it is that window. Rebuilt once: five rows originally overflowed into the footer. |
+| US-74 | As the client, I must be able to tell measured data from planning assumption at a glance. If a daypart is an assumption, say so on the slide. | ✅ | Slide 9 separates the two explicitly; slide 10 is stamped **MEASURED**, slide 11 **PLANNING ASSUMPTION**, and slide 13 repeats it as a limit. |
+| US-75 | As a seller, every slide must be Moove-branded — our colours, our wordmark, client-ready, not tool-branded. | ✅ | BRAND pink F0245E / navy 1B2D8A and the MOOVE MEDIA wordmark on all 14 slides, taken from index.html’s own BRAND constant rather than invented. |
+| US-76 | As a reviewer, no slide may overflow its frame or collide its text. A clipped figure is worse than no figure. | ✅ | Three render-and-fix rounds. Found and fixed: pill text overflowing on 3 slides; slide 11 rows running off the bottom; footnotes colliding with the page number on slides 6, 10 and 12; slide 12’s last row overflowing its card. Final pass — schema validation clean, no shape out of bounds, no footer collision on any slide. |
+| US-77 | As the client, tell me where this plan is *weak* on the same slide you tell me it is strong. | ✅ | Slide 13 leads with "DBP C1 has no East Region coverage" in the highlighted card, above boardings≠impressions, area-average cohorts and the daypart assumption. |
+
+Deck: `docs/DBP-C1-mindline.pptx` (14 slides, 16:9), generated by `tools/build_dbp_c1_deck.js`
+from `tools/dbp_c1_dco.py` — so every number on a slide is derived, not typed. Clarity was
+checked by rendering all 14 slides to images through LibreOffice and reading them cold; the
+defects listed above were found that way and fixed before this table was filled in.
