@@ -1,0 +1,3 @@
+# Python bytecode from running the tools/ scripts — never part of the site
+__pycache__/
+*.pyc
