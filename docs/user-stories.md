@@ -5,7 +5,7 @@ the change is built. Each story is then checked against the shipped change and i
 recorded. Verified = exercised in a headless-browser run or visually confirmed on a screenshot
 of the real app; never marked from intention.
 
-Statuses: ✅ verified · ⚠ partial (note why) · ✘ not built (note why)
+Statuses: ✅ verified · ⚠ partial (note why) · ✘ not built (note why) · ◻ proposed, not built yet
 
 ---
 
@@ -233,3 +233,91 @@ agreed with itself and was stale. Eleven malls, not twelve.
 | US-63 | As a seller pitching Frasers, I want their whole footprint in one layer — the offices and the business park are the same client and the same meeting as the malls. | ✅ | Layer renamed **Frasers** and widened to 16 spaces: the 11 FRx malls plus Frasers Tower, 51 Cuppage Road, Central Plaza, Alexandra Point and Alexandra Technopark, each carrying a `type` (Retail / Commercial). **Cross Street Exchange is not in it** — FLCT divested it to PAG on 31 Mar 2022; the two-question rule (is it theirs, is it open?) caught it before it shipped. Headless: 16/16 load, picker reads "✓ Frasers · 16". |
 | US-64 | As a seller, I want the smallest buy that reaches every Frasers space — "how many buses do I actually need?" is the question I get asked, and I should not answer it by eye. | ✅ | **Five services reach all 16: 65, 963, 39, 107, 38.** Derived in-app by greedy set cover (most still-uncovered spaces first, ties by boardings) and shipped as an **All 16** package button. Proven minimal offline: an exhaustive search over every 4-service combination, seeded on Eastpoint Mall (the scarcest space, only 9 services reach it), finds none. 65 alone carries 7 of the 16. |
 | US-65 | As a reviewer, I want the minimum buy in the audit doc too, not only as a button. | ✅ | `docs/frasers-assets.md` gains a "minimum buy" section listing each service and the spaces it brings in, plus the selection string. The app's derived set matches it exactly in a headless run. |
+
+## 2026-08-26 · Request (Mark): grad-recruitment brief — "the best 2 City + 3 City-outer routes"
+
+**Brief.** A client is running a recruitment campaign aimed at **university and polytechnic
+graduates**, and has bought a rate-card-shaped buy: **2 City routes + 3 City-outer routes**.
+Mark's question is not only "which five" — it is *how the atlas should be designed so a
+salesperson can answer that, and defend the answer in the room*.
+
+**Constraint set by Mark: deterministic.** No AI, no ML, no RAG. Every number here comes from
+a stated rule over the committed data, reproducible offline into a doc the same way
+`tools/frasers_assets.py` produces `docs/frasers-assets.md`.
+
+Nothing is built yet. What follows is the design and the feasibility probe behind it, so the
+stories can be argued over before code exists.
+
+### What the atlas cannot do today
+
+1. **City / City-outer is not in the data.** It exists only as typed-in route lists inside
+   `PRODUCTS` (`landscape`: City = 6 services, City outer = 12). "The best 2 City routes" over a
+   list somebody typed is a ranking of that person's memory, not of the network.
+2. **The audience proxy is the wrong cohort.** `share_youth` is *resident* 15–24 — it carries
+   secondary and JC students and misses that a graduating cohort is reached at a campus gate, on
+   a home corridor, and on a first-job commute, at three different times of day.
+3. **Nothing solves a constrained buy.** The Frasers minimum-buy is an unconstrained greedy set
+   cover. "Exactly 2 from pool A and exactly 3 from pool B" is a different question and the app
+   has no way to ask it.
+
+### Feasibility probe (offline, 26 Aug 2026)
+
+Rule used, stated so it can be disagreed with: a service is **City** when ≥50% of its stops sit
+in the URA Central Area planning areas (Downtown Core, Marina East/South, Museum, Newton, Novena,
+Orchard, Outram, River Valley, Rochor, Singapore River, Straits View, Tanglin), **City-outer**
+when it enters them but under half its stops are there, **Outer** when it never enters. A service
+reaches a campus when one of its stops is within 400 m of the campus footprint — the same 400 m
+the reach ranking already uses.
+
+| Finding | Number |
+|---|---|
+| Services by class (all 612) | City **27** · City-outer **134** · Outer **451** |
+| Campuses in scope (6 uni + 5 poly) | 11 |
+| Services reaching each campus | SMU **80** · NUS 38 · NYP 35 · TP 32 · SP 31 · Ngee Ann 21 · RP 15 · NTU **12** · SUTD 12 · SIT **8** · SUSS **8** |
+| Best 2+3 buy, base-numbered services only | **9 of 11 campuses** — City **190, 648** + City-outer **5, 70, 74** |
+| Campuses no 2+3 buy can reach | **NTU** and **SIT (Punggol)** |
+
+Three things fell out of the probe that change the design, not just the answer:
+
+- **Route 74 is the whole outer story** (Hougang ⇄ Buona Vista): NUS, SUSS, Ngee Ann and SP on
+  one service, because Clementi–Dover–Buona Vista is a four-campus corridor. 5 adds SUTD + TP,
+  70 adds NYP, 648 adds RP.
+- **The City half cannot be justified on campus reach.** The only campus inside the Central Area
+  is SMU, and 80 services already reach it — so *every* City pick scores it and none of them
+  differentiate. 190's sole campus is SMU. If the two City routes are sold as "campus reach",
+  the client is paying twice for the same campus.
+- **Coverage costs impressions, and the seller must be the one who decides.** Optimising for raw
+  youth-weighted OTS instead (106 + 190 with 51, 67, 157) reaches **~170 k** youth impressions a
+  day but only **5 of 11** campuses; the coverage-first set reaches 9 campuses at **~111 k**. That
+  is a real 35% trade, not a rounding error, and the answer depends on whether the client is
+  hiring 40 people or 400. It belongs on screen as two named options, not buried in an objective
+  function.
+- **Un-filtered, the optimiser returns unbuyable routes.** Before base-numbered services were
+  filtered in, the winning City pair was **851e + 951E** and the outer set pulled in **651** —
+  express and peak-supplementary variants that win on catchment arithmetic and are close to
+  worthless as ad inventory. The network file has no frequency, trip-count or fleet field, so
+  nothing in the data says "you cannot buy this". This is the Frasers lesson again in a new
+  costume: *is it theirs* / *is it still open* → **is it actually buyable?**
+
+### Proposed design
+
+| # | Story | Status | Check |
+|---|-------|--------|-------|
+| US-66 | As a seller, I want every service to carry its rate-card class as data, so "best City route" ranks the network and not a list somebody typed in 2026. | ◻ | Class becomes a derived field on all 612 services, written by `tools/route_class.py` into a committed `data/route_class.json` and cited in the sources panel. **The client's own rate card overrides it** — the file is the seam, so swapping the derived classes for Moove's real card is a data edit, not a code change. |
+| US-67 | As a seller, I want the buy shape to be an input — 2 + 3 today, 3 + 2 or 1 + 4 next week — not a hardcoded package. | ◻ | Two steppers over the two class pools; the solver takes the quota as an argument. Frasers stays the unconstrained case (one pool, no quota). |
+| US-68 | As a seller, I want the two halves scored on the two different jobs they do, because they are not the same pitch. | ◻ | **Outer half = the campus half**: campus coverage first, then youth-weighted de-duplicated boardings. **City half = the first-job half**: daytime workforce in the served areas + the employer's own sites, *not* campus count. One objective across all five would spend the City budget re-buying SMU. |
+| US-69 | As a seller, I want the exact best set, not a greedy guess, and I want to know it is exact. | ◻ | Two-stage exhaustive search: prune each pool to services that contribute, drop dominated duplicates (same coverage mask, lower OTS), then enumerate every combination. The probe ran 1.29 M combinations in seconds — this never needs to be a heuristic. |
+| US-70 | As a seller mid-meeting, I want to pin and exclude — "they insist on NTU", "they already run 5" — and see what it costs. | ◻ | Pin a campus, pin a route, exclude a route; re-solve; show the delta against the unconstrained best ("forcing NTU in costs 1 campus and 14% of youth OTS"). This is the move a seller actually makes in the room, and it is one re-run of the same deterministic solver. |
+| US-71 | As a seller, I want the campus-by-campus table before the meeting, including the two campuses I cannot reach. | ◻ | The Frasers "reaching each mall" table, per campus: which of the five services reach it, at which stops. Leads with **NTU and SIT are unreachable in a 2+3 buy** and why (NTU 12 services, all Jurong-anchored; SIT Punggol 8) so the seller says it first. |
+| US-72 | As a seller, I never want the tool to hand me a route I cannot sell. | ◻ | A `sellable` field per service — express, peak-supplementary and City-Direct variants excluded, ideally with LTA DataMall headway carried so the seller sees frequency. Until that field exists the solver must state its filter out loud ("base-numbered services only"), because silently filtering is how a wrong answer looks right. |
+| US-73 | As a seller, I want the answer to change when the campaign window changes, because a campus gate in July is an empty bus stop. | ◻ | Campaign window as an input (term / graduation-and-vacation). In term, campus stops carry the weight; across the graduation window the weight moves to home corridors and the CBD. Needs the IHL academic calendar as data — MOE's school terms, already used elsewhere in the app, are the *wrong* calendar for unis and polys. |
+| US-74 | As a seller, I want to know the campus reach number is not flattering me. | ◻ | 400 m from a footprint over-credits large campuses — NUS qualifies **82 stops** because the Kent Ridge polygon runs to Clementi and Dover Roads, and a stop 400 m from that boundary can be a 25-minute walk from a faculty. Campus **gate points** (named entrance stops) are the honest unit, and would replace the footprint rule for this product. |
+| US-75 | As the person saying these numbers out loud, I want "graduates reached", not "campuses reached". | ◻ | Campuses are not the same size and a recruiter buys people. Per-campus annual graduating cohort as a sourced field on `poi_uni.json` / `poi_poly.json`, checked by `tools/qc_poi.py` like every other field, turning coverage into a cohort-weighted figure. |
+| US-76 | As a reviewer, I want the recommended five in a diff. | ◻ | `tools/grad_recruitment.py` → `docs/grad-recruitment.md`, running the identical rule offline; the app's derived set must match the committed doc exactly in a headless run, as the Frasers packages do. |
+
+### Open question for Mark (does not block the design)
+
+**Whose City / City-outer list is authoritative?** The classes above are derived from the URA
+Central Area because the repo has no rate card in it. If Moove's card classifies these routes
+itself, that list wins — and the risk of not asking is a pitch built on a route the client
+prices in a different tier. US-66 keeps it a one-file change either way.
