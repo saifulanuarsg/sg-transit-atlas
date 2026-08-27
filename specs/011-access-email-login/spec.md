@@ -96,8 +96,10 @@ that blocks the verification method breaks the project's own quality process.
 
 ### Edge Cases
 
-- A Moove employee with an alias or a subdomain address (`@sg.moovemedia.com.sg`) — the policy must
-  state whether these are in or out rather than failing them by accident.
+- Resolved 2026-08-27: Moove uses a single mail domain with no subdomain variants, so the one
+  `email_domain` rule is the whole policy. Local parts vary in shape
+  (`v_msaifulma@moovemedia.com.sg`) and are not matched on, so no prefix convention can
+  accidentally exclude someone.
 - A contractor or client who legitimately needs access — there must be a documented way to admit a
   named individual without widening the domain rule.
 - A shared deep link (feature 007's URL state) opened by someone not signed in — must land on the
@@ -153,8 +155,8 @@ that blocks the verification method breaks the project's own quality process.
 
 - **Scope is the whole atlas.** Gating only part of it would require splitting the app across
   paths, which fights the single-file architecture — and leaves the data files exposed either way.
-- Moove Media controls the `moovemedia.com.sg` mail domain, and holding such an address is
-  sufficient evidence of belonging. This is authentication of a mailbox, not of employment: a
+- Moove Media controls the `moovemedia.com.sg` mail domain — its only one — and holding such an
+  address is sufficient evidence of belonging. This is authentication of a mailbox, not of employment: a
   departed employee with a live mailbox still passes, and that is accepted.
 - Fewer than 50 people need access, which keeps this inside the free tier of the chosen provider.
 - A hostname that can be pointed at a provider capable of edge enforcement is available, or can be

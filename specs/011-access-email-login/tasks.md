@@ -61,8 +61,9 @@ this on, and each maps to a story that stays unverified until then.
 
 - [ ] **T030** Obtain a hostname and put it on Cloudflare DNS, with the atlas reachable through it.
 - [ ] **T016** Mint a Cloudflare API token scoped to Access write on that zone.
-- [ ] **T017** Confirm whether `@sg.moovemedia.com.sg`-style addresses should be admitted; amend the
-  policy if so.
+- [X] **T017** Confirm whether `@sg.moovemedia.com.sg`-style addresses should be admitted.
+  Answered 2026-08-27: no subdomain variants exist, so the single domain rule is complete.
+  No policy change needed.
 - [ ] **T018** Set the hostname in `infra/access-policy.json` and re-run the dry run.
 - [ ] **T019** Apply with `--apply`.
 - [ ] **T020** Verify US-1: a `@moovemedia.com.sg` address signs in via emailed code, no invitation.

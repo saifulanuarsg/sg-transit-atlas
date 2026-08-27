@@ -9,7 +9,9 @@ Spec: [`specs/011-access-email-login/`](../specs/011-access-email-login/spec.md)
 
 Puts the atlas behind **Cloudflare Access** with its **one-time PIN** sign-in: a visitor enters
 their email, receives a code, and is in. An `email_domain` policy admits only
-`@moovemedia.com.sg`.
+`@moovemedia.com.sg` — Moove's single mail domain, with no subdomain variants (confirmed
+2026-08-27). The local part does not matter, so `v_msaifulma@moovemedia.com.sg` matches like
+any other address.
 
 The check happens at Cloudflare's edge, before the request reaches the origin. That matters more
 than it sounds: the atlas is a static site whose value is in `data/*.json`, and those are plain
@@ -31,8 +33,25 @@ it. See the Constitution Check in [`plan.md`](../specs/011-access-email-login/pl
 3. **An API token** scoped to *Access: Apps and Policies → Edit* **and** *Zone → Read*. The
    account ID is discovered from the token, so you only need to find it yourself if the token
    can see more than one account.
-4. **A decision on subdomain addresses.** The policy currently admits `@moovemedia.com.sg` and
-   *not* `@sg.moovemedia.com.sg` or similar. If those are real, add them before activating.
+
+## Who owns this
+
+The Cloudflare account is **saifulanuar.sg@gmail.com** — a personal Google account, not a Moove
+one. That works, and it is what the setup assumes.
+
+It is worth naming the consequence before this goes live rather than after: the gate controlling
+access to a Moove tool would be administered from an account Moove does not own. If that account
+is lost, locked, or its holder moves on, nobody at Moove can change the policy, admit a new
+starter, or roll the gate back — and the tool stays locked with no way in.
+
+Two ways to defuse it, neither urgent enough to block activation:
+
+- Add a second Cloudflare account as a member of the Zero Trust organisation, ideally on a
+  `@moovemedia.com.sg` address, so administration does not have one point of failure.
+- Or transfer the zone to a Moove-owned Cloudflare account once the domain is settled.
+
+Until one of those is done, treat the rollback step below as something only one person can
+perform, and make sure somebody else knows that.
 
 ## Choosing the origin
 

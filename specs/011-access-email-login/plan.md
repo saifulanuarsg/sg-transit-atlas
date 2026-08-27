@@ -105,8 +105,8 @@ environment at run time.
    address, so a custom domain is required. This is also true on the Vercel path.
 2. That hostname on Cloudflare DNS, with the atlas reachable through it.
 3. A Cloudflare API token limited to Access application and policy write on that zone.
-4. Confirmation of whether subdomain addresses (`@sg.moovemedia.com.sg`) count as Moove — the
-   policy currently states they do not.
+4. ~~Confirmation on subdomain addresses.~~ Answered 2026-08-27: Moove has one mail domain and
+   no subdomain variants, so the single `email_domain` rule is complete.
 
 ## Phase 1 — Design
 

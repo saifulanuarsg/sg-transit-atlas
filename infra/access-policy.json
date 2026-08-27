@@ -27,7 +27,7 @@
       "include": [
         { "email_domain": { "domain": "moovemedia.com.sg" } }
       ],
-      "_include_note": "The domain is the credential. Exact-match only: @sg.moovemedia.com.sg and other subdomains are NOT admitted. Confirm with the operator before activation (tasks.md T017) and add them here if they are real."
+      "_include_note": "The domain is the credential, and it is the only one Moove uses — confirmed 2026-08-27. Local part is irrelevant: v_msaifulma@moovemedia.com.sg matches like any other. There are no subdomain variants to admit, so this single rule is the whole policy."
     },
     {
       "name": "Named exceptions",
