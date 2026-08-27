@@ -7,6 +7,10 @@
   "singapore-bounds",
   "point-footprint-consistency",
   "exact-duplicates",
-  "known-complete floors"
- ]
+  "known-complete floors",
+  "rail lines & stations",
+  "unopened lines & stations flagged"
+ ],
+ "rail_lines": 16,
+ "rail_stations": 230
 }

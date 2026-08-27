@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Data QC for every data/poi_*.json layer. Run after ANY edit to place data:
+"""Data QC for the atlas's data files. Run after ANY edit to place or rail data:
 
     python3 tools/qc_poi.py            # exits 1 if any invariant fails
 
@@ -15,6 +15,10 @@ Invariants:
   5. KNOWN-COMPLETE FLOORS — layers whose real-world population is a small, publicly
      enumerable set must not fall below it. This is the check that catches the
      "8 polyclinics" class of gap: an incomplete curated layer fails instead of shipping.
+  6. RAIL — every line the network has must be present, every station in bounds, and no
+     station duplicated. This is the check that was missing when the atlas shipped for
+     six weeks with two of Singapore's three LRT systems simply absent: nothing outside
+     data/poi_*.json was ever looked at.
 
 Every passing run writes data/qc_report.json (layers, place count, checks, verified-on
 date); the app surfaces it as its data-health line, so the trust signal shown to users is
@@ -32,7 +36,31 @@ EXPECT_MIN = {
     'poi_interchanges.json': 26, 'poi_arts.json': 3, 'poi_events.json': 10,
 }
 CHECKS = ['names', 'singapore-bounds', 'point-footprint-consistency',
-          'exact-duplicates', 'known-complete floors']
+          'exact-duplicates', 'known-complete floors', 'rail lines & stations',
+          'unopened lines & stations flagged']
+# every line the network actually runs, with its minimum station count. Singapore has THREE
+# LRT systems; the atlas shipped with one. A line missing here is a line missing on the map.
+RAIL_LINES = {
+    'NSL': 26, 'EWL': 34, 'NEL': 16, 'CCL': 30, 'DTL': 34, 'TEL': 30, 'JRL': 20,
+    'SKLRT': 14, 'BPLRT': 13, 'PGLRT': 15,
+    # The two extensions are geometry-only entries: their stations belong to the parent
+    # line (Sungei Bedok is a TEL and DTL station, not a "TEL5" one), so they carry no
+    # station floor of their own — only existence, geometry, and the future flag.
+    # extension entries are geometry-only: their stations belong to the parent line
+    # (Sungei Kadut is a DTL and NSL station, not a "DTL2E" one), so no floor of their own
+    'TEL5': 0, 'DTL3E': 0, 'CRLP': 0, 'DTL2E': 0, 'TELT5': 0,
+    'CRL': 20,
+}
+# Lines not carrying passengers as of Sep 2026. They MUST be flagged future so the map draws
+# them dotted; a seller pointing at a solid line is entitled to assume it runs today.
+FUTURE_LINES = {'JRL', 'TEL5', 'DTL3E', 'CRL', 'CRLP', 'DTL2E', 'TELT5'}
+# Stations built or planned but not open, on lines that ARE running. The line style cannot
+# carry these — each station has to declare itself. Verified Sep 2026; re-check on any rail
+# edit, because data.gov.sg's own future list was stale (it still listed Keppel, Cantonment
+# and Prince Edward Road, which opened 12 Jul 2026).
+NOT_OPEN_STATIONS = {'Mount Pleasant', 'Marina South', "Founders' Memorial", 'Bukit Brown',
+                     'Bedok South', 'Sungei Bedok', 'Xilin', 'Brickland', 'Sungei Kadut',
+                     'Yew Tee Village', 'Tagore', 'Forest Hill', 'Changi Terminal 5', 'Elias'}
 
 def dist_m(lat1, lng1, lat2, lng2):
     dx = (lng2 - lng1) * 111320 * math.cos(math.radians((lat1 + lat2) / 2))
@@ -90,6 +118,48 @@ def main():
             if key in seen:
                 errs.append(f'{base}[{i}] {name!r}: exact duplicate (same name AND coordinates)')
             seen.add(key)
+    # ---- rail: lines present, stations in bounds, no duplicates
+    try:
+        lines = json.load(open(os.path.join(ROOT, 'data', 'rail_lines.json')))
+        stations = json.load(open(os.path.join(ROOT, 'data', 'rail_stations.json')))
+    except Exception as e:
+        errs.append(f'rail data unreadable ({e})')
+        lines, stations = [], []
+    have = {l.get('code') for l in lines}
+    for code, floor in sorted(RAIL_LINES.items()):
+        if code not in have:
+            errs.append(f'rail_lines.json: {code} is missing entirely — the map would not draw it')
+            continue
+        if not [s for l in lines if l.get('code') == code for s in l.get('segs') or []]:
+            errs.append(f'rail_lines.json: {code} has no geometry')
+        n = sum(1 for st in stations if code in (st.get('lines') or []))
+        if n < floor:
+            errs.append(f'rail_stations.json: {code} has {n} stations — the line has at least {floor}')
+    for code in sorted(FUTURE_LINES):
+        ln = next((l for l in lines if l.get('code') == code), None)
+        if ln and not ln.get('future'):
+            errs.append(f'rail_lines.json: {code} is not open but is not flagged future — '
+                        f'the map would draw it solid, as if it runs today')
+    for nm in sorted(NOT_OPEN_STATIONS):
+        hit = [st for st in stations if st.get('name') == nm]
+        if not hit:
+            errs.append(f'rail_stations.json: {nm!r} is missing')
+        elif hit[0].get('open') is not False:
+            errs.append(f'rail_stations.json: {nm!r} is not open but is not flagged '
+                        f'open:false — it would draw as a running station')
+    seen_st = set()
+    for i, st in enumerate(stations):
+        nm = (st.get('name') or '').strip()
+        if not nm:
+            errs.append(f'rail_stations.json[{i}]: missing name'); continue
+        lat, lng = st.get('lat'), st.get('lng')
+        if lat is None or lng is None or not (SG[0] <= lat <= SG[1] and SG[2] <= lng <= SG[3]):
+            errs.append(f'rail_stations.json[{i}] {nm!r}: out of Singapore bounds ({lat},{lng})')
+        if nm.lower() in seen_st:
+            errs.append(f'rail_stations.json[{i}] {nm!r}: duplicate station — an interchange '
+                        f'must be ONE record listing every line, not one record per line')
+        seen_st.add(nm.lower())
+
     print(f'{len(counts)} layers checked')
     for base, n in counts:
         print(f'  {base:30}{n:>6}')
@@ -103,11 +173,15 @@ def main():
         'layers': len(counts),
         'places': sum(n for _, n in counts),
         'checks': CHECKS,
+        'rail_lines': len(lines),
+        'rail_stations': len(stations),
     }
     with open(os.path.join(ROOT, 'data', 'qc_report.json'), 'w') as f:
         json.dump(report, f, indent=1)
     print(f"\nall invariants pass — data/qc_report.json written "
-          f"({report['layers']} layers · {report['places']} places · {report['verified_on']})")
+          f"({report['layers']} layers · {report['places']} places · "
+          f"{report['rail_lines']} rail lines · {report['rail_stations']} stations · "
+          f"{report['verified_on']})")
 
 if __name__ == '__main__':
     main()
