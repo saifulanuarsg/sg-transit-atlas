@@ -646,7 +646,7 @@
         <li><b>Shopping malls</b> (237) — OpenStreetMap <code>shop=mall</code>, non-malls filtered out.</li>
         <li><b>Supermarkets</b> (532) — OpenStreetMap <code>shop=supermarket</code>, minimarts excluded.</li>
         <li><b>Police</b> (118) — OpenStreetMap <code>amenity=police</code> (SPF centres, posts, HQs, Coast Guard); non-SPF removed.</li>
-        <li><b>Bus hubs</b> (54) — interchanges &amp; terminals derived from LTA stop names. <b>MRT/LRT lines &amp; stations</b> (8 lines, 182 stations) — OpenStreetMap; stations filtered to those on a drawn line (future CRL/RTS-Link stations omitted). Labels appear as you zoom in.</li>
+        <li><b>Bus hubs</b> (54) — interchanges &amp; terminals derived from LTA stop names. <b>MRT/LRT lines &amp; stations</b> (10 lines, 207 stations) — line geometry from OpenStreetMap and <code>cheeaun/sgraildata</code> (same author as the bus-route geometry this atlas uses; that source notes its alignments are simplified and smoothed, which is fit for a backdrop layer but is not survey-grade). Station points are OneMap geocodes of each station's own postal address. All three LRT systems are drawn: Sengkang, Bukit Panjang and Punggol — the last two were missing until Aug 2026. <b>Ten Mile Junction</b> is deliberately absent: it closed in Jan 2019 and appears in neither source. Interchanges are one station carrying every line that serves them. Stations filtered to those on a drawn line (future CRL/RTS-Link omitted). Labels appear as you zoom in.</li>
         <li><b>Audience</b> — modelled opportunities-to-see = passenger taps (LTA DataMall, Passenger Volume by Bus Stops, Jun 2026) × catchment segment share (SingStat Census 2020: residents by planning area &amp; age; households by income). Planning areas: URA Master Plan 2019. Every figure is aggregate and modelled, not panel-measured; no individual-level data (PDPA).</li>
         <li>Places shown as areas where they span 2+ buildings, else as points. Junior colleges without an OpenStreetMap footprint yet are drawn as dashed approximate campus extents (130 m radius). Within-400 m counts use footprints. All layers clipped to the Singapore boundary. Data compiled Jul 2026.</li>
         <li>Hover any place for its name; <b>Show place names</b> pins the names of what's in view (overlapping ones are dropped — zoom in for those). <b>Find one place by name</b> puts a single place on the map without its whole layer, and picked places can be ranked like any layer.</li>
@@ -843,7 +843,8 @@ const S={svcs:{},stops:{},areas:null,pois:{},
 const isSel=n=>S.selected.includes(n);
 const RAIL_NAME={EWL:'East–West Line',NSL:'North–South Line',NEL:'North East Line',
   CCL:'Circle Line',DTL:'Downtown Line',TEL:'Thomson–East Coast Line',
-  SKLRT:'Sengkang LRT',JRL:'Jurong Region Line (future)'};
+  SKLRT:'Sengkang LRT',BPLRT:'Bukit Panjang LRT',PGLRT:'Punggol LRT',
+  JRL:'Jurong Region Line (future)'};
 const groups={trunk:L.layerGroup(),rail:L.layerGroup(),hubs:L.layerGroup(),stations:L.layerGroup()};
 POI.forEach(p=>groups[p.key]=L.layerGroup());
 groups.poiLab=L.layerGroup();    // always-on place-name labels (opt-in switch)
