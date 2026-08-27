@@ -36,13 +36,27 @@ EXPECT_MIN = {
     'poi_interchanges.json': 26, 'poi_arts.json': 3, 'poi_events.json': 10,
 }
 CHECKS = ['names', 'singapore-bounds', 'point-footprint-consistency',
-          'exact-duplicates', 'known-complete floors', 'rail lines & stations']
+          'exact-duplicates', 'known-complete floors', 'rail lines & stations',
+          'unopened lines & stations flagged']
 # every line the network actually runs, with its minimum station count. Singapore has THREE
 # LRT systems; the atlas shipped with one. A line missing here is a line missing on the map.
 RAIL_LINES = {
     'NSL': 26, 'EWL': 34, 'NEL': 16, 'CCL': 30, 'DTL': 34, 'TEL': 30, 'JRL': 20,
     'SKLRT': 14, 'BPLRT': 13, 'PGLRT': 15,
+    # The two extensions are geometry-only entries: their stations belong to the parent
+    # line (Sungei Bedok is a TEL and DTL station, not a "TEL5" one), so they carry no
+    # station floor of their own — only existence, geometry, and the future flag.
+    'TEL5': 0, 'DTL3E': 0,
 }
+# Lines not carrying passengers as of Sep 2026. They MUST be flagged future so the map draws
+# them dotted; a seller pointing at a solid line is entitled to assume it runs today.
+FUTURE_LINES = {'JRL', 'TEL5', 'DTL3E'}
+# Stations built or planned but not open, on lines that ARE running. The line style cannot
+# carry these — each station has to declare itself. Verified Sep 2026; re-check on any rail
+# edit, because data.gov.sg's own future list was stale (it still listed Keppel, Cantonment
+# and Prince Edward Road, which opened 12 Jul 2026).
+NOT_OPEN_STATIONS = {'Mount Pleasant', 'Marina South', "Founders' Memorial", 'Bukit Brown',
+                     'Bedok South', 'Sungei Bedok', 'Xilin'}
 
 def dist_m(lat1, lng1, lat2, lng2):
     dx = (lng2 - lng1) * 111320 * math.cos(math.radians((lat1 + lat2) / 2))
@@ -117,6 +131,18 @@ def main():
         n = sum(1 for st in stations if code in (st.get('lines') or []))
         if n < floor:
             errs.append(f'rail_stations.json: {code} has {n} stations — the line has at least {floor}')
+    for code in sorted(FUTURE_LINES):
+        ln = next((l for l in lines if l.get('code') == code), None)
+        if ln and not ln.get('future'):
+            errs.append(f'rail_lines.json: {code} is not open but is not flagged future — '
+                        f'the map would draw it solid, as if it runs today')
+    for nm in sorted(NOT_OPEN_STATIONS):
+        hit = [st for st in stations if st.get('name') == nm]
+        if not hit:
+            errs.append(f'rail_stations.json: {nm!r} is missing')
+        elif hit[0].get('open') is not False:
+            errs.append(f'rail_stations.json: {nm!r} is not open but is not flagged '
+                        f'open:false — it would draw as a running station')
     seen_st = set()
     for i, st in enumerate(stations):
         nm = (st.get('name') or '').strip()

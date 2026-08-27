@@ -646,7 +646,7 @@
         <li><b>Shopping malls</b> (237) — OpenStreetMap <code>shop=mall</code>, non-malls filtered out.</li>
         <li><b>Supermarkets</b> (532) — OpenStreetMap <code>shop=supermarket</code>, minimarts excluded.</li>
         <li><b>Police</b> (118) — OpenStreetMap <code>amenity=police</code> (SPF centres, posts, HQs, Coast Guard); non-SPF removed.</li>
-        <li><b>Bus hubs</b> (54) — interchanges &amp; terminals derived from LTA stop names. <b>MRT/LRT lines &amp; stations</b> (10 lines, 207 stations) — line geometry from OpenStreetMap and <code>cheeaun/sgraildata</code> (same author as the bus-route geometry this atlas uses; that source notes its alignments are simplified and smoothed, which is fit for a backdrop layer but is not survey-grade). Station points are OneMap geocodes of each station's own postal address. All three LRT systems are drawn: Sengkang, Bukit Panjang and Punggol — the last two were missing until Aug 2026. <b>Ten Mile Junction</b> is deliberately absent: it closed in Jan 2019 and appears in neither source. Interchanges are one station carrying every line that serves them. Stations filtered to those on a drawn line (future CRL/RTS-Link omitted). Labels appear as you zoom in.</li>
+        <li><b>Bus hubs</b> (54) — interchanges &amp; terminals derived from LTA stop names. <b>MRT/LRT lines &amp; stations</b> (10 lines, 207 stations) — line geometry from OpenStreetMap and <code>cheeaun/sgraildata</code> (same author as the bus-route geometry this atlas uses; that source notes its alignments are simplified and smoothed, which is fit for a backdrop layer but is not survey-grade). Station points are OneMap geocodes of each station's own postal address. All three LRT systems are drawn: Sengkang, Bukit Panjang and Punggol — the last two were missing until Aug 2026. <b>Ten Mile Junction</b> is deliberately absent: it closed in Jan 2019 and appears in neither source. Interchanges are one station carrying every line that serves them. <b>Not yet open</b> — as at Sep 2026, lines and stations that are not carrying passengers are drawn <b>dotted and hollow</b>, never solid: the Sungei Bedok extension (TEL Stage 5 and DTL3e, both 2H 2026), the Jurong Region Line (Stage 1 delayed to mid-2028), and the stations built ahead of their surroundings — Mount Pleasant (~2029), Marina South (2030s), Founders' Memorial (2028) and Bukit Brown (no date). Their status is in the tooltip. Circle Line Stage 6 — Keppel, Cantonment and Prince Edward Road — <b>is</b> open (12 Jul 2026) and is drawn solid; the open-data future-station list still wrongly carries them, so status here is checked, not inherited. Not-yet-open station points come from the <code>data.gov.sg</code> future-station dataset (URA); the two extension alignments are <b>schematic</b> — station to station, not traced — which the dotted style also signals. CRL, RTS-Link and DTL2e are not drawn at all. Labels appear as you zoom in.</li>
         <li><b>Audience</b> — modelled opportunities-to-see = passenger taps (LTA DataMall, Passenger Volume by Bus Stops, Jun 2026) × catchment segment share (SingStat Census 2020: residents by planning area &amp; age; households by income). Planning areas: URA Master Plan 2019. Every figure is aggregate and modelled, not panel-measured; no individual-level data (PDPA).</li>
         <li>Places shown as areas where they span 2+ buildings, else as points. Junior colleges without an OpenStreetMap footprint yet are drawn as dashed approximate campus extents (130 m radius). Within-400 m counts use footprints. All layers clipped to the Singapore boundary. Data compiled Jul 2026.</li>
         <li>Hover any place for its name; <b>Show place names</b> pins the names of what's in view (overlapping ones are dropped — zoom in for those). <b>Find one place by name</b> puts a single place on the map without its whole layer, and picked places can be ranked like any layer.</li>
@@ -844,7 +844,8 @@ const isSel=n=>S.selected.includes(n);
 const RAIL_NAME={EWL:'East–West Line',NSL:'North–South Line',NEL:'North East Line',
   CCL:'Circle Line',DTL:'Downtown Line',TEL:'Thomson–East Coast Line',
   SKLRT:'Sengkang LRT',BPLRT:'Bukit Panjang LRT',PGLRT:'Punggol LRT',
-  JRL:'Jurong Region Line (future)'};
+  TEL5:'TEL Stage 5 (2H 2026)',DTL3E:'DTL3 Extension (2H 2026)',
+  JRL:'Jurong Region Line (2028)'};
 const groups={trunk:L.layerGroup(),rail:L.layerGroup(),hubs:L.layerGroup(),stations:L.layerGroup()};
 POI.forEach(p=>groups[p.key]=L.layerGroup());
 groups.poiLab=L.layerGroup();    // always-on place-name labels (opt-in switch)
@@ -1182,9 +1183,14 @@ function buildRailLines(){
   S.railLayers=[];
   (S.railLines||[]).forEach(ln=>{
     ln.segs.forEach(seg=>{
+      // a line that has not opened is drawn dotted — a seller must never point at it and
+      // imply it carries passengers today. `schematic` extensions have station-to-station
+      // alignments rather than traced ones, which the dotted style also honestly signals.
+      const soon=!!ln.future;
       const layer=L.polyline(toLL(seg),{pane:'rail',renderer:rRail,color:ln.color,
-        weight:2.8,opacity:.92,lineCap:'round',lineJoin:'round'})
-        .bindTooltip(RAIL_NAME[ln.code]||ln.name,{sticky:true});
+        weight:soon?2.4:2.8,opacity:soon?.7:.92,lineCap:soon?'butt':'round',lineJoin:'round',
+        dashArray:soon?'2,6':null})
+        .bindTooltip((RAIL_NAME[ln.code]||ln.name)+(soon?' — not yet open':''),{sticky:true});
       layer._code=ln.code;layer._color=ln.color;
       groups.rail.addLayer(layer);S.railLayers.push(layer);
     });
@@ -1279,8 +1285,15 @@ function buildStations(){
   S.stationItems=[];
   (S.stations||[]).forEach(s=>{
     const col=s.kind==='LRT'?'#748477':'#0f766e';
-    const circle=L.circleMarker([s.lat,s.lng],{pane:'label',radius:2.8,
-      color:col,weight:1.6,fillColor:'#fff',fillOpacity:1}).bindTooltip(s.name);
+    // not-yet-open stations are drawn hollow and dashed. Several sit on lines that ARE
+    // running (Mount Pleasant, Marina South, Bukit Brown), so the line style alone cannot
+    // carry this — the station has to say it itself.
+    const soon=s.open===false;
+    const circle=L.circleMarker([s.lat,s.lng],{pane:'label',radius:soon?3.2:2.8,
+      color:col,weight:1.6,fillColor:'#fff',fillOpacity:soon?.35:1,
+      dashArray:soon?'2,2':null,opacity:soon?.8:1})
+      .bindTooltip(soon?`${s.name}<br><span style="color:#b45309">⚑ not yet open${s.note?' — '+s.note:''}</span>`
+                       :s.name);
     const label=labelMarker(s.lat,s.lng,s.name,'stnlab');
     S.stationItems.push({lines:s.lines||[],circle,label});
   });   // not shown until a rail line is focused

@@ -8,8 +8,9 @@
   "point-footprint-consistency",
   "exact-duplicates",
   "known-complete floors",
-  "rail lines & stations"
+  "rail lines & stations",
+  "unopened lines & stations flagged"
  ],
- "rail_lines": 10,
- "rail_stations": 207
+ "rail_lines": 12,
+ "rail_stations": 210
 }
