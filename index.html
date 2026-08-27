@@ -34,6 +34,11 @@
   .lb-route .lb-n{font-weight:800;min-width:30px}
   .lb-route .lb-name{flex:1;color:var(--muted);font-weight:500;font-size:11px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tg{font:700 9px/1 system-ui;letter-spacing:.03em;padding:3px 5px;border-radius:5px;
+    flex:none;white-space:nowrap;text-transform:uppercase}
+  .tg-city{background:#dbeafe;color:#1e40af}
+  .tg-outer{background:#dcfce7;color:#166534}
+  .tg-op{background:#f1f5f9;color:#475569}
   .lb-route .lb-sc{font:700 11px/1 system-ui;color:var(--muted);font-variant-numeric:tabular-nums}
   .lb-route .lb-car{color:#94a3b8;font-size:10px;flex:none;transition:transform .12s}
   .lb-route.open .lb-car{transform:rotate(90deg)}
@@ -253,9 +258,6 @@
   .exp-dl.primary{background:var(--primary);border-color:var(--primary);color:#fff}
   .exp-dl.primary:hover{background:#1b3aa0;color:#fff}
   .exp-dl:disabled{opacity:.6;cursor:progress}
-  /* Bus products — highlighted section + cleaner preset buttons */
-  .sec-prod{--acc:var(--primary);background:linear-gradient(180deg,#eef4ff,#fff 62%)}
-  .sec-prod .sec-lab{color:var(--primary)}
   /* place-layer chips (POI dropdown picks) */
   .poi-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
   .poi-empty{font:500 11px/1.4 system-ui;color:var(--muted);margin-top:9px}
@@ -332,32 +334,6 @@
   .legend.hatch div{height:17px;background-color:#fff;border-right:1px solid var(--line)}
   .legend.hatch div:last-child{border-right:0}
 
-  /* ---------- bus products (route presets) ---------- */
-  .prod-lab{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:13px 0 6px}
-  .prod-lab.first{margin-top:2px}
-  .pl-name{font:700 12px/1.25 system-ui;color:var(--ink)}
-  .pl-spec{font:600 10px/1.25 system-ui;color:var(--muted);text-align:right;white-space:nowrap}
-  #clusterBtns .cluster-btns{margin-bottom:2px}
-  .cluster-btns{display:flex;gap:8px}
-  .cluster-btns.grid2{flex-wrap:wrap}
-  .cluster-btns.grid2 .clbtn{flex:1 1 calc(50% - 4px);padding:9px 8px}
-  /* min-width:0 — flex items refuse to shrink below their nowrap content otherwise, and the
-     coverage line would push the buttons out of the card instead of ellipsizing */
-  .clbtn{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
-    gap:5px;cursor:pointer;font:700 13px/1 system-ui;color:var(--ink);background:#fff;
-    border:1.5px solid var(--line);border-radius:10px;padding:9px 8px;transition:.12s}
-  .clbtn .cl-top{display:flex;align-items:center;gap:7px}
-  /* where the package actually goes, derived from its routes' termini — a seller can read the
-     story off the button instead of memorising what "Set 3" means */
-  .clbtn .cl-cov{font:500 9.5px/1.3 system-ui;color:var(--muted);text-align:center;
-    width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .clbtn.on .cl-cov{color:rgba(255,255,255,.85)}
-  .clbtn:hover{border-color:var(--cc);color:var(--cc)}
-  .clbtn.on{background:var(--cc);border-color:var(--cc);color:#fff}
-  .clbtn:focus-visible{outline:2px solid var(--cc);outline-offset:2px}
-  .clbtn .cl-n{font:800 11px/1 system-ui;background:rgba(15,23,42,.08);border-radius:999px;
-    padding:3px 7px;color:inherit}
-  .clbtn.on .cl-n{background:rgba(255,255,255,.25)}
 
   /* ---------- selection card ---------- */
   #selcard{display:none}
@@ -517,8 +493,6 @@
     box-shadow .15s ease,transform .15s ease}
   .cta-export:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(30,64,175,.35)}
   .cta-export:active{transform:translateY(0)}
-  .clbtn:hover{transform:translateY(-1px)}
-  .clbtn:active,.clbtn.on{transform:none}
   .modal-back{animation:mbIn .16s ease-out}
   .modal{animation:mIn .18s cubic-bezier(.2,.9,.3,1.15)}
   @keyframes mbIn{from{opacity:0}}
@@ -526,9 +500,9 @@
   @media(prefers-reduced-motion:reduce){
     .row,.rrow,.achip,.selchip,.exp-btn,.exp-dl,.res,.lb-route,.lb-stop,.poi-chip,.mcd-tgl,
     .dir-tab,.rl-row,.rl-all,.reset-btn,.pk-res,.seg button,.modal-x,.xbtn,.lb-x,.pc-x,
-    .cta-export,.clbtn,.track,.track::after,.lb-route .lb-car{transition:none}
+    .cta-export,.track,.track::after,.lb-route .lb-car{transition:none}
     .modal-back,.modal{animation:none}
-    .cta-export:hover,.clbtn:hover{transform:none}
+    .cta-export:hover{transform:none}
   }
   #loading{position:absolute;inset:0;z-index:2000;background:rgba(248,250,252,.9);
     display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px}
@@ -568,13 +542,6 @@
         <div id="lbBody"></div>
       </div>
       <div class="sec" id="selcard"></div>
-      <div class="sec sec-prod" id="prodSec">
-        <div class="sec-lab">Route packages <span class="hint-txt" style="text-transform:none;letter-spacing:0">one-tap sell-in sets</span></div>
-        <div id="clusterBtns"></div>
-        <div class="note">Each package loads a ready-made shortlist — tap again to clear. The small line
-          on each button is where its routes run, or which places it was built around. Hover for the
-          full service list.</div>
-      </div>
       <div class="sec sec-rank">
         <div class="sec-lab">Reach ranking <span class="hint-txt" style="text-transform:none;letter-spacing:0">every route, or just yours</span></div>
         <select id="rankSel" aria-label="Rank routes by reach">
@@ -768,38 +735,6 @@ function hatchCss(col,w){
 // are far apart in hue so overlapping lanes stay tellable-apart.
 const SELP=['#dc2626','#2563eb','#16a34a','#d97706','#7c3aed','#0e7490','#db2777','#4d7c0f',
   '#4338ca','#92400e','#0891b2','#a21caf','#991b1b','#1e3a8a','#047857','#c2410c'];
-// curated route sets — each preset loads a ready-made shortlist of services.
-// Reach is modelled per route, so a route appearing once or twice in a set doesn't
-// change the audience figure.
-const PRODUCTS=[
-  {key:'landscape', name:'Core corridors', spec:'18 curated services', sets:[
-    {ck:'city', label:'City',       color:'#091CA1', routes:['5','107','111','121','132','147']},
-    {ck:'outer',label:'City outer', color:'#0E8A6E', routes:['117','21','45','103','102','109','153','157','161','163','168','198']},
-  ]},
-  {key:'dual', name:'Five-route sets', spec:'5 routes each', sets:[
-    {ck:'c1', label:'Set 1', color:'#091CA1', routes:['190','518','70','117','87']},
-    {ck:'c2', label:'Set 2', color:'#0E8A6E', routes:['190','70','133','198','85']},
-    {ck:'c3', label:'Set 3', color:'#7C2D92', routes:['972','143','5','76','31']},
-    {ck:'c4', label:'Set 4', color:'#C2410C', routes:['972','97','130','89','43']},
-  ]},
-  {key:'single', name:'Wide sets', spec:'30 routes', sets:[
-    {ck:'city', label:'City',       color:'#091CA1', routes:['190','972','106','143','132','65','80','188','960','961','70','176','2','12','10']},
-    {ck:'outer',label:'City outer', color:'#0E8A6E', routes:['117','71','28','39','72','979','962','335','181','185','800','806','807','811']},
-  ]},
-];
-// flat key→cluster lookup (product-cluster id) used by selection / highlight / export title
-const CLUSTERS={};
-function registerClusters(p){
-  p.sets.forEach(st=>{
-    CLUSTERS[p.key+'-'+st.ck]={routes:st.routes,label:st.label,slug:p.key+'-'+st.ck,
-      color:st.color,title:p.name+' · '+st.label,product:p.name,spec:p.spec,
-      poi:p.poi||null,places:st.places||null};
-  });
-}
-PRODUCTS.forEach(registerClusters);
-// products derived from data (below) join the same lookup once their data has loaded
-function addProduct(p){PRODUCTS.push(p);registerClusters(p);}
-
 const FEATURES={demographics:false};   // flipped on when planning-area data is present
 
 // ---------------- map ----------------
@@ -905,10 +840,11 @@ Promise.all([
   get('data/network.json'),get('data/stops.json'),get('data/rail_stations.json'),
   get('data/rail_lines.json'),get('data/planning_areas.geojson'),
   get('data/stop_area.json'),get('data/stop_volume.json'),get('data/context_indices.json'),
-  get('data/qc_report.json'),
+  get('data/qc_report.json'),get('data/service_tags.json'),
   ...POI.map(p=>get(p.file))
-]).then(([net,stops,stations,railLines,areas,stopArea,stopVol,context,qcReport,...pois])=>{
+]).then(([net,stops,stations,railLines,areas,stopArea,stopVol,context,qcReport,svcTags,...pois])=>{
   S.qcReport=qcReport;
+  S.svcTags=svcTags||null;
   S.stops=stops||{};S.stations=stations||[];S.railLines=railLines||[];
   S.areas=areas;S.stopArea=stopArea||{};S.stopVol=stopVol||{};S.context=context||null;
   if(areas){FEATURES.demographics=true;
@@ -1421,7 +1357,6 @@ function buildPanel(){
     document.querySelectorAll('#poiScopeSeg button').forEach(x=>x.classList.toggle('on',x===b));
     applyPoiScope();
   });
-  buildClusters();
   buildRanking();
   buildMcdSection();
   buildPropertyHeatmaps();
@@ -1434,64 +1369,6 @@ function buildPanel(){
       +`passed every consistency check (${(S.qcReport.checks||[]).join(' · ')}) on <b>${S.qcReport.verified_on}</b>. `
       +`The checker re-runs on every data edit; this line comes from its report.`;
     const src=$('srcList');if(src)src.prepend(li);}
-}
-// ---------------- route clusters (curated packages) ----------------
-// A package button must say where its routes go — "Set 3" alone forces the seller to memorise
-// the rate card. Derive a coverage line from the termini named in the routes themselves.
-function clusterCoverage(routes){
-  const cnt={};
-  routes.forEach(n=>{const s=S.svcs[n];if(!s||!s.name)return;
-    s.name.split(/⇄|⟲/).forEach(t=>{
-      t=t.trim().replace(/ (Int|Ter)$/,'').replace(/ Stn Exit.*$/,'').replace(/ Stn$/,'');
-      if(t)cnt[t]=(cnt[t]||0)+1;});});
-  return Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]).join(' · ');
-}
-function buildClusters(){
-  const host=$('clusterBtns');if(!host)return;host.innerHTML='';
-  PRODUCTS.forEach((p,pi)=>{
-    const lab=document.createElement('div');lab.className='prod-lab'+(pi===0?' first':'');
-    lab.innerHTML=`<span class="pl-name">${p.name}</span><span class="pl-spec">${p.spec}</span>`;
-    host.appendChild(lab);
-    const row=document.createElement('div');
-    row.className='cluster-btns'+(p.sets.length>2?' grid2':'');   // 4 sets wrap 2×2
-    p.sets.forEach(st=>{
-      const key=p.key+'-'+st.ck,c=CLUSTERS[key];
-      const n=c.routes.filter(x=>S.svcs[x]).length;
-      const btn=document.createElement('button');btn.type='button';btn.className='clbtn';
-      btn.dataset.k=key;btn.style.setProperty('--cc',c.color);btn.setAttribute('aria-pressed','false');
-      btn.title=`${c.title} — ${c.routes.join(', ')}`;
-      // a package built around named places says which places, not which termini
-      const cov=c.places?c.places.join(' · '):clusterCoverage(c.routes);
-      btn.innerHTML=`<span class="cl-top"><span class="cl-name">${c.label}</span><span class="cl-n">${n}</span></span>`
-        +(cov?`<span class="cl-cov" title="${cov}">${cov}</span>`:'');
-      btn.onclick=()=>selectCluster(key);
-      row.appendChild(btn);
-    });
-    host.appendChild(row);
-  });
-}
-// which cluster (if any) the current selection exactly equals
-function matchedCluster(){
-  for(const k in CLUSTERS){
-    const r=CLUSTERS[k].routes.filter(n=>S.svcs[n]);
-    if(r.length===S.selected.length&&r.every(n=>S.selected.includes(n)))return k;
-  }
-  return null;
-}
-function updateClusterBtns(){
-  const m=matchedCluster();
-  document.querySelectorAll('.clbtn').forEach(b=>{
-    const on=b.dataset.k===m;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on));});
-}
-function selectCluster(k){
-  const c=CLUSTERS[k];
-  const set=c.routes.filter(n=>S.svcs[n]);
-  const already=matchedCluster()===k;
-  clearSel({silent:true});          // resets selection (and clears any cluster highlight)
-  if(already)return;                // tapping the active cluster just clears
-  set.forEach(n=>S.selected.push(n));
-  if(c.poi)poiSetOn(c.poi,true);    // a package sold on named places is unreadable without them
-  renderSelection({fit:true});
 }
 // Scenario 4 — feature-flagged Demographics layer. Disabled until data is present;
 // FEATURES.demographics flips true when planning-area data loads, enabling the overlay.
@@ -2134,7 +2011,6 @@ map.on('moveend',()=>{
 });
 function renderSelection(opt){
   opt=opt||{};
-  updateClusterBtns();   // keep cluster presets in sync with the live selection
   const c=$('selcard');
   if(!S.selected.length){   // empty state doubles as onboarding help (heuristic #10)
     paintLines(false);
@@ -2324,6 +2200,7 @@ function renderLeftbar(){
     row.title='Tap to see every stop this service calls at';
     row.innerHTML=`<span class="lb-car">▶</span><span class="cdot" style="background:${color}"></span>`
       +`<b class="lb-n">${n}</b><span class="lb-name">${s.name}</span>`
+      +tagChips(n)
       +`<span class="lb-sc" title="${s.sc} unique stops">${s.sc}</span>`
       +`<button class="lb-x" title="Remove ${n} from selection">✕</button>`;
     row.querySelector('.lb-x').onclick=e=>{e.stopPropagation();toggleRoute(n);};
@@ -2766,6 +2643,20 @@ const SOURCE='LTA DataMall (Jun 2026) · SingStat Census 2020 · Basemap © Open
 S.exp={legend:false,corridor:false,stops:false,imp:false,summary:false,perRoute:false};
 
 // classify a service by how it runs (jumps = express legs with no stops between)
+// ---------------- service tags (tier + operator) ----------------
+// Moove's own two-bucket tier and the operating company, from the routes master list.
+// Only services on that list carry tags: feeders, City Direct (6xx) and other non-inventory
+// classes are absent from it by design, so a missing tag means "not sold", not "unknown".
+function svcTag(n){return (S.svcTags&&S.svcTags.tags&&S.svcTags.tags[n])||null;}
+function tierLabel(t){return ((S.svcTags||{})._tier||{})[t]||t;}
+function opLabel(o){return ((S.svcTags||{})._op||{})[o]||o;}
+function tagChips(n){
+  const t=svcTag(n);if(!t)return '';
+  let h='';
+  if(t.tier)h+=`<span class="tg tg-${t.tier}" title="Moove tier: ${tierLabel(t.tier)}">${tierLabel(t.tier)}</span>`;
+  if(t.op)h+=`<span class="tg tg-op" title="Operator: ${opLabel(t.op)}">${t.op}</span>`;
+  return h;
+}
 function busType(s){if(!s)return 'Trunk';if(s.feeder)return 'Feeder';
   const jl=(s.jumps||[]).reduce((a,g)=>a+segLen(g),0);return jl>2?'Express':'Trunk';}
 // split a service name "A ⇄ B" / "A ⟲" into {from,to}
@@ -2802,21 +2693,20 @@ function ensureExportData(){
 }
 // title/badge/colour for whatever is selected — route-centric, no "product"
 function titleInfo(){
-  const m=matchedCluster(),colOf=S._colOf||{};
+  const colOf=S._colOf||{};
   const routes=S.selected.map(n=>({n,color:colOf[n]||'#334155',type:busType(S.svcs[n])}));
-  const setLabel=m?CLUSTERS[m].product+' · '+CLUSTERS[m].label:'';
   if(S.selected.length===1){const s=S.svcs[S.selected[0]],t=termsOf(s);
     return {kind:'single',eyebrow:'Bus route',badge:s.n,color:colOf[s.n]||SELP[0],
-      title:s.name,termini:t.loop?t.from+' ⟲':t.from+'  ⇄  '+t.to,type:busType(s),setLabel,routes};}
+      title:s.name,termini:t.loop?t.from+' ⟲':t.from+'  ⇄  '+t.to,type:busType(s),routes};}
   if(S.selected.length>1)
     return {kind:'multi',eyebrow:'Bus routes',badge:String(S.selected.length),color:'#1e293b',
-      title:S.selected.length+' bus routes',termini:'',type:'',setLabel,routes};
+      title:S.selected.length+' bus routes',termini:'',type:'',routes};
   const aps=activePoiLayers();   // no routes, but a POI map is still worth titling
   if(aps.length===1)
     return {kind:'none',eyebrow:'Places on the map',badge:'',color:'#1e40af',
-      title:aps[0].label,termini:'',type:'',setLabel:'',routes:[]};
+      title:aps[0].label,termini:'',type:'',routes:[]};
   return {kind:'none',eyebrow:aps.length?'Places on the map':'Transit network',badge:'',color:'#1e40af',
-    title:'Singapore Transit Atlas',termini:'',type:'',setLabel:'',routes:[]};
+    title:'Singapore Transit Atlas',termini:'',type:'',routes:[]};
 }
 function selImpressions(){
   if(!FEATURES.demographics||!S.selected.length)return null;
@@ -2827,8 +2717,6 @@ function selImpressions(){
 // gated by the Impressions export toggle
 function impForExport(){return S.exp.imp?selImpressions():null;}
 function fileBase(){
-  const m=matchedCluster();
-  if(m)return 'bus-routes-'+CLUSTERS[m].slug;
   if(S.selected.length===1)return 'bus-route-'+S.selected[0];
   if(S.selected.length>1)return 'bus-routes-'+S.selected.slice(0,6).join('-')
     +(S.selected.length>6?'-plus':'');
@@ -2948,13 +2836,12 @@ function buildBar(x,W){
   x.font=F(`800 ${badgeF}`);
   const badgeW=info.badge?Math.max(42*u,x.measureText(info.badge).width+24*u):0;
   x.font=F(`800 ${mainF}`);const titleNeed=single?0:x.measureText(info.title).width;
-  x.font=F(`600 ${bodyF*0.92}`);const setNeed=info.setLabel?x.measureText(info.setLabel).width:0;
+  const setNeed=0;
   const headerW=single?300*u:Math.min(320*u,Math.max(180*u,Math.max(titleNeed,setNeed)+4*u));
   const mainLines=wrapLines(x,single?info.termini:info.title,F(`800 ${mainF}`),
     headerW-(info.badge?badgeW+12*u:0));
   const headH=Math.max(badgeH,mainLines.length*mainF*1.16);
   let headerH=eyeF+10*u+headH;
-  if(info.setLabel)headerH+=8*u+bodyF*1.05;
   if(single&&info.type)headerH+=10*u+19*u;
   // ---- opt-in blocks, each a {h, draw(bx, byTop)} laid into a column of width colW ----
   const aps=activePoiLayers();
@@ -3042,8 +2929,6 @@ function buildBar(x,W){
     const mTop=cy+headH/2-(mainLines.length*mainF*1.16)/2+mainF*0.82;
     mainLines.forEach((l,i)=>x.fillText(l,tx,mTop+i*mainF*1.16));
     cy+=headH;
-    if(info.setLabel){cy+=8*u+bodyF*1.05;x.fillStyle=CARD.grey;
-      x.font=F(`600 ${bodyF*0.92}`);x.fillText(info.setLabel,pad,cy);}
     if(single&&info.type){cy+=10*u;const label=info.type.toUpperCase();
       x.font=F(`800 ${chipF}`);const cw=x.measureText(label).width+16*u;
       const tc=TYPE_C[info.type]||TYPE_C.Trunk;
@@ -3100,7 +2985,7 @@ function addHeroMapSlide(p,img,info,imp){
   const s=p.addSlide();s.background={color:'FFFFFF'};
   const single=info.kind==='single',aps=activePoiLayers();
   // eyebrow pill — the package / product code a seller quotes ("Core corridors · City")
-  const eye=(info.setLabel||info.eyebrow).toUpperCase();
+  const eye=info.eyebrow.toUpperCase();
   const eyeW=Math.max(1.1,eye.length*0.082+0.36);
   s.addShape('roundRect',{x:0.4,y:0.34,w:eyeW,h:0.4,fill:{color:BRAND.pink},line:{type:'none'},rectRadius:0.09});
   s.addText(eye,{x:0.4,y:0.34,w:eyeW,h:0.4,fontSize:11,bold:true,color:'FFFFFF',
@@ -3173,7 +3058,7 @@ function addSummarySlide(p,info,imp){
   const s=p.addSlide();s.background={color:'FFFFFF'};
   const ag=selAgg();
   s.addText('Route summary',{x:0.55,y:0.4,w:8,h:0.5,fontSize:26,bold:true,color:INK,fontFace:'Inter'});
-  s.addText(info.setLabel||(ag.routes+' bus routes selected'),{x:0.56,y:0.92,w:9,h:0.3,fontSize:13,
+  s.addText(ag.routes+' bus routes selected',{x:0.56,y:0.92,w:9,h:0.3,fontSize:13,
     color:GREY,fontFace:'Inter'});
   // stat tiles across the top
   const tiles=[['Unique bus stops',ag.unique.toLocaleString('en-SG')],
