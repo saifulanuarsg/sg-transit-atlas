@@ -29,6 +29,19 @@ this up without activating it.
 - [X] **T008** State in the runbook that a custom domain is a hard prerequisite — Access cannot sit
   in front of a `github.io` address.
 
+## Phase 2b — Make activation one command
+
+- [X] **T026** Discover the Cloudflare account from the token, so the operator does not have to
+  find an account ID. Fail with the choices listed if the token can see more than one.
+- [X] **T027** Preflight the hostname against Cloudflare's zone list and fail *before* creating
+  anything if the domain was never delegated — the most common setup mistake, and the one that
+  otherwise leaves a half-built application behind.
+- [X] **T028** Add `--verify`: unauthenticated requests for the page and a data file, exiting
+  non-zero if either is served. Needs no token. Runs automatically after `--apply`.
+- [X] **T029** Sabotage-test the checker in `infra/test_verify.py`. A verification that always
+  passes certifies an open door. Four cases: open door, gate holding, **page gated but data
+  leaking**, and Cloudflare's interstitial served with HTTP 200.
+
 ## Phase 2 — Verification (this PR)
 
 - [X] **T009** `python3 infra/apply_access.py` with the placeholder hostname exits non-zero and
@@ -38,13 +51,15 @@ this up without activating it.
 - [X] **T012** `index.html` is byte-identical to its state before this feature.
 - [X] **T013** `python3 tools/qc_poi.py` still passes.
 - [X] **T014** The live site is unchanged by merging this — nothing here is activated.
+- [X] **T015a** `python3 infra/test_verify.py` passes all four cases, including the page-gated-
+  but-data-leaking case that a browser check would miss.
 
 ## Phase 3 — Activation (NOT in this PR)
 
 Left unchecked deliberately. Each is an acceptance criterion for the day someone decides to turn
 this on, and each maps to a story that stays unverified until then.
 
-- [ ] **T015** Obtain a hostname and put it on Cloudflare DNS, with the atlas reachable through it.
+- [ ] **T030** Obtain a hostname and put it on Cloudflare DNS, with the atlas reachable through it.
 - [ ] **T016** Mint a Cloudflare API token scoped to Access write on that zone.
 - [ ] **T017** Confirm whether `@sg.moovemedia.com.sg`-style addresses should be admitted; amend the
   policy if so.
@@ -63,4 +78,4 @@ this on, and each maps to a story that stays unverified until then.
 ## Dependencies
 
 T001 → T003 → T004/T005/T006 → T009/T010. T007 depends on the script's interface being settled.
-Phase 3 is blocked on T015 and T016, which are operator actions outside this repository.
+Phase 3 is blocked on T030 and T016, which are operator actions outside this repository.

@@ -28,7 +28,9 @@ it. See the Constitution Check in [`plan.md`](../specs/011-access-email-login/pl
    loads through it before going further. (This prerequisite exists on the Vercel path too.)
 2. **A Cloudflare account** with the zone added. The free Zero Trust tier covers 50 users; beyond
    that it is roughly $7/user/month.
-3. **An API token** scoped to *Access: Apps and Policies → Edit* on that zone, plus the account ID.
+3. **An API token** scoped to *Access: Apps and Policies → Edit* **and** *Zone → Read*. The
+   account ID is discovered from the token, so you only need to find it yourself if the token
+   can see more than one account.
 4. **A decision on subdomain addresses.** The policy currently admits `@moovemedia.com.sg` and
    *not* `@sg.moovemedia.com.sg` or similar. If those are real, add them before activating.
 
@@ -60,46 +62,42 @@ two sign-ins for the same visit.
 ## Activate
 
 ```bash
-# 1. set the hostname
-$EDITOR infra/access-policy.json        # replace REPLACE_ME.example.com
+$EDITOR infra/access-policy.json          # set the hostname
 
-# 2. see exactly what will happen — this sends nothing
-python3 infra/apply_access.py
+python3 infra/apply_access.py             # dry run — shows the calls, sends nothing
 
-# 3. do it
-export CLOUDFLARE_API_TOKEN=...         # never write these into a file in this repo
-export CLOUDFLARE_ACCOUNT_ID=...
+export CLOUDFLARE_API_TOKEN=...           # never write this into a file in this repo
 python3 infra/apply_access.py --apply
 ```
 
-The script prints a service token's client ID and secret once, for headless checks. Put them in
-the environment of whatever runs those checks. They must not be committed.
+`--apply` discovers the account, confirms the hostname is on a Cloudflare zone *before*
+creating anything, creates the application and policy, issues a service token, and then runs the
+unauthenticated checks below and exits non-zero if the gate is not holding.
+
+The service token's ID and secret are printed once. Put them in the environment of whatever runs
+the headless checks. They must not be committed.
 
 ## Verify
 
-Do all four. The first three are the spec's acceptance scenarios; the fourth is the one people
-forget, and it is the one that decides whether this is a real control.
-
 ```bash
-# a Moove address gets in — in a browser, expect a code by email
-open https://atlas.moovemedia.com.sg
-
-# an unauthenticated request for the page is redirected to sign-in, not served
-curl -sI https://atlas.moovemedia.com.sg | head -1
-
-# THE IMPORTANT ONE: a data file is not served either
-curl -s https://atlas.moovemedia.com.sg/data/stops.json | head -c 200
-# expect a sign-in page or an error — NOT JSON
-
-# headless checks still work with the service token
-curl -s https://atlas.moovemedia.com.sg/data/stops.json \
-  -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" \
-  -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" | head -c 200
-# expect JSON
+python3 infra/apply_access.py --verify     # no token needed; exits non-zero if the gate leaks
 ```
 
-Then record each story's result with its evidence in `docs/user-stories.md` under a dated heading,
-per Principle V, and update the spec's Status. Tasks T020–T025 track this.
+It requests the page and a data file with no credentials. The data-file check is the one that
+decides whether this is a real control: a gate covering only the page leaves the atlas's actual
+content fetchable, and the page would still *look* correctly locked in a browser.
+
+The checker itself is sabotage-tested, because a verification that always passes is worse than
+none — it certifies an open door:
+
+```bash
+python3 infra/test_verify.py               # exit 0 = the checker can be trusted
+```
+
+Then confirm by hand what a script cannot: that a `@moovemedia.com.sg` address receives a code and
+gets in, that a non-Moove address is refused, and that a shared `#r=…` deep link survives sign-in.
+Record each result with its evidence in `docs/user-stories.md` under a dated heading, per
+Principle V, and update the spec's Status. Tasks T020–T025 track this.
 
 ## Roll back
 
