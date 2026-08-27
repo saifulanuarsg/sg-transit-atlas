@@ -573,7 +573,7 @@
         <div id="clusterBtns"></div>
         <div class="note">Each package loads a ready-made shortlist — tap again to clear. The small line
           on each button is where its routes run, or which places it was built around. Hover for the
-          full service list. The Frasers packages also switch that landlord's malls on to the map.</div>
+          full service list.</div>
       </div>
       <div class="sec sec-rank">
         <div class="sec-lab">Reach ranking <span class="hint-txt" style="text-transform:none;letter-spacing:0">every route, or just yours</span></div>
@@ -677,7 +677,6 @@
         <li><b>IHLs</b> (17) — curated list (universities, polytechnics, ITE, arts); multi-campus institutions (LASALLE McNally + Winstedt) listed per campus; campus boundaries from OpenStreetMap / Nominatim.</li>
         <li><b>Transit hotspots</b> (35) — MRT/LRT interchange stations derived from this app's own rail data (stations on 2+ drawn lines). <b>Major event &amp; convention venues</b> (11) — curated list.</li>
         <li><b>Shopping malls</b> (237) — OpenStreetMap <code>shop=mall</code>, non-malls filtered out.</li>
-        <li><b>Frasers</b> (16) — every Frasers Property Singapore space: eleven malls, per the Frasers Experience (FRx) directory — Causeway Point, Century Square, Eastpoint Mall, Hougang Mall, Northpoint City, Tampines 1, The Centrepoint, Tiong Bahru Plaza, Valley Point, Waterway Point, White Sands — and five office / business-park properties: Frasers Tower, 51 Cuppage Road, Central Plaza, Alexandra Point and Alexandra Technopark. Every one checked as still theirs and still open, Aug 2026 — membership of a portfolio is not the same question as whether a mall is open. Three malls a reader might expect are deliberately absent: <b>Robertson Walk</b> ceased operations 31 May 2025 and is being redeveloped by Frasers and Sekisui House; <b>Changi City Point</b> was divested in 2023; <b>nex</b> is half-owned by Frasers Centrepoint Trust but is not one of Frasers Property Singapore's malls; <b>Cross Street Exchange</b> was divested to PAG in March 2022. The first two are still in the OpenStreetMap mall layer, which is why this list is its own file and not a filter over it — and two of the eleven can't be found there by name anyway (Eastpoint Mall is tagged <code>East Point</code>). <b>Valley Point</b> trades today but has written permission for a full-site redevelopment; the map flags it. Ownership notes as at Aug 2026 (FCT took the Northpoint City South Wing in May 2025). Every point is the OneMap geocode of the mall's own postal address; Northpoint City is the midpoint of its two wings, which are 160 m apart. Its route packages are <b>derived, not curated</b>: every service with a stop within 400 m of a space, ranked by spaces covered then by weekday boardings at those stops, top 12 per region — plus an <b>All 16</b> package, the smallest set of services that reaches every space (5 of them, and an exhaustive search confirms 5 is the floor). Feeder services are included — the advertising asset is the bus, not its trunk/feeder class — so a package can hold services the trunk layer doesn't draw until they are selected. Full mall-by-mall mapping: <code>docs/frasers-assets.md</code>.</li>
         <li><b>Supermarkets</b> (532) — OpenStreetMap <code>shop=supermarket</code>, minimarts excluded.</li>
         <li><b>Police</b> (118) — OpenStreetMap <code>amenity=police</code> (SPF centres, posts, HQs, Coast Guard); non-SPF removed.</li>
         <li><b>Bus hubs</b> (54) — interchanges &amp; terminals derived from LTA stop names. <b>MRT/LRT lines &amp; stations</b> (8 lines, 182 stations) — OpenStreetMap; stations filtered to those on a drawn line (future CRL/RTS-Link stations omitted). Labels appear as you zoom in.</li>
@@ -801,75 +800,6 @@ PRODUCTS.forEach(registerClusters);
 // products derived from data (below) join the same lookup once their data has loaded
 function addProduct(p){PRODUCTS.push(p);registerClusters(p);}
 
-// ---------------- Frasers malls → Moove bus assets ----------------
-// A landlord's pitch starts from its own malls, not from a route list. This turns
-// data/poi_frasers.json into the same thing the rest of the app sells — route packages — by
-// DERIVING them from the live bus network rather than hand-listing services, so a package can
-// never quietly drift from the network it claims to cover.
-// Rule: a service is at a mall's door when one of its stops sits within FRASERS_R of the mall
-// point — the same 400 m the reach ranking uses. A regional package is that region's services
-// ranked by how many of the region's malls they touch, then by weekday boardings at the
-// qualifying stops, capped at FRASERS_MAX (the selection palette holds 16 colours, and 12 lines
-// still read on one map). Feeders are in: Moove sells the bus, not its trunk/feeder class.
-// tools/frasers_assets.py runs the identical rule offline into docs/frasers-assets.md, so the
-// mapping is reviewable in a diff and not only on someone's screen.
-const FRASERS_R=400, FRASERS_MAX=12;
-// region = the value in data/poi_frasers.json; label = what the button says (non-breaking
-// hyphen so "North-East" doesn't split across two lines in a half-width button)
-const FRASERS_REGIONS=[
-  {ck:'north',    region:'North',      label:'North',      color:'#091CA1'},
-  {ck:'northeast',region:'North-East', label:'North‑East', color:'#0E8A6E'},
-  {ck:'east',     region:'East',       label:'East',       color:'#7C2D92'},
-  {ck:'central',  region:'Central',    label:'Central',    color:'#C2410C'},
-];
-function mapFrasersAssets(){
-  const malls=S.pois.frasers||[];if(!malls.length)return;
-  const stopSvc={};   // stop code -> services calling there (feeders included)
-  Object.values(S.svcs).forEach(s=>s.stops.forEach(c=>{(stopSvc[c]=stopSvc[c]||[]).push(s.n);}));
-  const codes=Object.keys(S.stops);
-  S.frasers={};
-  malls.forEach(m=>{
-    const near=codes.filter(c=>{const st=S.stops[c];
-      return st&&cdDist(m.lat,m.lng,st[1],st[0])<=FRASERS_R;});
-    const routes={};   // service -> weekday boardings at this mall's stops
-    near.forEach(c=>{const wd=(S.stopVol[c]||{}).wd||0;
-      (stopSvc[c]||[]).forEach(n=>{routes[n]=(routes[n]||0)+wd;});});
-    S.frasers[m.name]={region:m.region,stops:near.length,routes};
-  });
-  const sets=FRASERS_REGIONS.map(r=>{
-    const ms=malls.filter(m=>m.region===r.region).map(m=>m.name);
-    const agg={};      // service -> [malls covered in this region, boardings at their stops]
-    ms.forEach(nm=>{const d=S.frasers[nm];
-      for(const n in d.routes){const a=agg[n]=agg[n]||[0,0];a[0]++;a[1]+=d.routes[n];}});
-    const routes=Object.keys(agg)
-      .sort((a,b)=>agg[b][0]-agg[a][0]||agg[b][1]-agg[a][1]||(a<b?-1:1))
-      .slice(0,FRASERS_MAX);
-    return {ck:r.ck,label:r.label,color:r.color,routes,places:ms};
-  }).filter(st=>st.routes.length);
-  if(!sets.length)return;
-  // Smallest set of services that puts at least one stop within FRASERS_R of EVERY space.
-  // Greedy (take the service covering most of what is still uncovered, ties by boardings) —
-  // for the current portfolio it lands on 5, which an exhaustive search confirms is the floor.
-  const uncovered=new Set(malls.map(m=>m.name)), minCover=[];
-  const reach={};
-  malls.forEach(m=>Object.keys(S.frasers[m.name].routes).forEach(n=>{
-    (reach[n]=reach[n]||new Set()).add(m.name);}));
-  const load=n=>malls.reduce((a,m)=>a+(S.frasers[m.name].routes[n]||0),0);
-  while(uncovered.size){
-    let best=null,bn=0;
-    for(const n in reach){
-      let c=0;reach[n].forEach(x=>{if(uncovered.has(x))c++;});
-      if(c>bn||(c===bn&&c>0&&load(n)>load(best)))
-        {best=n;bn=c;}
-    }
-    if(!best||!bn)break;
-    minCover.push(best);reach[best].forEach(x=>uncovered.delete(x));
-  }
-  if(minCover.length)sets.unshift({ck:'all',label:`All ${malls.length}`,color:'#B91C1C',
-    routes:minCover,places:malls.map(m=>m.name)});
-  addProduct({key:'frasers',name:'Frasers',
-    spec:`routes at ${malls.length} spaces`,poi:'frasers',sets});
-}
 const FEATURES={demographics:false};   // flipped on when planning-area data is present
 
 // ---------------- map ----------------
@@ -934,15 +864,6 @@ const POI=[
   {key:'pei',label:'Private education (PEI)',color:'#6366f1',file:'data/poi_pei.json',cat:'edu'},
   {key:'studentcare',label:'Student care',color:'#f59e0b',file:'data/poi_studentcare.json',cat:'edu'},
   {key:'malls',label:'Shopping malls',color:'#db2777',file:'data/poi_malls.json',cat:'retail'},
-  // Client layer: every Frasers Property Singapore space — the eleven malls from their FRx
-  // directory plus their office and business-park properties — each checked as still theirs and
-  // still open (Robertson Walk closed 31 May 2025 and Cross Street Exchange was divested in 2022;
-  // being on a portfolio page is not the same fact as being current).
-  // Kept separate from the OpenStreetMap mall layer — this list is the landlord's own portfolio,
-  // not an OSM tag: two of the eleven can't be found there by name, and two malls that have
-  // closed or been divested are still in it. nex is out too — FCT half-owns it, but it is not
-  // one of Frasers Property Singapore's malls.
-  {key:'frasers',label:'Frasers',color:'#1E40AF',file:'data/poi_frasers.json',cat:'retail'},
   {key:'supermarkets',label:'Supermarkets',color:'#16a34a',file:'data/poi_supermarkets.json',cat:'retail'},
   {key:'fnb',label:'F&B (healthier eateries)',color:'#ea580c',file:'data/poi_fnb.json',cat:'retail'},
   {key:'sephora',label:'Sephora outlets',color:'#171717',file:'data/poi_sephora.json',cat:'retail'},
@@ -995,7 +916,6 @@ Promise.all([
     S.baseline=(areas.meta||{}).baseline||{};}
   (net?net.services:[]).forEach(s=>S.svcs[s.n]=s);
   POI.forEach((p,i)=>S.pois[p.key]=pois[i]);
-  mapFrasersAssets();   // derive the mall→service mapping before anything draws or labels it
   buildBus();buildRailLines();buildPois();buildHubs();buildStations();buildAreas();buildPanel();
   renderSelection();   // show the empty-state onboarding hint
   applyHash();         // then restore a shared / reopened pitch from the URL
@@ -1045,15 +965,6 @@ function poiTip(p,cfg){
   // a site with a redevelopment or closure hanging over it says so where it is read, not in a
   // footnote — a campaign booked for next year is exactly where that matters
   if(p.note)tip+=`<br><span style="color:#b45309">⚑ ${p.note}</span>`;
-  // A Frasers mall answers the question its landlord actually asks — which buses stop at my door?
-  const fr=cfg&&cfg.key==='frasers'&&S.frasers&&S.frasers[p.name];
-  if(fr){
-    const ns=Object.keys(fr.routes).sort((a,b)=>fr.routes[b]-fr.routes[a]||(a<b?-1:1));
-    tip+=`<br><b>${ns.length}</b> bus service${ns.length===1?'':'s'} at ${fr.stops} stop`
-      +`${fr.stops===1?'':'s'} within ${FRASERS_R} m`
-      +`<br><span style="color:#64748b">busiest stop first — ${ns.slice(0,10).join(', ')}`
-      +`${ns.length>10?` +${ns.length-10} more`:''}</span>`;
-  }
   return tip;
 }
 function poiLayer(p,color,letter,letterFg,off,cfg){

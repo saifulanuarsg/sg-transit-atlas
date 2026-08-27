@@ -30,7 +30,13 @@ retrospective.
 | [006-selling-workflow-ui](006-selling-workflow-ui/spec.md) | 2026-08-05 | #2–#5 | ✅ US-1…US-13 |
 | [007-shareable-state-rail-focus](007-shareable-state-rail-focus/spec.md) | 2026-08-06 | #8 | ✅ US-36…US-40 |
 | [008-data-trust-qc](008-data-trust-qc/spec.md) | 2026-08-06 | #9 | ✅ US-41…US-45 |
-| [009-frasers-client-layer](009-frasers-client-layer/spec.md) | 2026-08-13 | #10, #12–#14 | ✅ US-46…US-65 |
+| [009-frasers-client-layer](009-frasers-client-layer/spec.md) ⚠ superseded | 2026-08-13 | #10, #12–#14 | ✅ US-46…US-65 |
+
+### Live features
+
+| Spec | Change |
+|------|--------|
+| [010-remove-frasers-layer](010-remove-frasers-layer/spec.md) | Removes the Frasers client layer; supersedes 009 |
 
 ## What is deliberately missing
 
@@ -39,7 +45,7 @@ behaviour, both of which are recoverable from a shipped artefact. A task list de
 execution that already happened in a different order, or did not happen as a list at all —
 writing one now would be invention, not documentation.
 
-Features from 010 onward go through the full workflow and will carry all of it.
+Feature 010 onward goes through the full workflow.
 
 ## Two of these became constitution principles
 

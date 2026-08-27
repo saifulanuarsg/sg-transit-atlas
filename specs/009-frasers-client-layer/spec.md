@@ -4,12 +4,17 @@
 
 **Created**: 2026-08-13
 
-**Status**: Shipped — retrospective
+**Status**: Superseded — removed from the product on 2026-08-27 by [`010-remove-frasers-layer`](../010-remove-frasers-layer/spec.md)
 
 **Input**: Reconstructed from shipped behaviour. Commits `d148e9f` (PR #10), `5879257` (PR #12),
 `e429b39` (PR #13), `575accc` (PR #14); `data/poi_frasers.json`, `tools/frasers_assets.py`,
 `docs/frasers-assets.md`, and stories US-46…US-65 in `docs/user-stories.md`.
 
+> **This feature no longer ships.** The Frasers layer, its derived packages and its audit
+> document were removed on 2026-08-27. This spec is kept as the historical record of what
+> was built and why — and because it is where Constitution Principle IV came from. The rule
+> outlived the layer: see `.specify/memory/constitution.md` and `CLAUDE.md`.
+>
 > **Retrospective spec.** This feature shipped before the repository adopted Spec Kit. Its user
 > stories *were* written before each build — it ran over four pull requests, each starting from a
 > persona walkthrough or a user correction, with every story verified headless. This spec

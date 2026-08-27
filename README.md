@@ -9,7 +9,6 @@ Open-data, client-side, no backend. Live: https://saifulanuarsg.github.io/sg-tra
 index.html                    the whole application — no build step
 data/*.json                   network, stops, catchment and POI layers
 tools/qc_poi.py               data invariants gate (run after any data/poi_*.json edit)
-tools/frasers_assets.py       derives the Moove bus assets per Frasers mall
 docs/user-stories.md          dated simulation runs, each story marked with its evidence
 .specify/                     Spec Kit: constitution, templates, scripts
 .claude/skills/speckit-*      Spec Kit workflow skills for Claude Code
