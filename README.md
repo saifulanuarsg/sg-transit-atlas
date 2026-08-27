@@ -10,6 +10,8 @@ index.html                    the whole application — no build step
 data/*.json                   network, stops, catchment and POI layers
 tools/qc_poi.py               data invariants gate (run after any data/poi_*.json edit)
 docs/user-stories.md          dated simulation runs, each story marked with its evidence
+docs/access-setup.md          runbook for the Moove-only access gate (configured, not active)
+infra/                        Cloudflare Access policy as code + its apply script
 .specify/                     Spec Kit: constitution, templates, scripts
 .claude/skills/speckit-*      Spec Kit workflow skills for Claude Code
 specs/<NNN>-<short-name>/     one directory per feature: spec.md, plan.md, tasks.md
