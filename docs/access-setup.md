@@ -24,10 +24,15 @@ it. See the Constitution Check in [`plan.md`](../specs/011-access-email-login/pl
 
 ## Prerequisites
 
-1. **A custom domain.** This is the hard one. Access cannot be placed in front of
-   `saifulanuarsg.github.io` — it needs a hostname on Cloudflare DNS, e.g.
-   `atlas.moovemedia.com.sg`. Point that hostname at the current origin and confirm the atlas
-   loads through it before going further. (This prerequisite exists on the Vercel path too.)
+1. **A hostname on Cloudflare DNS.** Access cannot be placed in front of
+   `saifulanuarsg.github.io`, so a custom domain is required. (Same on the Vercel path.)
+
+   **It does not have to be a Moove domain.** The hostname being protected and the email domain
+   being admitted are completely independent: Access gates whatever host you point it at, and the
+   policy separately decides who gets through. So `atlas.cancheck.co` — any domain already on your
+   own Cloudflare account — gated to `@moovemedia.com.sg` works today and needs nothing from
+   Moove's IT. Moving to `atlas.moovemedia.com.sg` later is a DNS change and a one-line edit here;
+   the policy does not change at all.
 2. **A Cloudflare account** with the zone added. The free Zero Trust tier covers 50 users; beyond
    that it is roughly $7/user/month.
 3. **An API token** scoped to *Access: Apps and Policies → Edit* **and** *Zone → Read*. The
