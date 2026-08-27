@@ -46,17 +46,21 @@ RAIL_LINES = {
     # The two extensions are geometry-only entries: their stations belong to the parent
     # line (Sungei Bedok is a TEL and DTL station, not a "TEL5" one), so they carry no
     # station floor of their own — only existence, geometry, and the future flag.
-    'TEL5': 0, 'DTL3E': 0,
+    # extension entries are geometry-only: their stations belong to the parent line
+    # (Sungei Kadut is a DTL and NSL station, not a "DTL2E" one), so no floor of their own
+    'TEL5': 0, 'DTL3E': 0, 'CRLP': 0, 'DTL2E': 0, 'TELT5': 0,
+    'CRL': 20,
 }
 # Lines not carrying passengers as of Sep 2026. They MUST be flagged future so the map draws
 # them dotted; a seller pointing at a solid line is entitled to assume it runs today.
-FUTURE_LINES = {'JRL', 'TEL5', 'DTL3E'}
+FUTURE_LINES = {'JRL', 'TEL5', 'DTL3E', 'CRL', 'CRLP', 'DTL2E', 'TELT5'}
 # Stations built or planned but not open, on lines that ARE running. The line style cannot
 # carry these — each station has to declare itself. Verified Sep 2026; re-check on any rail
 # edit, because data.gov.sg's own future list was stale (it still listed Keppel, Cantonment
 # and Prince Edward Road, which opened 12 Jul 2026).
 NOT_OPEN_STATIONS = {'Mount Pleasant', 'Marina South', "Founders' Memorial", 'Bukit Brown',
-                     'Bedok South', 'Sungei Bedok', 'Xilin'}
+                     'Bedok South', 'Sungei Bedok', 'Xilin', 'Brickland', 'Sungei Kadut',
+                     'Yew Tee Village', 'Tagore', 'Forest Hill', 'Changi Terminal 5', 'Elias'}
 
 def dist_m(lat1, lng1, lat2, lng2):
     dx = (lng2 - lng1) * 111320 * math.cos(math.radians((lat1 + lat2) / 2))
