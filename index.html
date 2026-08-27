@@ -745,9 +745,26 @@ const map=L.map('map',{zoomControl:false,minZoom:10,maxBounds:SG_BOUNDS,maxBound
 L.control.zoom({position:'bottomright'}).addTo(map);
 // distance scale beside the zoom buttons (metric only; tracks the zoom level live)
 L.control.scale({position:'bottomright',imperial:false,maxWidth:120}).addTo(map);
-const baseTiles=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
+// ---------------- basemap ----------------
+// CARTO Positron. As of 2026 their raster tiles need a key: without one they come back
+// stamped "API KEY REQUIRED", which is what a client sees in a pitch.
+//
+// This is a PUBLISHABLE, client-side, domain-restrictable key — the same category as a
+// Google Maps JS key, not a secret. It belongs in this file. Get one free at
+// carto.com (5M tiles/month; a gated tool for ~50 sellers will not come close).
+//
+// Positron is kept rather than swapped because the whole map is designed on it: sixteen
+// route colours have to read against the basemap, and every deck and screenshot already
+// shipped uses this look. The keyless alternatives all cost more than a key does —
+// see docs/basemap.md.
+const BASEMAP_KEY='';   // <-- paste the CARTO API key here
+const baseTiles=L.tileLayer(
+  'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'+(BASEMAP_KEY?'?api_key='+BASEMAP_KEY:''),{
   attribution:'&copy; OpenStreetMap contributors &copy; CARTO',maxZoom:19,
   crossOrigin:'anonymous'}).addTo(map);   // enables canvas export of the basemap
+if(!BASEMAP_KEY)console.warn('[atlas] No basemap key set — CARTO will watermark every tile '
+  +'"API KEY REQUIRED". Fix: get a free key at carto.com and set BASEMAP_KEY in index.html. '
+  +'See docs/basemap.md.');
 ['areas','bus','poi'].forEach((p,i)=>{map.createPane(p).style.zIndex=380+i*20;});
 map.createPane('areaHatch').style.zIndex=382;   // second property layer, hatched over the choropleth fill
 map.getPane('areaHatch').style.pointerEvents='none';
