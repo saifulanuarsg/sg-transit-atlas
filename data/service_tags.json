@@ -1,0 +1,1304 @@
+{
+"_source": "Moove Media bus routes master list, 5 Jun 2026. Tier and operator only.",
+"_tier": {
+"city": "City",
+"outer": "City Outer"
+},
+"_op": {
+"SBST": "SBS Transit",
+"GAS": "Go-Ahead",
+"SMRT": "SMRT Buses",
+"TT": "Tower Transit"
+},
+"_note": "Operator is public (LTA publishes route-operator assignment). Tier is Moove's own two-bucket segmentation. Services absent here are feeders, City Direct (6xx) or other non-inventory classes, not gaps.",
+"tags": {
+"2": {
+"tier": "city",
+"op": "GAS"
+},
+"3": {
+"tier": "outer",
+"op": "GAS"
+},
+"4": {
+"tier": "outer",
+"op": "GAS"
+},
+"5": {
+"tier": "city",
+"op": "SBST"
+},
+"6": {
+"tier": "outer",
+"op": "GAS"
+},
+"7": {
+"tier": "city",
+"op": "SBST"
+},
+"8": {
+"tier": "outer",
+"op": "SBST"
+},
+"9": {
+"tier": "outer",
+"op": "SBST"
+},
+"10": {
+"tier": "city",
+"op": "SBST"
+},
+"11": {
+"tier": "outer",
+"op": "SBST"
+},
+"12": {
+"tier": "city",
+"op": "GAS"
+},
+"13": {
+"tier": "outer",
+"op": "SBST"
+},
+"14": {
+"tier": "city",
+"op": "SBST"
+},
+"15": {
+"tier": "outer",
+"op": "GAS"
+},
+"16": {
+"tier": "city",
+"op": "SBST"
+},
+"17": {
+"tier": "outer",
+"op": "GAS"
+},
+"18": {
+"tier": "outer",
+"op": "GAS"
+},
+"19": {
+"tier": "outer",
+"op": "GAS"
+},
+"20": {
+"tier": "outer",
+"op": "GAS"
+},
+"21": {
+"tier": "outer",
+"op": "SBST"
+},
+"22": {
+"tier": "outer",
+"op": "SBST"
+},
+"23": {
+"tier": "outer",
+"op": "SBST"
+},
+"24": {
+"tier": "outer",
+"op": "SBST"
+},
+"25": {
+"tier": "outer",
+"op": "SBST"
+},
+"26": {
+"tier": "outer",
+"op": "SBST"
+},
+"27": {
+"tier": "outer",
+"op": "SBST"
+},
+"28": {
+"tier": "outer",
+"op": "GAS"
+},
+"29": {
+"tier": "outer",
+"op": "GAS"
+},
+"30": {
+"tier": "city",
+"op": "SBST"
+},
+"31": {
+"tier": "outer",
+"op": "GAS"
+},
+"32": {
+"tier": "city",
+"op": "SBST"
+},
+"33": {
+"tier": "city",
+"op": "SBST"
+},
+"34": {
+"tier": "outer",
+"op": "GAS"
+},
+"35": {
+"tier": "outer",
+"op": "SBST"
+},
+"36": {
+"tier": "city",
+"op": "GAS"
+},
+"37": {
+"tier": "outer",
+"op": "GAS"
+},
+"38": {
+"tier": "outer",
+"op": "GAS"
+},
+"39": {
+"tier": "outer",
+"op": "GAS"
+},
+"40": {
+"tier": "outer",
+"op": "SBST"
+},
+"41": {
+"tier": "outer",
+"op": "TT"
+},
+"42": {
+"tier": "outer",
+"op": "SBST"
+},
+"43": {
+"tier": "outer",
+"op": "GAS"
+},
+"44": {
+"tier": "outer",
+"op": "GAS"
+},
+"45": {
+"tier": "outer",
+"op": "SBST"
+},
+"46": {
+"tier": "outer",
+"op": "SBST"
+},
+"47": {
+"tier": "outer",
+"op": "SBST"
+},
+"48": {
+"tier": "outer",
+"op": "SBST"
+},
+"49": {
+"tier": "outer",
+"op": "TT"
+},
+"50": {
+"tier": "outer",
+"op": "SBST"
+},
+"51": {
+"tier": "city",
+"op": "SBST"
+},
+"52": {
+"tier": "outer",
+"op": "SBST"
+},
+"53": {
+"tier": "outer",
+"op": "SBST"
+},
+"54": {
+"tier": "city",
+"op": "SBST"
+},
+"55": {
+"tier": "outer",
+"op": "SBST"
+},
+"56": {
+"tier": "city",
+"op": "SBST"
+},
+"57": {
+"tier": "city",
+"op": "SBST"
+},
+"58": {
+"tier": "outer",
+"op": "SBST"
+},
+"59": {
+"tier": "outer",
+"op": "SBST"
+},
+"60": {
+"tier": "outer",
+"op": "SBST"
+},
+"61": {
+"tier": "city",
+"op": "SMRT"
+},
+"62": {
+"tier": "outer",
+"op": "GAS"
+},
+"63": {
+"tier": "city",
+"op": "SBST"
+},
+"64": {
+"tier": "city",
+"op": "SBST"
+},
+"65": {
+"tier": "city",
+"op": "GAS"
+},
+"66": {
+"tier": "outer",
+"op": "TT"
+},
+"67": {
+"tier": "outer",
+"op": "SMRT"
+},
+"68": {
+"tier": "outer",
+"op": "GAS"
+},
+"69": {
+"tier": "outer",
+"op": "GAS"
+},
+"70": {
+"tier": "city",
+"op": "SBST"
+},
+"71": {
+"tier": "outer",
+"op": "SBST"
+},
+"72": {
+"tier": "outer",
+"op": "GAS"
+},
+"73": {
+"tier": "outer",
+"op": "SBST"
+},
+"74": {
+"tier": "outer",
+"op": "SBST"
+},
+"75": {
+"tier": "city",
+"op": "SMRT"
+},
+"76": {
+"tier": "outer",
+"op": "SBST"
+},
+"77": {
+"tier": "city",
+"op": "TT"
+},
+"78": {
+"tier": "outer",
+"op": "TT"
+},
+"79": {
+"tier": "outer",
+"op": "TT"
+},
+"80": {
+"tier": "city",
+"op": "SBST"
+},
+"81": {
+"tier": "outer",
+"op": "GAS"
+},
+"82": {
+"tier": "outer",
+"op": "GAS"
+},
+"83": {
+"tier": "outer",
+"op": "GAS"
+},
+"85": {
+"tier": "outer",
+"op": "GAS"
+},
+"86": {
+"tier": "outer",
+"op": "SBST"
+},
+"87": {
+"tier": "outer",
+"op": "SBST"
+},
+"88": {
+"tier": "outer",
+"op": "SBST"
+},
+"89": {
+"tier": "outer",
+"op": "SBST"
+},
+"90": {
+"tier": "outer",
+"op": "SBST"
+},
+"91": {
+"tier": "outer",
+"op": "SBST"
+},
+"92": {
+"tier": "outer",
+"op": "SBST"
+},
+"93": {
+"tier": "outer",
+"op": "SBST"
+},
+"94": {
+"tier": "outer",
+"op": "SBST"
+},
+"95": {
+"tier": "outer",
+"op": "SBST"
+},
+"96": {
+"tier": "outer",
+"op": "TT"
+},
+"97": {
+"tier": "city",
+"op": "TT"
+},
+"98": {
+"tier": "outer",
+"op": "TT"
+},
+"99": {
+"tier": "outer",
+"op": "SBST"
+},
+"100": {
+"tier": "city",
+"op": "SBST"
+},
+"101": {
+"tier": "outer",
+"op": "SBST"
+},
+"102": {
+"tier": "outer",
+"op": "SBST"
+},
+"103": {
+"tier": "outer",
+"op": "SBST"
+},
+"104": {
+"tier": "outer",
+"op": "GAS"
+},
+"105": {
+"tier": "city",
+"op": "SBST"
+},
+"106": {
+"tier": "city",
+"op": "TT"
+},
+"107": {
+"tier": "city",
+"op": "SBST"
+},
+"109": {
+"tier": "outer",
+"op": "SBST"
+},
+"110": {
+"tier": "outer",
+"op": "SMRT"
+},
+"111": {
+"tier": "city",
+"op": "SBST"
+},
+"112": {
+"tier": "outer",
+"op": "SBST"
+},
+"113": {
+"tier": "outer",
+"op": "SBST"
+},
+"114": {
+"tier": "outer",
+"op": "SBST"
+},
+"115": {
+"tier": "outer",
+"op": "SBST"
+},
+"116": {
+"tier": "outer",
+"op": "SBST"
+},
+"117": {
+"tier": "outer",
+"op": "SBST"
+},
+"118": {
+"tier": "outer",
+"op": "GAS"
+},
+"119": {
+"tier": "outer",
+"op": "GAS"
+},
+"120": {
+"tier": "city",
+"op": "SBST"
+},
+"121": {
+"tier": "city",
+"op": "SBST"
+},
+"122": {
+"tier": "city",
+"op": "SBST"
+},
+"123": {
+"tier": "city",
+"op": "SBST"
+},
+"124": {
+"tier": "city",
+"op": "SBST"
+},
+"125": {
+"tier": "outer",
+"op": "SBST"
+},
+"127": {
+"tier": "outer",
+"op": "GAS"
+},
+"129": {
+"tier": "outer",
+"op": "GAS"
+},
+"130": {
+"tier": "city",
+"op": "SBST"
+},
+"131": {
+"tier": "city",
+"op": "SBST"
+},
+"132": {
+"tier": "city",
+"op": "SBST"
+},
+"133": {
+"tier": "city",
+"op": "SBST"
+},
+"134": {
+"tier": "outer",
+"op": "SBST"
+},
+"135": {
+"tier": "outer",
+"op": "SBST"
+},
+"136": {
+"tier": "outer",
+"op": "GAS"
+},
+"137": {
+"tier": "outer",
+"op": "SBST"
+},
+"138": {
+"tier": "outer",
+"op": "SBST"
+},
+"139": {
+"tier": "city",
+"op": "SBST"
+},
+"140": {
+"tier": "outer",
+"op": "SBST"
+},
+"141": {
+"tier": "outer",
+"op": "SBST"
+},
+"142": {
+"tier": "outer",
+"op": "SBST"
+},
+"143": {
+"tier": "city",
+"op": "TT"
+},
+"145": {
+"tier": "city",
+"op": "SBST"
+},
+"146": {
+"tier": "outer",
+"op": "SBST"
+},
+"147": {
+"tier": "city",
+"op": "SBST"
+},
+"150": {
+"tier": "outer",
+"op": "SBST"
+},
+"151": {
+"tier": "outer",
+"op": "SBST"
+},
+"153": {
+"tier": "outer",
+"op": "SBST"
+},
+"154": {
+"tier": "outer",
+"op": "SBST"
+},
+"155": {
+"tier": "outer",
+"op": "SBST"
+},
+"156": {
+"tier": "outer",
+"op": "SBST"
+},
+"157": {
+"tier": "outer",
+"op": "SBST"
+},
+"158": {
+"tier": "outer",
+"op": "SBST"
+},
+"159": {
+"tier": "outer",
+"op": "SBST"
+},
+"160": {
+"tier": "outer",
+"op": "SBST"
+},
+"161": {
+"tier": "outer",
+"op": "SBST"
+},
+"162": {
+"tier": "outer",
+"op": "SBST"
+},
+"163": {
+"tier": "outer",
+"op": "SBST"
+},
+"165": {
+"tier": "outer",
+"op": "SBST"
+},
+"166": {
+"tier": "city",
+"op": "SBST"
+},
+"167": {
+"tier": "city",
+"op": "TT"
+},
+"168": {
+"tier": "outer",
+"op": "SBST"
+},
+"169": {
+"tier": "outer",
+"op": "TT"
+},
+"170": {
+"tier": "outer",
+"op": "SBST"
+},
+"171": {
+"tier": "outer",
+"op": "TT"
+},
+"172": {
+"tier": "outer",
+"op": "SMRT"
+},
+"173": {
+"tier": "outer",
+"op": "TT"
+},
+"174": {
+"tier": "city",
+"op": "SBST"
+},
+"175": {
+"tier": "city",
+"op": "SBST"
+},
+"176": {
+"tier": "city",
+"op": "SMRT"
+},
+"177": {
+"tier": "outer",
+"op": "TT"
+},
+"178": {
+"tier": "outer",
+"op": "SMRT"
+},
+"179": {
+"tier": "outer",
+"op": "SMRT"
+},
+"180": {
+"tier": "outer",
+"op": "SMRT"
+},
+"181": {
+"tier": "outer",
+"op": "SBST"
+},
+"182": {
+"tier": "outer",
+"op": "SMRT"
+},
+"183": {
+"tier": "outer",
+"op": "TT"
+},
+"184": {
+"tier": "outer",
+"op": "SMRT"
+},
+"185": {
+"tier": "outer",
+"op": "SMRT"
+},
+"186": {
+"tier": "city",
+"op": "SBST"
+},
+"187": {
+"tier": "outer",
+"op": "SMRT"
+},
+"188": {
+"tier": "city",
+"op": "SMRT"
+},
+"189": {
+"tier": "outer",
+"op": "TT"
+},
+"190": {
+"tier": "city",
+"op": "SMRT"
+},
+"191": {
+"tier": "outer",
+"op": "SBST"
+},
+"192": {
+"tier": "outer",
+"op": "SMRT"
+},
+"193": {
+"tier": "outer",
+"op": "SMRT"
+},
+"194": {
+"tier": "outer",
+"op": "SMRT"
+},
+"195": {
+"tier": "city",
+"op": "SBST"
+},
+"196": {
+"tier": "city",
+"op": "SBST"
+},
+"197": {
+"tier": "city",
+"op": "SBST"
+},
+"198": {
+"tier": "outer",
+"op": "SBST"
+},
+"199": {
+"tier": "outer",
+"op": "SMRT"
+},
+"200": {
+"tier": "outer",
+"op": "SBST"
+},
+"201": {
+"tier": "outer",
+"op": "SBST"
+},
+"222": {
+"tier": "outer",
+"op": "SBST"
+},
+"228": {
+"tier": "outer",
+"op": "SBST"
+},
+"229": {
+"tier": "outer",
+"op": "SBST"
+},
+"230": {
+"tier": "outer",
+"op": "SBST"
+},
+"231": {
+"tier": "outer",
+"op": "SBST"
+},
+"232": {
+"tier": "outer",
+"op": "SBST"
+},
+"235": {
+"tier": "outer",
+"op": "SBST"
+},
+"238": {
+"tier": "outer",
+"op": "SBST"
+},
+"240": {
+"tier": "outer",
+"op": "SMRT"
+},
+"241": {
+"tier": "outer",
+"op": "SMRT"
+},
+"242": {
+"tier": "outer",
+"op": "SMRT"
+},
+"246": {
+"tier": "outer",
+"op": "SMRT"
+},
+"247": {
+"tier": "outer",
+"op": "SMRT"
+},
+"248": {
+"tier": "outer",
+"op": "SMRT"
+},
+"249": {
+"tier": "outer",
+"op": "SMRT"
+},
+"251": {
+"tier": "outer",
+"op": "SMRT"
+},
+"252": {
+"tier": "outer",
+"op": "SMRT"
+},
+"253": {
+"tier": "outer",
+"op": "SMRT"
+},
+"254": {
+"tier": "outer",
+"op": "SMRT"
+},
+"255": {
+"tier": "outer",
+"op": "SMRT"
+},
+"257": {
+"tier": "outer",
+"op": "SMRT"
+},
+"258": {
+"tier": "outer",
+"op": "SMRT"
+},
+"261": {
+"tier": "outer",
+"op": "SBST"
+},
+"262": {
+"tier": "outer",
+"op": "SBST"
+},
+"265": {
+"tier": "outer",
+"op": "SBST"
+},
+"268": {
+"tier": "outer",
+"op": "SBST"
+},
+"269": {
+"tier": "outer",
+"op": "SBST"
+},
+"272": {
+"tier": "outer",
+"op": "SBST"
+},
+"273": {
+"tier": "outer",
+"op": "SBST"
+},
+"282": {
+"tier": "outer",
+"op": "TT"
+},
+"284": {
+"tier": "outer",
+"op": "TT"
+},
+"285": {
+"tier": "outer",
+"op": "TT"
+},
+"291": {
+"tier": "outer",
+"op": "GAS"
+},
+"292": {
+"tier": "outer",
+"op": "GAS"
+},
+"293": {
+"tier": "outer",
+"op": "GAS"
+},
+"296": {
+"tier": "outer",
+"op": "GAS"
+},
+"298": {
+"tier": "outer",
+"op": "GAS"
+},
+"300": {
+"tier": "outer",
+"op": "SMRT"
+},
+"301": {
+"tier": "outer",
+"op": "SMRT"
+},
+"302": {
+"tier": "outer",
+"op": "SMRT"
+},
+"307": {
+"tier": "outer",
+"op": "SMRT"
+},
+"315": {
+"tier": "outer",
+"op": "SBST"
+},
+"317": {
+"tier": "outer",
+"op": "SBST"
+},
+"324": {
+"tier": "outer",
+"op": "SBST"
+},
+"325": {
+"tier": "outer",
+"op": "SBST"
+},
+"329": {
+"tier": "outer",
+"op": "SBST"
+},
+"333": {
+"tier": "outer",
+"op": "TT"
+},
+"334": {
+"tier": "outer",
+"op": "TT"
+},
+"335": {
+"tier": "outer",
+"op": "TT"
+},
+"354": {
+"tier": "outer",
+"op": "GAS"
+},
+"358": {
+"tier": "outer",
+"op": "GAS"
+},
+"359": {
+"tier": "outer",
+"op": "GAS"
+},
+"371": {
+"tier": "outer",
+"op": "SBST"
+},
+"372": {
+"tier": "outer",
+"op": "SBST"
+},
+"374": {
+"tier": "outer",
+"op": "SBST"
+},
+"381": {
+"tier": "outer",
+"op": "GAS"
+},
+"382": {
+"tier": "outer",
+"op": "GAS"
+},
+"384": {
+"tier": "outer",
+"op": "GAS"
+},
+"386": {
+"tier": "outer",
+"op": "GAS"
+},
+"400": {
+"tier": "city",
+"op": "SBST"
+},
+"403": {
+"tier": "outer",
+"op": "GAS"
+},
+"502": {
+"tier": "city",
+"op": "SMRT"
+},
+"506": {
+"tier": "outer",
+"op": "SBST"
+},
+"518": {
+"tier": "city",
+"op": "GAS"
+},
+"800": {
+"tier": "outer",
+"op": "SBST"
+},
+"801": {
+"tier": "outer",
+"op": "TT"
+},
+"803": {
+"tier": "outer",
+"op": "SBST"
+},
+"804": {
+"tier": "outer",
+"op": "SBST"
+},
+"805": {
+"tier": "outer",
+"op": "SBST"
+},
+"806": {
+"tier": "outer",
+"op": "SBST"
+},
+"807": {
+"tier": "outer",
+"op": "SBST"
+},
+"811": {
+"tier": "outer",
+"op": "SBST"
+},
+"812": {
+"tier": "outer",
+"op": "SBST"
+},
+"851": {
+"tier": "city",
+"op": "SBST"
+},
+"852": {
+"tier": "outer",
+"op": "SBST"
+},
+"853": {
+"tier": "outer",
+"op": "TT"
+},
+"854": {
+"tier": "outer",
+"op": "TT"
+},
+"855": {
+"tier": "city",
+"op": "TT"
+},
+"856": {
+"tier": "outer",
+"op": "TT"
+},
+"857": {
+"tier": "city",
+"op": "TT"
+},
+"858": {
+"tier": "outer",
+"op": "TT"
+},
+"859": {
+"tier": "outer",
+"op": "TT"
+},
+"860": {
+"tier": "outer",
+"op": "SBST"
+},
+"861": {
+"tier": "outer",
+"op": "TT"
+},
+"870": {
+"tier": "outer",
+"op": "TT"
+},
+"871": {
+"tier": "outer",
+"op": "TT"
+},
+"872": {
+"tier": "outer",
+"op": "TT"
+},
+"882": {
+"tier": "outer",
+"op": "TT"
+},
+"883": {
+"tier": "outer",
+"op": "TT"
+},
+"900": {
+"tier": "outer",
+"op": "SMRT"
+},
+"901": {
+"tier": "outer",
+"op": "SMRT"
+},
+"902": {
+"tier": "outer",
+"op": "SMRT"
+},
+"903": {
+"tier": "outer",
+"op": "SMRT"
+},
+"904": {
+"tier": "outer",
+"op": "SMRT"
+},
+"911": {
+"tier": "outer",
+"op": "SMRT"
+},
+"912": {
+"tier": "outer",
+"op": "SMRT"
+},
+"913": {
+"tier": "outer",
+"op": "SMRT"
+},
+"920": {
+"tier": "outer",
+"op": "SMRT"
+},
+"922": {
+"tier": "outer",
+"op": "SMRT"
+},
+"925": {
+"tier": "outer",
+"op": "SMRT"
+},
+"927": {
+"tier": "outer",
+"op": "SMRT"
+},
+"941": {
+"tier": "outer",
+"op": "TT"
+},
+"945": {
+"tier": "outer",
+"op": "TT"
+},
+"947": {
+"tier": "outer",
+"op": "TT"
+},
+"950": {
+"tier": "outer",
+"op": "SMRT"
+},
+"960": {
+"tier": "city",
+"op": "SMRT"
+},
+"961": {
+"tier": "city",
+"op": "SMRT"
+},
+"962": {
+"tier": "outer",
+"op": "SMRT"
+},
+"963": {
+"tier": "city",
+"op": "TT"
+},
+"964": {
+"tier": "outer",
+"op": "SMRT"
+},
+"965": {
+"tier": "outer",
+"op": "TT"
+},
+"966": {
+"tier": "outer",
+"op": "TT"
+},
+"967": {
+"tier": "outer",
+"op": "SMRT"
+},
+"969": {
+"tier": "outer",
+"op": "TT"
+},
+"970": {
+"tier": "city",
+"op": "SMRT"
+},
+"972": {
+"tier": "city",
+"op": "SMRT"
+},
+"973": {
+"tier": "outer",
+"op": "SMRT"
+},
+"974": {
+"tier": "outer",
+"op": "SMRT"
+},
+"975": {
+"tier": "outer",
+"op": "SMRT"
+},
+"976": {
+"tier": "outer",
+"op": "SMRT"
+},
+"979": {
+"tier": "outer",
+"op": "SMRT"
+},
+"980": {
+"tier": "city",
+"op": "TT"
+},
+"981": {
+"tier": "outer",
+"op": "TT"
+},
+"983": {
+"tier": "outer",
+"op": "SMRT"
+},
+"984": {
+"tier": "outer",
+"op": "TT"
+},
+"985": {
+"tier": "outer",
+"op": "SMRT"
+},
+"990": {
+"tier": "outer",
+"op": "TT"
+},
+"991": {
+"tier": "outer",
+"op": "SMRT"
+},
+"992": {
+"tier": "outer",
+"op": "TT"
+},
+"993": {
+"tier": "outer",
+"op": "SBST"
+},
+"982E": {
+"tier": "city",
+"op": "SMRT"
+}
+}
+}

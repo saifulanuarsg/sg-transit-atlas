@@ -1,5 +1,11 @@
 # Working notes for Claude
 
+- **This repo runs [Spec Kit](https://github.com/github/spec-kit).** `.specify/memory/constitution.md`
+  is the authority; these notes are its operational restatement. A behaviour change goes
+  `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement`, leaving a
+  `specs/<NNN>-<short-name>/` directory behind. Chores (typo fixes, regenerating
+  `data/qc_report.json`) may skip it — say so in the PR. Amend the constitution with
+  `/speckit-constitution`, never by hand, and keep this file consistent with it.
 - **Simulation → user stories → verify.** Whenever a change is driven by simulating a user
   (persona walkthrough, UX critique), first write the user stories to `docs/user-stories.md`
   under a dated simulation heading, then build, then check every story against the real app

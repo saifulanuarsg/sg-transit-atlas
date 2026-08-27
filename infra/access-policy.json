@@ -1,0 +1,49 @@
+{
+  "_readme": "Cloudflare Access policy for the Singapore Transit Atlas. This file is the intended state; infra/apply_access.py pushes it to Cloudflare. Spec: specs/011-access-email-login/. NOT ACTIVE — see docs/access-setup.md.",
+
+  "hostname": "REPLACE_ME.example.com",
+  "_hostname_note": "The atlas hostname, e.g. atlas.moovemedia.com.sg. Must be a zone on Cloudflare DNS. Access CANNOT be placed in front of a github.io address, so a custom domain is a hard prerequisite. apply_access.py refuses to run while this is the placeholder.",
+
+  "application": {
+    "name": "Singapore Transit Atlas",
+    "type": "self_hosted",
+    "path": "",
+    "_path_note": "Empty path = the entire hostname, data/*.json included. Gating only part of the app would leave the data files publicly fetchable, which is the whole point of doing this at the edge rather than in index.html.",
+
+    "session_duration": "24h",
+    "_session_note": "A working day. Long enough that a seller signs in once each morning rather than mid-pitch; short enough that a borrowed laptop is not open indefinitely.",
+
+    "allowed_idps": ["onetimepin"],
+    "_idp_note": "One-time PIN: Cloudflare emails a code to the address entered. No account, no directory, no invitation — which is what makes FR-003 (a new starter gets in unaided) achievable.",
+
+    "auto_redirect_to_identity": true,
+    "app_launcher_visible": false
+  },
+
+  "policies": [
+    {
+      "name": "Moove Media staff",
+      "decision": "allow",
+      "include": [
+        { "email_domain": { "domain": "moovemedia.com.sg" } }
+      ],
+      "_include_note": "The domain is the credential, and it is the only one Moove uses — confirmed 2026-08-27. Local part is irrelevant: v_msaifulma@moovemedia.com.sg matches like any other. There are no subdomain variants to admit, so this single rule is the whole policy."
+    },
+    {
+      "name": "Named exceptions",
+      "decision": "allow",
+      "include": [
+        { "email": { "email": [] } }
+      ],
+      "_exceptions_note": "Individual addresses admitted one at a time — a contractor, an agency partner. Kept as its own policy so admitting one person never means widening the domain rule. Empty by design; every addition should be reviewable in a diff with a reason in the commit message.",
+      "skip_if_empty": true
+    }
+  ],
+
+  "service_tokens": [
+    {
+      "name": "atlas-headless-checks",
+      "_note": "Non-interactive path for the project's headless verification, so activating this does not break Principle V's evidence requirement. Cloudflare issues a client ID and secret on creation; they go in the environment of whatever runs the checks and NEVER in this repository."
+    }
+  ]
+}

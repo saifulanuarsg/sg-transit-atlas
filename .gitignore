@@ -1,0 +1,14 @@
+# Agent-local state. `specify init` warns that agent folders can accumulate
+# credentials and auth tokens, so keep the shared workflow (.claude/skills/)
+# tracked and everything machine-local out.
+.claude/settings.local.json
+.claude/*.local.json
+.claude/.credentials.json
+
+# Python bytecode from tools/
+__pycache__/
+*.py[cod]
+
+# OS noise
+.DS_Store
+Thumbs.db
