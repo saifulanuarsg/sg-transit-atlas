@@ -32,6 +32,31 @@ it. See the Constitution Check in [`plan.md`](../specs/011-access-email-login/pl
 4. **A decision on subdomain addresses.** The policy currently admits `@moovemedia.com.sg` and
    *not* `@sg.moovemedia.com.sg` or similar. If those are real, add them before activating.
 
+## Choosing the origin
+
+Access sits in front of whatever serves the files, so the hostname is the only thing it cares
+about. `infra/access-policy.json` names a hostname and never an origin — moving the origin later
+does not touch this feature.
+
+**GitHub Pages (today).** Point the hostname at Pages, confirm the atlas loads through it, then
+activate. Nothing else to do.
+
+**Vercel.** The atlas is already static with no build step, so a Vercel project needs no
+configuration — import the repo, set the framework preset to "Other", leave the build command
+empty and the output directory as the repository root. Add `vercel.json` only if you later want
+explicit cache headers on `data/*.json`; it is not required to deploy.
+
+One thing to get right if you put Cloudflare in front of Vercel: set the Cloudflare SSL mode to
+**Full (strict)** and add the custom domain in Vercel *without* using Vercel's own nameservers —
+the domain stays on Cloudflare DNS, proxied. Getting this wrong produces a redirect loop rather
+than a clear error, which is why it is worth checking first. Verify the site loads over the
+custom hostname *before* enabling Access, so that if something breaks you know which of the two
+changes caused it.
+
+Do not enable Vercel's own Deployment Protection alongside Access. It gates on Vercel team
+membership, which is a different question from the one this policy asks, and stacking them means
+two sign-ins for the same visit.
+
 ## Activate
 
 ```bash
