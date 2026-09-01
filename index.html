@@ -15,7 +15,10 @@
   html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
     font-family:system-ui,"Inter",-apple-system,sans-serif;font-size:14px}
   #app{display:flex;height:100vh;overflow:hidden;position:relative}
-  #map{flex:1;min-width:0;background:#e8ecef;position:relative}
+  /* This background is the sea behind the map, and the export fills its frame with the same
+     colour. It must stay in step with GROUND.water in the basemap section below — change one
+     without the other and every exported frame gets a seam at its edge. */
+  #map{flex:1;min-width:0;background:#dfe7ec;position:relative}
   .leaflet-container{font:inherit}
 
   /* ---------- left rail: selected-route list with stop drill-down ---------- */
@@ -746,25 +749,52 @@ L.control.zoom({position:'bottomright'}).addTo(map);
 // distance scale beside the zoom buttons (metric only; tracks the zoom level live)
 L.control.scale({position:'bottomright',imperial:false,maxWidth:120}).addTo(map);
 // ---------------- basemap ----------------
-// CARTO Positron. As of 2026 their raster tiles need a key: without one they come back
-// stamped "API KEY REQUIRED", which is what a client sees in a pitch.
+// Two basemaps, and the key decides which. See docs/basemap.md.
 //
-// This is a PUBLISHABLE, client-side, domain-restrictable key — the same category as a
-// Google Maps JS key, not a secret. It belongs in this file. Get one free at
-// carto.com (5M tiles/month; a gated tool for ~50 sellers will not come close).
+// CARTO Positron is the designed-for look and stays the intended production basemap: sixteen
+// route colours were chosen to read against it, and every deck and screenshot already shipped
+// uses it. As of 2026 their raster tiles need a key — without one, CARTO returns every tile
+// stamped "API KEY REQUIRED", which is what a client would see in a pitch.
 //
-// Positron is kept rather than swapped because the whole map is designed on it: sixteen
-// route colours have to read against the basemap, and every deck and screenshot already
-// shipped uses this look. The keyless alternatives all cost more than a key does —
-// see docs/basemap.md.
+// So without a key we do not ask for those tiles at all. The fallback below draws Singapore
+// from the planning-area polygons this app already loads: no watermark, no third-party host,
+// no street detail. That trade is deliberate — for a transit-reach tool the routes, stops and
+// places carry the argument, and a clean island beats a stamped one. Paste a key and the
+// streets come back; nothing else needs changing.
+//
+// The key is PUBLISHABLE, client-side and domain-restrictable — the same category as a Google
+// Maps JS key, not a secret. It belongs in this file. Free at carto.com (5M tiles/month; a
+// gated tool for ~50 sellers will not come close).
 const BASEMAP_KEY='';   // <-- paste the CARTO API key here
-const baseTiles=L.tileLayer(
-  'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'+(BASEMAP_KEY?'?api_key='+BASEMAP_KEY:''),{
+// Positron-like ground for the keyless fallback. Land stays near-white so the route palette,
+// the choropleth ramps and the density surface all keep their contrast over it; water is a
+// touch bluer than the land so the coastline reads at island zoom. GROUND.water is the same
+// colour as #map's CSS background and the export's frame fill — keep all three in step.
+const GROUND={land:'#f7f8f9',water:'#dfe7ec',edge:'#e6eaed'};
+// Which basemap is showing. Declared here, beside the key that decides it, because tileerror
+// below can flip it before the planning areas have finished loading — buildLand honours it.
+let landWanted=!BASEMAP_KEY;
+// null when no key is set — that is what stops a watermarked tile ever being requested.
+// Everything touching baseTiles must therefore null-check it (see tilesReady).
+const baseTiles=BASEMAP_KEY?L.tileLayer(
+  'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?api_key='+BASEMAP_KEY,{
   attribution:'&copy; OpenStreetMap contributors &copy; CARTO',maxZoom:19,
-  crossOrigin:'anonymous'}).addTo(map);   // enables canvas export of the basemap
-if(!BASEMAP_KEY)console.warn('[atlas] No basemap key set — CARTO will watermark every tile '
-  +'"API KEY REQUIRED". Fix: get a free key at carto.com and set BASEMAP_KEY in index.html. '
+  crossOrigin:'anonymous'}).addTo(map):null;   // crossOrigin enables canvas export of the basemap
+if(!BASEMAP_KEY)console.info('[atlas] No basemap key set — drawing the built-in Singapore '
+  +'silhouette instead of CARTO tiles. No watermark, but no street detail either. '
+  +'For streets: get a free key at carto.com and set BASEMAP_KEY in index.html. '
   +'See docs/basemap.md.');
+// A key that is revoked, expired, over quota, or a host that is simply unreachable, answers
+// with an error rather than a tile. Drop to the silhouette instead of leaving a grey void.
+// (A host that answers 200 with a watermarked image cannot be caught here — see docs/basemap.md.)
+if(baseTiles)baseTiles.once('tileerror',()=>{
+  console.warn('[atlas] CARTO tiles failed to load — falling back to the built-in silhouette. '
+    +'Check the BASEMAP_KEY in index.html, or the network. See docs/basemap.md.');
+  map.removeLayer(baseTiles);useLand(true);});
+// keyless ground: below every content pane, above Leaflet's own tile pane (200). Never a click
+// target — the transparent choropleth fill above it stays the area drill-down's hit area.
+map.createPane('land').style.zIndex=250;
+map.getPane('land').style.pointerEvents='none';
 ['areas','bus','poi'].forEach((p,i)=>{map.createPane(p).style.zIndex=380+i*20;});
 map.createPane('areaHatch').style.zIndex=382;   // second property layer, hatched over the choropleth fill
 map.getPane('areaHatch').style.pointerEvents='none';
@@ -782,6 +812,7 @@ map.getPane('label').style.pointerEvents='none';
 // name tooltip opens when the cursor is near the dot, not only dead on it
 const rBus=L.canvas({pane:'bus',padding:.4}), rPoi=L.canvas({pane:'poi',padding:.4,tolerance:6}),
       rRail=L.canvas({pane:'rail',padding:.4}),
+      rLand=L.canvas({pane:'land',padding:.5}),     // canvas, like the layers below, so export captures it
       rAreas=L.canvas({pane:'areas',padding:.5}),   // canvas (not default SVG) so choropleth exports aligned
       rHatch=L.canvas({pane:'areaHatch',padding:.5}),
       rSel=L.canvas({pane:'sel',padding:.5});   // canvas (not SVG) so image export captures the selection
@@ -873,6 +904,7 @@ Promise.all([
     S.baseline=(areas.meta||{}).baseline||{};}
   (net?net.services:[]).forEach(s=>S.svcs[s.n]=s);
   POI.forEach((p,i)=>S.pois[p.key]=pois[i]);
+  buildLand();   // ground first, so everything below draws over it rather than under it
   buildBus();buildRailLines();buildPois();buildHubs();buildStations();buildAreas();buildPanel();
   renderSelection();   // show the empty-state onboarding hint
   applyHash();         // then restore a shared / reopened pitch from the URL
@@ -1402,6 +1434,26 @@ function buildPanel(){
       +`passed every consistency check (${(S.qcReport.checks||[]).join(' · ')}) on <b>${S.qcReport.verified_on}</b>. `
       +`The checker re-runs on every data edit; this line comes from its report.`;
     const src=$('srcList');if(src)src.prepend(li);}
+}
+// ---------------- keyless ground ----------------
+// The same planning-area polygons the choropleth uses, drawn once as plain land over water.
+// It gets its own layer rather than sharing S._areaLayer because paintChoro rewrites that
+// layer's fill and stroke on every shading change — ground drawn on it would vanish the first
+// time a seller shaded a segment. Same twin-layer trick S._hatchLayer already uses.
+function buildLand(){
+  if(S._landLayer||!S.areas)return;   // no areas file: the map still runs, just over plain water
+  S._landLayer=L.geoJSON(S.areas,{pane:'land',renderer:rLand,interactive:false,
+    // the ground is the basemap while it is showing, so it carries the basemap's credit
+    attribution:'Planning areas &copy; URA Master Plan 2019',
+    style:{color:GROUND.edge,weight:1,opacity:1,fillColor:GROUND.land,fillOpacity:1}});
+  if(landWanted)S._landLayer.addTo(map);
+}
+// Show or hide the ground. Safe to call before the data has loaded — the flag is what buildLand
+// reads when the polygons eventually arrive.
+function useLand(on){
+  landWanted=on;
+  if(!S._landLayer)return;
+  if(on)S._landLayer.addTo(map);else map.removeLayer(S._landLayer);
 }
 // Scenario 4 — feature-flagged Demographics layer. Disabled until data is present;
 // FEATURES.demographics flips true when planning-area data loads, enabling the overlay.
@@ -2766,6 +2818,7 @@ function selectionBounds(){
 }
 // wait until the basemap tiles for the current view have loaded (with a fallback)
 function tilesReady(){
+  if(!baseTiles)return Promise.resolve();   // keyless: the ground is already drawn, nothing to wait for
   return new Promise(res=>{let done=false;const fin=()=>{if(done)return;done=true;res();};
     baseTiles.once('load',()=>setTimeout(fin,140));
     setTimeout(fin,1800);});
@@ -2806,7 +2859,7 @@ async function captureFramed(w,h,opts){
     if(S.selected.length)placeTermini();}
   let canvas;
   try{
-    canvas=await html2canvas(el,{useCORS:true,backgroundColor:'#e8ecef',scale:2,logging:false,
+    canvas=await html2canvas(el,{useCORS:true,backgroundColor:GROUND.water,scale:2,logging:false,
       width:w,height:h,
       ignoreElements:n=>n.classList&&(n.classList.contains('leaflet-control-zoom')
         ||n.classList.contains('leaflet-control-scale')

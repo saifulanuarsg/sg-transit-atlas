@@ -233,3 +233,37 @@ agreed with itself and was stale. Eleven malls, not twelve.
 | US-63 | As a seller pitching Frasers, I want their whole footprint in one layer — the offices and the business park are the same client and the same meeting as the malls. | ✅ | Layer renamed **Frasers** and widened to 16 spaces: the 11 FRx malls plus Frasers Tower, 51 Cuppage Road, Central Plaza, Alexandra Point and Alexandra Technopark, each carrying a `type` (Retail / Commercial). **Cross Street Exchange is not in it** — FLCT divested it to PAG on 31 Mar 2022; the two-question rule (is it theirs, is it open?) caught it before it shipped. Headless: 16/16 load, picker reads "✓ Frasers · 16". |
 | US-64 | As a seller, I want the smallest buy that reaches every Frasers space — "how many buses do I actually need?" is the question I get asked, and I should not answer it by eye. | ✅ | **Five services reach all 16: 65, 963, 39, 107, 38.** Derived in-app by greedy set cover (most still-uncovered spaces first, ties by boardings) and shipped as an **All 16** package button. Proven minimal offline: an exhaustive search over every 4-service combination, seeded on Eastpoint Mall (the scarcest space, only 9 services reach it), finds none. 65 alone carries 7 of the 16. |
 | US-65 | As a reviewer, I want the minimum buy in the audit doc too, not only as a button. | ✅ | `docs/frasers-assets.md` gains a "minimum buy" section listing each service and the spaces it brings in, plus the selection string. The app's derived set matches it exactly in a headless run. |
+
+---
+
+## 2026-09-01 · Bug: the map watermark blocking beta testing (015-basemap-watermark)
+
+Not a persona simulation — a defect report from beta testing: *"need the watermark on the map to
+disappear."* Stories were written to [`specs/015-basemap-watermark/spec.md`](../specs/015-basemap-watermark/spec.md)
+before the build, per Principle I, and checked against the running app after it.
+
+The watermark is CARTO's, burnt into every tile because `BASEMAP_KEY` was empty and their raster
+basemaps went key-gated in 2026. No CARTO key exists and none can be obtained from this
+environment, so the fix is not "set the key" (still the intended end state, still one line) but
+"stop having a watermarked state": keyless, the app no longer requests those tiles and draws
+Singapore from the planning-area polygons it already loads.
+
+Evidence: three headless Chromium suites against `python3 -m http.server`, with Leaflet,
+html2canvas and pptxgen served locally rather than from the blocked CDNs. **32/32 checks passed.**
+
+| # | Story | Status | Check |
+|---|-------|--------|-------|
+| US-66 | As a beta tester, I want to open the atlas and see a map, not a third party's error notice tiled across it — right now I cannot give feedback on the product because the product is covered in writing. | ✅ | Headless keyless run: **0 requests to any watermarking tile host** (the assertion is zero requests, not "no watermark visible"), `baseTiles === null`, 0 tile `<img>` in the DOM, land layer on the map. Screenshot: Singapore in near-white over bluish water with district hairlines, no text anywhere on the map. |
+| US-67 | As a tester, I want it clean at every zoom, not just the opening view. | ✅ | Panned and zoomed z11 → z13 → z15 → z17; still 0 tile-host requests, no tearing or misregistration against the routes. Four screenshots. |
+| US-68 | As a seller, I want everything I actually sell with — routes, stops, rail, places, shading, density — to stay legible over the new ground. | ✅ | 5 routes + population choropleth + labels: all distinguishable on screenshot. Ground survived a choropleth repaint (`#f7f8f9`/1 intact) — it has its own layer precisely because `paintChoro` rewrites the area layer's style. Area tooltips and the area drill-down still work: `elementFromPoint` at map centre returns the Leaflet overlay, not the land pane. |
+| US-69 | As a seller, I want the export — the thing I actually send — to carry the new basemap and not break. | ✅ | JPG exported through the app's own button (165 KB) and deck through its own button (170 KB). Exported frame samples as **both** land and water pixels, so the ground is genuinely in the image. `toDataURL` succeeds → canvas not tainted. Removing the cross-origin tile layer makes this strictly safer than before. |
+| US-70 | As a seller, I don't want export to get slower because the basemap changed. | ✅ | `tilesReady()` resolves in **0.1 ms** keyless (it previously waited on a tile `load` event with an 1800 ms timeout — with no tile layer that timeout would have been paid in full on every export). |
+| US-71 | As the owner, I want the streets back the moment I have a key, with no other edit. | ⚠ | **Cannot be verified against real CARTO here** — the proxy blocks every tile host, so a keyed run renders grey and is indistinguishable from a failure. What *was* verified, with the tile host stubbed: a key builds the tile layer, 20 tiles render, the ground is built but **not** added (exactly one basemap showing), the URL is the unchanged `light_all` URL with `?api_key=` appended, the attribution reverts to the CARTO credit, and the export is 100% tile pixels and untainted. That is our wiring proven; that a real CARTO key is accepted by CARTO is a browser check, listed in [`docs/basemap.md`](basemap.md). |
+| US-72 | As the owner, I don't want a key that has expired, been revoked or run out of quota to leave testers looking at a grey void. | ✅ | Junk key against the blocked host: tiles error → tile layer removed → ground shown, no uncaught errors. Screenshot. **Known limit, stated rather than hidden:** a host answering `200 OK` with a watermarked *image* cannot be caught this way — which is why the keyless path makes no request at all. |
+| US-73 | As the owner, I want to know the atlas is running on the fallback; as a tester or client, I want no sign of it. | ✅ | Console carries an informational line naming the trade and the one-line fix. Nothing about basemap mode appears on the map, in the sidebar, in the sources strip, or in any export — confirmed on every screenshot and in both exported files. |
+| US-74 | As the owner, I don't want the atlas to break outright if the file the ground is drawn from ever fails to load. | ✅ | `planning_areas.geojson` aborted at the network layer: app still starts, no uncaught JS exception, no ground built, routes still select and draw over plain water, demographics disables itself as it already did, and export still produces an untainted canvas with no basemap at all. Screenshot. |
+
+**Not claimed:** that the fallback is as good as Positron. It is not — it has no streets, and at
+street zoom that is a real loss for a seller drilling into one stop's surroundings. It is better
+than a watermark, it is reversible in one line, and the trade is written down in
+[`docs/basemap.md`](basemap.md) rather than left for someone to discover.
