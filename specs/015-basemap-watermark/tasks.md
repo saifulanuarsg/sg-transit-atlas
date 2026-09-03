@@ -76,7 +76,27 @@ watermark text anywhere, land distinguishable from water, and zero requests to
 - [x] T013 [US1] Verify Scenario 2: pan and zoom island → street level, confirming no watermark at any zoom and no tearing or misregistration against the routes
 - [x] T014 [US1] Verify Scenario 3: with routes selected, place layers on, a segment shaded and the density surface on, confirm everything stays legible over the ground and that area tooltips and the area drill-down still work — the ground must not have stolen the pointer (FR-003, INV-3)
 
-**Checkpoint**: The reported bug is fixed and beta testing can resume. This is the MVP.
+**Checkpoint**: The watermark is gone. **Reviewed as "I still need a map" — correct: a
+coastline with nothing inside it is not a basemap. Phase 3a closes that.**
+
+---
+
+## Phase 3a: User Story 1 continued — the ground has to be a *map* (Priority: P1) 🎯
+
+**Goal**: The keyless basemap carries the road network, so a viewer can orient on it with no
+other layer switched on.
+
+**Independent Test**: Load keyless, look at the island view with nothing toggled, and confirm
+expressways, town centres and the built-up grain are legible.
+
+- [x] T029 [US1] Add `GROUND.road` and draw one non-interactive hairline polyline per service from `S.svcs` into the `land` pane inside `buildLand()` in `index.html`, holding them in `S._roadLines` (FR-002a)
+- [x] T030 [US1] Turn `S._landLayer` into an `L.layerGroup` of coastline + roads so `useLand()` still switches the whole ground with one call, and so a missing `planning_areas.geojson` leaves the roads drawing rather than killing the ground (FR-010, INV-2)
+- [x] T031 [US1] Add `roadWeight()` and `gateRoads()` in `index.html` and hook `gateRoads` to `zoomend` beside `gateLabels`, banding stroke width .7 px (z≤11) → 3.6 px (z≥17), guarded on the previous width so a pan inside a band restyles nothing (FR-002b)
+- [x] T032 [US1] Tune the road colour against real renders — `#dbe0e4` was too faint at street zoom, darkened to `#d2dadf` (FR-003)
+- [x] T033 [US1] Verify the ground reads as a map at z12/z14/z16 and that selected routes still dominate it; measure the re-render cost of the added geometry
+- [x] T034 [US1] Confirm the keyed path still hides the roads as well as the coastline — 0 of 612 road lines on the map when tiles work (INV-1)
+
+**Checkpoint**: The keyless basemap is a map, not an outline.
 
 ---
 
@@ -146,6 +166,7 @@ never ✅ (Principle V).
 - [x] T026 Verify Scenario 7 from [quickstart.md](./quickstart.md): temporarily rename `data/planning_areas.geojson`, reload, and confirm the app still starts with no uncaught exception (FR-010, INV-2)
 - [x] T027 Run `python3 tools/qc_poi.py` to confirm the tree is clean — expected to pass untouched, since no `data/poi_*.json` is edited (Principle III)
 - [x] T028 Re-read the diff adversarially before committing: null-safety on every new `baseTiles` reference, no leftover hardcoded `#e8ecef`, no pane z-order regression, no change to the keyed path
+- [x] T035 Re-run all three verification suites after the road work and fix the assertions the change legitimately invalidated (the ground is a group now, and a missing areas file no longer means no ground)
 
 ---
 

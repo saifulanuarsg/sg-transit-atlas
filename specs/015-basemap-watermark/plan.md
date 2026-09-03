@@ -8,9 +8,10 @@
 
 Every tile is stamped `API KEY REQUIRED` because CARTO key-gated their raster basemaps and
 `BASEMAP_KEY` is empty. No key exists and none can be obtained from this environment, so the fix
-is to give the product an acceptable appearance without one: draw Singapore's landmass from
-`data/planning_areas.geojson` — already fetched on every load — as a permanent ground layer, and
-only add the CARTO tile layer when a key is present. Keyless, the map is a clean island; keyed,
+is to give the product an acceptable appearance without one: draw Singapore from two files
+already fetched on every load — the coastline from `data/planning_areas.geojson` and the road
+network from `data/network.json`, whose 612 services are all road-aligned — and only add the
+CARTO tile layer when a key is present. Keyless, the map is a clean, orientable island; keyed,
 the tiles cover the ground and nothing about the product changes. Falling back on `tileerror`
 means a revoked, expired or over-quota key, or an unreachable host, lands on the same clean
 ground instead of a grey void.
@@ -22,8 +23,9 @@ ground instead of a grey void.
 **Primary Dependencies**: Leaflet (map, panes, canvas renderers, GeoJSON), html2canvas (JPG
 export), pptxgen (deck export). All CDN-loaded at runtime; none added or changed by this feature.
 
-**Storage**: Static JSON under `data/`. This feature adds no file and reads
-`data/planning_areas.geojson`, which `index.html:862` already fetches.
+**Storage**: Static JSON under `data/`. This feature adds no file. It reads
+`data/planning_areas.geojson` (coastline) and `data/network.json` (road geometry), both already
+fetched by `index.html`'s single load promise.
 
 **Testing**: No test runner exists. Verification is `python3 -m http.server` plus
 Playwright/Chromium screenshots, with the results recorded as story evidence in
@@ -34,14 +36,16 @@ Playwright/Chromium screenshots, with the results recorded as story evidence in
 
 **Project Type**: Single self-contained client-side application.
 
-**Performance Goals**: One added canvas layer of 55 MultiPolygons, drawn once at load. Must not
+**Performance Goals**: One added canvas layer holding 55 MultiPolygons plus 612 polylines
+(33,025 points), drawn once at load and restyled only when the zoom band changes. Must not
 delay first paint or add a network request.
 
 **Constraints**: No build step, no backend, no new dependency, no vendored asset (Principle II).
 The development proxy blocks every tile host, so the keyed path cannot be exercised here.
 
-**Scale/Scope**: Roughly 25 lines of `index.html`: one pane, one layer, one conditional around
-the tile layer, one guard in `tilesReady`, and two colour constants.
+**Scale/Scope**: Roughly 45 lines of `index.html`: one pane, one layer group (coastline + 612
+road polylines), one conditional around the tile layer, one guard in `tilesReady`, a
+zoom-banded restyle hooked to `zoomend`, and four colour constants.
 
 ## Constitution Check
 
@@ -96,10 +100,12 @@ index.html                     # the entire application — the only file this f
 ├── :18                        #   #map background  → becomes the shared water colour
 ├── :740-767                   #   map + basemap    → land pane, ground layer, conditional tiles
 ├── :862                       #   data load        → planning_areas.geojson (already fetched)
+├── :911                       #   zoomend          → gateRoads joins gateLabels
 ├── :1409 buildAreas()         #   choropleth layer → untouched; ground gets its own layer
 └── :2768 tilesReady()         #   export gate      → guarded for the no-tile-layer case
 
-data/planning_areas.geojson    # read as the land silhouette; NOT modified
+data/planning_areas.geojson    # read as the coastline; NOT modified
+data/network.json              # read as the road skeleton (612 aligned services); NOT modified
 docs/basemap.md                # updated: records the fallback alongside the key fix
 docs/user-stories.md           # story evidence for this simulation (Principle V)
 ```
@@ -115,16 +121,19 @@ A new `land` pane sits below every existing pane, so nothing already drawn chang
 
 | Pane | z-index | Contents |
 |---|---|---|
-| **`land` (new)** | **250** | **Singapore land silhouette — the keyless ground** |
+| **`land` (new)** | **250** | **The keyless ground: land silhouette + road skeleton** |
 | Leaflet `tilePane` | 200 | CARTO tiles — *only created when a key is set* |
 | `areas` | 380 | choropleth fill (existing) |
 | `areaHatch` | 382 | hatch overlay (existing) |
 | `heat` | 385 | density surface (existing) |
 | `bus` / `poi` / `rail` / `sel` / `pill` / `poiIcon` / `label` | 400–495 | existing |
 
-The ground is drawn at 250 rather than inside `tilePane` so it is above the tile pane's own
-backdrop but below every content pane. When a key is set, opaque tiles at 200… **would sit
-below it** — so the ground layer is only *added to the map* when there is no working tile layer.
+The ground is one `L.layerGroup`: the coastline polygons plus one polyline per service. Both go
+in the same pane at 250 — above the tile pane's own backdrop, below every content pane.
+
+Note the consequence of that ordering: tiles live at 200, *below* the ground, so a ground left
+on the map would cover them. The ground is therefore only *added to the map* when there is no
+working tile layer.
 Keyed, it is built but not added; on `tileerror` it is added and the tile layer removed. This
 keeps one code path for "what the ground looks like" and one switch for "is it showing".
 
@@ -141,6 +150,16 @@ from one constant so they cannot drift and put a seam at the edge of an export.
 for `'none'`. Ground drawn on it would vanish the first time a user shaded a segment. The ground
 gets its own non-interactive layer over the same geometry — the same twin-layer pattern
 `S._hatchLayer` already uses.
+
+### Roads
+
+612 services, all `aligned: true`, 33,025 points. Bus routes follow real roads, so their union
+is a road network — the thing that turns an outline into a map. Feeders are included: they are
+the estate streets the trunks skip. Stroke weight is banded by zoom (.7 px at z≤11 → 3.6 px at
+z≥17) on `zoomend`, guarded so a pan within a band restyles nothing.
+
+They are ground, so they are non-interactive: the user-facing trunk-services layer keeps its own
+hover, click and styling, and is unaffected.
 
 ### Export
 

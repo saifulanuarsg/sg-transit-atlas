@@ -267,3 +267,34 @@ html2canvas and pptxgen served locally rather than from the blocked CDNs. **32/3
 street zoom that is a real loss for a seller drilling into one stop's surroundings. It is better
 than a watermark, it is reversible in one line, and the trade is written down in
 [`docs/basemap.md`](basemap.md) rather than left for someone to discover.
+
+### Follow-up (user: "I still need a map")
+
+Fair, and the right call. The first build removed the watermark and left a coastline — Singapore's
+outline over water, with nothing inside it. That is a silhouette, not a basemap: you cannot find
+Orchard on it, tell a reservoir from a town centre, or place a stop in its surroundings. Removing
+the watermark was necessary and not sufficient.
+
+The fix was already in the repository. `data/network.json` holds 612 bus services and **every one
+is road-aligned** — 33,025 polyline points that follow real roads, not stop-to-stop chords. Bus
+routes run on roads, so their union *is* the road network. Drawn pale and thin underneath
+everything, from a file the app already fetches on every load, it turns the outline into a map at
+no watermark, no key and no third-party host.
+
+Evidence: same three headless suites, re-run after the change. **33/33 checks passed** (up from
+32 — a new road assertion). Two assertions were corrected rather than the code: the ground is a
+layer group now, and a missing `planning_areas.geojson` no longer means no ground.
+
+| # | Story | Status | Check |
+|---|-------|--------|-------|
+| US-75 | As a tester, I want to look at the map with nothing switched on and know where I am — the outline told me the shape of Singapore and nothing else. | ✅ | All **612** road-aligned services drawn into the ground, 612/612 on the map, **33,025 points**. Screenshots at z12/z14/z16: expressways, town-centre grain, the CBD, the Jurong industrial grid and Changi all legible with zero layers toggled. |
+| US-76 | As a seller, I want the ground roads to stay out of the way of the routes I am actually pitching. | ✅ | Ground roads are `#d2dadf` hairlines under every content pane and non-interactive; screenshot with 5 routes + population shading shows the selection clearly dominant. The user-facing "Trunk bus services" layer keeps its own styling, hover and click — untouched. |
+| US-77 | As a seller, I want it readable both when I'm looking at the whole island and when I'm zoomed into one stop. | ✅ | Stroke banded by zoom (.7 px at z≤11 → 3.6 px at z≥17) on `zoomend`, guarded so a pan inside a band restyles nothing. A single 1 px width was verified too faint at z16; a single 2.6 px smeared the island view. First colour `#dbe0e4` was also too faint at street zoom and was darkened after looking at renders. |
+| US-78 | As the owner, I don't want the richer ground to slow the tool down or bloat the export. | ✅ | 5 full re-renders of the whole ground: **543 ms** (~109 ms each). `captureFramed` 1281–1829 ms, unchanged from the 1542 ms measured before the roads existed. No new file, no new fetch, no new dependency. |
+| US-79 | As the owner, I don't want the roads showing through once I have a real basemap. | ✅ | Keyed run with the tile host stubbed: **0 of 612** road lines on the map, ground built but not added, exported frame 100% tile pixels. |
+| US-80 | As the owner, I want the map to survive one of its two data files failing, not just neither. | ✅ | `planning_areas.geojson` aborted: roads still draw over plain water, map still orientable, routes still select, export still untainted, no uncaught exception. The ground now degrades in parts rather than all at once. |
+
+**Still not claimed:** that this is Positron. It is road *centrelines* only — no street names, no
+buildings, no parks or inland water, and no minor road the bus network never touches. A seller
+zoomed into one stop sees the road pattern but cannot read off a street name. Setting
+`BASEMAP_KEY` remains the one-line switch to the real thing.

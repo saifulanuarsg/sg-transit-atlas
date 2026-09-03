@@ -4,7 +4,7 @@ The atlas has two basemaps, and `BASEMAP_KEY` decides which one you get.
 
 | `BASEMAP_KEY` | What renders | Street detail |
 |---|---|---|
-| empty (today) | the built-in Singapore silhouette | no |
+| empty (today) | the built-in Singapore map — coastline + road network | centrelines only, no names |
 | a valid CARTO key | CARTO Positron, as originally designed | yes |
 
 Spec: [`specs/015-basemap-watermark/`](../specs/015-basemap-watermark/spec.md)
@@ -25,19 +25,28 @@ does not request those tiles, and draws its own ground instead.
 
 ## The keyless fallback
 
-Singapore's landmass, drawn from `data/planning_areas.geojson` — the 55 URA Master Plan 2019
-planning areas the app already fetches on every load for the demographics layers. Near-white
-land, slightly bluer water, hairline district edges.
+Singapore, drawn from two files the app already fetches on every load:
+
+- **The coastline** from `data/planning_areas.geojson` — the 55 URA Master Plan 2019 planning
+  areas the demographics layers use. Near-white land, slightly bluer water, hairline edges.
+- **The road network** from `data/network.json`. All 612 bus services in it are road-aligned
+  (33,025 polyline points), so their union *is* the road network — drawn pale and thin under
+  everything else. Feeders are included on purpose: they are the estate streets the trunk
+  services skip, and they are what makes an estate look like an estate. Stroke width scales with
+  zoom, because a width that reads at street level is a smear at island level.
+
+The coastline alone was tried first and was not enough — it told you the shape of Singapore and
+nothing else. Roads are what make it a map you can orient on.
 
 - No third-party host, no key, no new file, no new dependency, no build step.
 - The routes, rail lines, stops, places, shading and density surface all draw over it unchanged.
 - Export captures it like anything else — and with no cross-origin tile in the frame, the
   tainted-canvas risk that would break export outright goes away entirely.
 
-**What you lose: streets.** At street zoom the fallback has ground and nothing else, so a seller
-drilling into one stop's surroundings sees less than they would with Positron. That is the whole
-cost, and it is why this is a fallback rather than a replacement. For a transit-reach tool the
-routes, stops and places carry the argument, and a clean island beats a stamped one.
+**What you lose: everything that is not a road centreline.** No street names, no buildings, no
+parks or water bodies inland, and no minor road the bus network never touches. A seller drilling
+into one stop's surroundings sees the road pattern but cannot read off a street name. That is the
+cost, and it is why this is a fallback rather than a replacement.
 
 It also catches failure, not just absence: if a key is set and the tiles come back an error —
 revoked, expired, over quota, host unreachable — the app drops to the same ground rather than
@@ -102,19 +111,22 @@ Verifiable in the sandbox, and covered by the headless run recorded in
 1. Load with `BASEMAP_KEY=''` and confirm the island renders with no watermark, and that the
    network log shows **zero** requests to `basemaps.cartocdn.com`. Zero requests is the
    assertion — "no watermark visible" is weaker.
-2. Zoom island → street level and confirm it stays clean at every zoom.
-3. Export a JPG and a deck and confirm the silhouette is in the image.
+2. Confirm you can orient on it with no layers on: expressways, town centres, the CBD.
+3. Zoom island → street level and confirm roads stay legible at both ends without swamping the
+   route colours.
+4. Export a JPG and a deck and confirm the ground is in the image.
 
 ### Keyed
 
 **This cannot be checked from the Claude Code sandbox** — its proxy blocks every tile host, so
 the map renders grey and a keyed run is indistinguishable from a failure. Check it in a browser:
 
-1. Set `BASEMAP_KEY`, reload, and confirm the streets are back and the silhouette is gone.
+1. Set `BASEMAP_KEY`, reload, and confirm the real streets are back and the built-in ground —
+   coastline *and* roads — is gone.
 2. Zoom to street level over a town centre and confirm tiles stay sharp.
 3. Export a JPG with routes selected and confirm the basemap is *in* the image — if export
    silently produces a blank or route-only image, the basemap is tainting the canvas.
-4. Clear the key, reload, and confirm you are back on the silhouette.
+4. Clear the key, reload, and confirm you are back on the built-in ground.
 
 Until a key is set the console carries an informational line naming the trade and the fix, so
 running on the fallback is visible to whoever maintains the tool — and to nobody else. Nothing

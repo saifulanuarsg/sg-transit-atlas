@@ -23,16 +23,20 @@ them) and rewrite the `<script>`/`<link>` tags in a scratch copy of `index.html`
 2. Load `http://localhost:8000/` and wait for the loading overlay to clear.
 3. Screenshot the map viewport at the default island view.
 
-**Expected**: Singapore's landmass in near-white over bluish-grey water, quiet district
-hairlines, no text of any kind on the map. **No network request to `basemaps.cartocdn.com`** —
-check the browser's network log; zero requests is the assertion, not "no watermark visible".
+**Expected**: Singapore's landmass in near-white over bluish-grey water, the road network
+drawn as pale hairlines, quiet district edges, no text of any kind on the map. You should be
+able to point at the CBD, an expressway and a town centre without any layer switched on. **No
+network request to `basemaps.cartocdn.com`** — check the browser's network log; zero requests is
+the assertion, not "no watermark visible".
 
 ## Scenario 2 — No watermark at any zoom (US1)
 
 Zoom from the island view to street level over a town centre, panning across the island.
 
-**Expected**: no watermark at any zoom; the coastline stays crisp; no tearing, seams, or
-misregistration between the ground and the routes drawn over it.
+**Expected**: no watermark at any zoom; the coastline stays crisp; roads stay legible at both
+ends of the range — a mesh at island zoom, distinct lines at street zoom — without ever becoming
+a smear that swallows the route colours; no tearing, seams, or misregistration between the
+ground and the routes drawn over it.
 
 ## Scenario 3 — Content stays legible over the ground (US1, FR-003)
 
@@ -40,7 +44,8 @@ Select a multi-route set, enable two or three place layers, shade a demographic 
 turn on the competitive-density surface.
 
 **Expected**: route colours, place markers, labels, choropleth fill and the heat surface all
-remain distinguishable against the ground. Area tooltips still open on hover and the area
+remain distinguishable against the ground, and the selected routes clearly dominate the pale
+road underlay rather than competing with it. Area tooltips still open on hover and the area
 drill-down still opens on click — the ground must not have stolen the pointer (INV-3).
 
 ## Scenario 4 — Export carries the ground (User Story 3, P2)
@@ -81,9 +86,11 @@ The reported bug — no key at all — is fully covered, because no request is m
 
 Temporarily rename `data/planning_areas.geojson` and reload.
 
-**Expected**: the app still starts; routes, stops, rail and places all render over plain water;
-no uncaught exception in the console. The demographics features disable themselves, as they
-already do today when that file is absent.
+**Expected**: the app still starts; the **road skeleton still draws** (it comes from
+`network.json`, a different file) so the map remains orientable over plain water; routes, stops,
+rail and places all render; no uncaught exception in the console. The demographics features
+disable themselves, as they already do today when that file is absent. Repeat with
+`data/network.json` renamed instead: the coastline should still draw.
 
 ## Recording the evidence
 

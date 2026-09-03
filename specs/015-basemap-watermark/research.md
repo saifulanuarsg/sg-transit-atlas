@@ -76,6 +76,42 @@ Named honestly rather than buried: at street zoom the fallback has nothing to sh
 so a seller drilling into one stop's surroundings sees less than they do today. That is the
 cost, and it is why this is a fallback and not a replacement.
 
+## R4a — A coastline is not a map (FR-002a)
+
+**Decision**: Draw all 612 services' road-aligned geometry from `data/network.json` as a
+hairline underlay, beneath everything else, as part of the same ground.
+
+**Rationale**: The first build shipped the coastline alone and was reviewed as *"I still need a
+map"* — correctly. An outline tells you the shape of Singapore and nothing else: you cannot find
+Orchard, tell a reservoir from a town centre, or place a stop in its surroundings. For a tool a
+seller opens in front of a client, that is not a basemap.
+
+The network file already holds what is needed. Checked against it: 612 services, **every one
+`aligned: true`**, 33,025 polyline points in total — these follow real roads, not straight-line
+chords between stops. Feeders are included deliberately: they are the residential streets the
+trunk services skip, and they are what fills in the estates. Drawn faint and thin, they give the
+street structure the tiles would have, from a file already fetched on every load.
+
+**Honest about what it is not**: road *centrelines* only — no buildings, no street names, no
+minor road the bus network never touches. It is a street skeleton, not Positron.
+
+**Alternatives considered**:
+- *Rail lines and stops only* — rejected: far too sparse to orient by.
+- *Reusing the existing trunk-services layer* — rejected: that layer is a user-facing toggle
+  with its own styling, hover and click behaviour, off by default and covering only the 293
+  trunks. The ground must be always-on, non-interactive, and include feeders.
+
+## R4b — One stroke width does not work (FR-002b)
+
+**Decision**: Scale road weight with zoom — .7 px at z≤11 up to 3.6 px at z≥17 — restyled on
+`zoomend`, and only when the band actually changes.
+
+**Rationale**: Measured on screenshots. At a single 1 px the island view is a legible mesh but
+z16 is nearly invisible; at a single 2.6 px z16 reads well but the island view becomes a smear
+that swallows the route colours. Banding by zoom is the same technique `gateLabels` already uses
+for hub and station labels. Guarding on the previous width keeps a pan from restyling 612
+polylines for no reason.
+
 ## R5 — Detecting a key that is set but not working (FR-006)
 
 **Decision**: Fall back on Leaflet's `tileerror`. Draw the land silhouette permanently
@@ -117,8 +153,8 @@ than burn the full 1.8 s on every export.
 
 ## R7 — Colours
 
-**Decision**: Land `#f7f8f9`, water `#dfe7ec`, area hairline `#e6eaed`. Water is defined once
-and shared by the `#map` CSS background and the html2canvas `backgroundColor`.
+**Decision**: Land `#f7f8f9`, water `#dfe7ec`, area hairline `#e6eaed`, roads `#d2dadf`. Water
+is defined once and shared by the `#map` CSS background and the html2canvas `backgroundColor`.
 
 **Rationale**: Near-white land is what Positron does, and it is what the palette over it needs:
 sixteen route colours (`SELP`), five-step choropleth ramps, and a density heat surface all have
@@ -127,6 +163,10 @@ to stay distinguishable (FR-003). Water is pulled slightly bluer and darker than
 route colour to never be mistaken for one. The hairline gives quiet district texture that helps
 orientation without competing with the boundaries the choropleth draws at `#64748b` when a
 segment is shaded.
+
+Roads sit between the land and the area hairline in contrast: dark enough to read as roads on
+their own, light enough that the sixteen route colours drawn over them still dominate. The first
+value tried, `#dbe0e4`, was too faint at street zoom and was darkened after looking at renders.
 
 The single source of truth matters: `#map{background:#e8ecef}` (`index.html:18`) and
 html2canvas's `backgroundColor:'#e8ecef'` (`index.html:2809`) are the same colour written twice

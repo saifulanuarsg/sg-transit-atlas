@@ -770,7 +770,7 @@ const BASEMAP_KEY='';   // <-- paste the CARTO API key here
 // the choropleth ramps and the density surface all keep their contrast over it; water is a
 // touch bluer than the land so the coastline reads at island zoom. GROUND.water is the same
 // colour as #map's CSS background and the export's frame fill — keep all three in step.
-const GROUND={land:'#f7f8f9',water:'#dfe7ec',edge:'#e6eaed'};
+const GROUND={land:'#f7f8f9',water:'#dfe7ec',edge:'#e6eaed',road:'#d2dadf'};
 // Which basemap is showing. Declared here, beside the key that decides it, because tileerror
 // below can flip it before the planning areas have finished loading — buildLand honours it.
 let landWanted=!BASEMAP_KEY;
@@ -909,6 +909,7 @@ Promise.all([
   renderSelection();   // show the empty-state onboarding hint
   applyHash();         // then restore a shared / reopened pitch from the URL
   gateLabels();map.on('zoomend',gateLabels);
+  gateRoads();map.on('zoomend',gateRoads);   // ground roads thicken as you zoom in
   $('loading').remove();
 });
 
@@ -1436,17 +1437,49 @@ function buildPanel(){
     const src=$('srcList');if(src)src.prepend(li);}
 }
 // ---------------- keyless ground ----------------
-// The same planning-area polygons the choropleth uses, drawn once as plain land over water.
-// It gets its own layer rather than sharing S._areaLayer because paintChoro rewrites that
-// layer's fill and stroke on every shading change — ground drawn on it would vanish the first
-// time a seller shaded a segment. Same twin-layer trick S._hatchLayer already uses.
+// Two layers, both from data this app already loads, added and removed together:
+//
+//   1. Land — the planning-area polygons, as plain land over water. Its own layer rather than
+//      S._areaLayer's, because paintChoro rewrites that layer's fill and stroke on every
+//      shading change and ground drawn on it would vanish the first time a seller shaded a
+//      segment. Same twin-layer trick S._hatchLayer already uses.
+//   2. Roads — every service's road-aligned geometry as a hairline. A coastline alone is a
+//      silhouette, not a map: you cannot tell Orchard from Tampines on it. All 612 services
+//      (feeders included — they are the residential streets the trunks skip) trace the real
+//      road network, so drawn faint and thin they give the street structure the tiles would
+//      have, at no watermark and no third-party host.
+//
+// Both are hidden the moment real tiles are showing — Positron draws its own streets, and
+// these underneath would only muddy it.
 function buildLand(){
-  if(S._landLayer||!S.areas)return;   // no areas file: the map still runs, just over plain water
-  S._landLayer=L.geoJSON(S.areas,{pane:'land',renderer:rLand,interactive:false,
-    // the ground is the basemap while it is showing, so it carries the basemap's credit
-    attribution:'Planning areas &copy; URA Master Plan 2019',
-    style:{color:GROUND.edge,weight:1,opacity:1,fillColor:GROUND.land,fillOpacity:1}});
+  if(S._landLayer)return;
+  const parts=[];
+  if(S.areas)parts.push(L.geoJSON(S.areas,{pane:'land',renderer:rLand,interactive:false,
+    style:{color:GROUND.edge,weight:1,opacity:1,fillColor:GROUND.land,fillOpacity:1}}));
+  // one polyline per service; canvas-rendered, non-interactive, and under everything the app
+  // draws, so it never competes with a selection or steals a click from the trunk layer
+  S._roadLines=[];
+  Object.values(S.svcs).forEach(s=>{
+    if(!s.segs||!s.segs.length)return;
+    const ln=L.polyline(s.segs.map(toLL),{pane:'land',renderer:rLand,interactive:false,
+      color:GROUND.road,weight:roadWeight(),opacity:1});
+    S._roadLines.push(ln);parts.push(ln);
+  });
+  if(!parts.length)return;   // neither areas nor network loaded: the map runs over plain water
+  // the ground is the basemap while it is showing, so it carries the basemap's credit
+  S._landLayer=L.layerGroup(parts,{attribution:'Planning areas &copy; URA Master Plan 2019 · '
+    +'roads traced from LTA bus route alignments'});
   if(landWanted)S._landLayer.addTo(map);
+}
+// Roads are dense at island zoom and sparse at street zoom, so a single stroke width is either
+// a smear or invisible. Widen as you go in — the same trick gateLabels uses for labels.
+function roadWeight(){const z=map.getZoom();
+  return z<=11?.7:z<=13?1.1:z<=15?1.7:z<=16?2.6:3.6;}
+function gateRoads(){
+  if(!S._roadLines||!landWanted)return;
+  const w=roadWeight();
+  if(w===S._roadW)return;   // only restyle when the band actually changes
+  S._roadW=w;S._roadLines.forEach(l=>l.setStyle({weight:w}));
 }
 // Show or hide the ground. Safe to call before the data has loaded — the flag is what buildLand
 // reads when the polygons eventually arrive.
