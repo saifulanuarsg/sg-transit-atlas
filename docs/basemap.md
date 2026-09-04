@@ -4,8 +4,12 @@ The atlas has two basemaps, and `BASEMAP_KEY` decides which one you get.
 
 | `BASEMAP_KEY` | What renders | Street detail |
 |---|---|---|
-| empty (today) | the built-in Singapore map — coastline, road network, **town + street names** | names, but no buildings or minor roads |
-| a valid CARTO key | CARTO Positron, as originally designed | yes |
+| **a valid CARTO key — set since 2026-09-04** | CARTO Positron, as originally designed | yes |
+| empty | the built-in Singapore map — coastline, road network, town + street names | names, but no buildings or minor roads |
+
+**A key is set.** The atlas is on Positron. The built-in map below is now the *fallback* — what
+renders if the key is ever cleared, revoked, expired, over quota, or the tile host is unreachable.
+It is no longer what testers see day to day.
 
 Spec: [`specs/015-basemap-watermark/`](../specs/015-basemap-watermark/spec.md)
 
@@ -65,17 +69,20 @@ at all.
 
 ## Getting the streets back
 
+**Done — a key is set.** For the record, and for whoever has to replace it:
+
 **You do not need a CARTO account.** Request a key at
 [carto.com/basemaps/apikey](https://carto.com/basemaps/apikey) — anyone can, commercial use
 included, free to 5 million tile requests a month. (An earlier version of this page said "get a
-free account", which overstated the effort.) Then set it in `index.html`:
+free account", which overstated the effort, and that overstatement is part of why the key went
+unset for a week.) Then set it in `index.html`:
 
 ```js
-const BASEMAP_KEY='';   // <-- paste it here
+const BASEMAP_KEY='...';   // <-- here
 ```
 
-That is the only edit. Free tier is 5 million tile requests a month; a tool gated to ~50 sellers
-will not approach it. Clearing the key returns you to the silhouette, also with no other edit.
+That is the only edit. A tool gated to ~50 sellers will not approach 5M tiles/month. Clearing the
+key returns you to the built-in map, also with no other edit.
 
 ## Is the key a secret?
 

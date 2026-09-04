@@ -339,3 +339,16 @@ you do.
 **Also corrected:** `docs/basemap.md` said getting a CARTO key needs "a free account". It doesn't —
 anyone can request one at carto.com/basemaps/apikey, commercial use included. That overstatement
 is part of why the key never got set.
+
+### Follow-up (2026-09-04): the basemap key is set
+
+`BASEMAP_KEY` now carries a real CARTO key, so the atlas is on Positron and the built-in map
+built in 015/016 has become what it was always meant to be — the fallback, not the daily view.
+
+| # | Story | Status | Check |
+|---|-------|--------|-------|
+| US-71 | As the owner, I want the streets back the moment I have a key, with no other edit. | ⚠ | **Still ⚠, deliberately.** Setting the key was the only edit, and with the tile host stubbed everything wires correctly: tile layer on with 20 tiles, ground off, **0** built-in labels, attribution back to CARTO, URL is the unchanged `light_all` path with `?api_key=` carrying the real key, export untainted. But this environment's proxy blocks `basemaps.cartocdn.com`, so **whether CARTO accepts this particular key is not something I can test** — that is a browser check, and the story stays ⚠ until someone loads the live site and sees streets. |
+
+The failure path is what makes shipping this safe without that check: if the key is wrong, tiles
+error, and the app falls back to the built-in map from 015/016 rather than to a grey void or a
+watermark. The worst case is that the site looks exactly like it did an hour ago.
