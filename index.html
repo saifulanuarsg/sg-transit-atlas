@@ -447,6 +447,14 @@
   .stnlab{position:absolute;transform:translate(6px,-50%);white-space:nowrap;
     font:600 10px/1 system-ui;color:#0f766e;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff;
     transition:opacity .1s}
+  /* Ground labels — only drawn on the built-in basemap, where nothing else names anything.
+     A real tile basemap carries its own names, so these are removed rather than doubled up. */
+  .roadlab{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;pointer-events:none;
+    font:600 10px/1 system-ui;color:#5b6875;
+    text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff,0 0 3px #fff}
+  .townlab{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;pointer-events:none;
+    font:700 11px/1 system-ui;color:#94a3b8;letter-spacing:.06em;text-transform:uppercase;
+    text-shadow:0 0 4px #fff,0 0 4px #fff,0 0 4px #fff,0 0 4px #fff}
   /* planning-area names on a shaded choropleth — pill so they read on colour and survive export */
   .arealab{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;
     font:700 10.5px/1 system-ui;color:#0f172a;background:rgba(255,255,255,.82);
@@ -910,6 +918,8 @@ Promise.all([
   applyHash();         // then restore a shared / reopened pitch from the URL
   gateLabels();map.on('zoomend',gateLabels);
   gateRoads();map.on('zoomend',gateRoads);   // ground roads thicken as you zoom in
+  buildGroundLabels();                       // street + town names for the built-in ground
+  gateGroundLabels();map.on('moveend',gateGroundLabels);   // moveend covers pan *and* zoom
   $('loading').remove();
 });
 
@@ -1471,6 +1481,77 @@ function buildLand(){
     +'roads traced from LTA bus route alignments'});
   if(landWanted)S._landLayer.addTo(map);
 }
+// ---------------- ground labels ----------------
+// A map you cannot name anything on is only half a map: a seller looking at a stop needs to say
+// "along Bukit Timah Rd", and a tester at island zoom needs to know that blob is Tampines.
+//
+// Both names are already in the repo and were going unused. Every one of the 5,207 entries in
+// stops.json carries the road it stands on at index 3 ("New Bridge Rd", "Eu Tong Sen St") — 860
+// distinct roads, which is the street index of Singapore, positioned. Town names come from the
+// planning areas already drawn as the coastline.
+//
+// These exist only because the built-in ground has no names of its own. Set a key and CARTO
+// draws its own labels, so useLand() takes these away rather than stacking two sets of names.
+const LBL_ROAD=15, LBL_TOWN_IN=12, LBL_TOWN_OUT=15;   // road labels from z15; town names z12–14
+function buildGroundLabels(){
+  // one label point per ~6 stops along a road, so a long road is named more than once and
+  // there is usually one in view rather than a single label stranded miles away
+  const byRoad={};
+  for(const c in S.stops){const st=S.stops[c],rd=st[3];
+    if(rd)(byRoad[rd]=byRoad[rd]||[]).push(st);}
+  S._roadPts=[];
+  // rank = how many stops the road carries, a decent proxy for how major it is. When labels
+  // collide, the bigger road keeps its name.
+  Object.keys(byRoad).forEach(rd=>{const pts=byRoad[rd];
+    for(let i=0;i<pts.length;i+=6)
+      S._roadPts.push({lat:pts[i][1],lng:pts[i][0],name:rd,rank:pts.length});});
+  S._roadPts.sort((a,b)=>b.rank-a.rank);
+  // town names: the centre of each planning area, ranked by area so that when the dense middle
+  // of the island cannot fit them all, the big recognisable towns are the ones that survive
+  S._townPts=[];
+  if(S.areas&&S._areaLayer)S._areaLayer.eachLayer(l=>{
+    let c;try{c=l.getCenter();}catch(e){c=l.getBounds().getCenter();}
+    S._townPts.push({lat:c.lat,lng:c.lng,name:l.feature.properties.name,
+      rank:l.feature.properties.area_km2||0});});
+  S._townPts.sort((a,b)=>b.rank-a.rank);
+}
+// Greedy de-overlap in screen space: walk candidates best-first and drop any whose label box
+// would touch one already placed. Without this the CBD prints six town names on top of each
+// other — which is precisely where a seller is working.
+function placeLabels(cands,halfW,halfH,cap){
+  const placed=[],out=[];
+  for(const p of cands){
+    const pt=map.latLngToContainerPoint([p.lat,p.lng]);
+    if(placed.some(q=>Math.abs(q.x-pt.x)<halfW*2&&Math.abs(q.y-pt.y)<halfH*2))continue;
+    placed.push(pt);out.push(p);
+    if(out.length>=cap)break;
+  }
+  return out;
+}
+// Redraw the labels that belong to the current view. Called on move and zoom; cheap because it
+// only ever builds the handful that are actually on screen.
+function gateGroundLabels(){
+  if(S._groundLabels){map.removeLayer(S._groundLabels);S._groundLabels=null;}
+  if(!landWanted||!S._roadPts)return;            // real tiles are showing: they carry the names
+  const z=map.getZoom(),b=map.getBounds(),grp=L.layerGroup();
+  // a shaded choropleth draws its own area names (renderAreaLabels) — don't print them twice
+  const shading=S.segment&&S.segment!=='none';
+  if(z>=LBL_TOWN_IN&&z<LBL_TOWN_OUT&&!shading){
+    const vis=(S._townPts||[]).filter(p=>b.contains([p.lat,p.lng]));
+    placeLabels(vis,46,9,40).forEach(p=>grp.addLayer(labelMarker(p.lat,p.lng,p.name,'townlab')));
+  }
+  if(z>=LBL_ROAD){
+    // one label per road name per screen — a road with eight label points in view should be
+    // named once, not eight times — then de-overlap what is left.
+    const seen={},vis=[];
+    for(const p of S._roadPts){
+      if(!b.contains([p.lat,p.lng])||seen[p.name])continue;
+      seen[p.name]=1;vis.push(p);
+    }
+    placeLabels(vis,42,8,28).forEach(p=>grp.addLayer(labelMarker(p.lat,p.lng,p.name,'roadlab')));
+  }
+  if(grp.getLayers().length){grp.addTo(map);S._groundLabels=grp;}
+}
 // Roads are dense at island zoom and sparse at street zoom, so a single stroke width is either
 // a smear or invisible. Widen as you go in — the same trick gateLabels uses for labels.
 function roadWeight(){const z=map.getZoom();
@@ -1485,8 +1566,8 @@ function gateRoads(){
 // reads when the polygons eventually arrive.
 function useLand(on){
   landWanted=on;
-  if(!S._landLayer)return;
-  if(on)S._landLayer.addTo(map);else map.removeLayer(S._landLayer);
+  if(S._landLayer){if(on)S._landLayer.addTo(map);else map.removeLayer(S._landLayer);}
+  gateGroundLabels();   // the ground's names come and go with the ground
 }
 // Scenario 4 — feature-flagged Demographics layer. Disabled until data is present;
 // FEATURES.demographics flips true when planning-area data loads, enabling the overlay.
@@ -1528,6 +1609,7 @@ function areaMetric(p,seg){
 }
 function paintChoro(seg){
   updateExportCta();   // a shaded area is exportable on its own, even with no route selected
+  gateGroundLabels();  // shading draws its own area names — drop the ground's town names now
   // each shading source keeps its own legend so the three dropdowns don't overwrite each other
   ['choroLegend','mopLegend','txLegend'].forEach(id=>{const e=$(id);if(e)e.innerHTML='';});
   clearAreaLabels();
