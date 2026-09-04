@@ -298,3 +298,44 @@ layer group now, and a missing `planning_areas.geojson` no longer means no groun
 buildings, no parks or inland water, and no minor road the bus network never touches. A seller
 zoomed into one stop sees the road pattern but cannot read off a street name. Setting
 `BASEMAP_KEY` remains the one-line switch to the real thing.
+
+---
+
+## 2026-09-04 · Bug: "not good, we need a better map" (016-ground-labels)
+
+A second defect report on the same surface, and the sharper one. 015 removed the watermark and
+gave the keyless basemap a coastline and roads; the verdict was still *not good enough*, with the
+instruction *"the beta testers need it fast — think about their needs."*
+
+What testers actually needed was **names**. The built-in basemap named nothing: you could see the
+shape of a road but not which road, a built-up blob but not that it was Tampines. For a seller
+mid-pitch — "this route runs the length of Bukit Timah Road" — an unnamed map is a diagram.
+
+No tile provider was needed. Both name sets were already in the repo, unused: every one of the
+**5,207 entries in `data/stops.json` carries the road it stands on at index 3** (860 distinct
+roads — the street index of Singapore, already positioned and already loaded), and the 55 planning
+areas carry town names.
+
+Evidence: headless Chromium, CDN libraries served locally. **34/34 checks** across the three
+suites from 015 (up from 33 — one new assertion), plus the label-specific run below. **No ⚠ this
+time**: unlike 015, every story here is verifiable in this environment, the keyed case included.
+
+| # | Story | Status | Check |
+|---|-------|--------|-------|
+| US-81 | As a tester, I want to know which part of Singapore I'm looking at, with nothing switched on. | ✅ | 55 town points built; **39 drawn at z12** after de-overlap, zero overlapping. Screenshot: Sembawang, Woodlands, Yishun, Tampines, Jurong East, Queenstown, Bukit Merah all legible across the island. |
+| US-82 | As a seller, I want to name the road a route runs on, from the map. | ✅ | 1,285 road label points from 860 roads. At z16 over Orchard the map reads **Orchard Rd, Orchard Blvd, Orchard Turn, Scotts Rd, Paterson Rd, Grange Rd, Somerset Rd, Stevens Rd, Tomlinson Rd, Bt Timah Rd, Dunearn Rd, River Valley Rd** — correct for that location, checked against the real geography. |
+| US-83 | As a seller, I don't want a road named five times because five of its stops are on screen. | ✅ | One label per road name per view. z15 over Tampines: 28 labels, **0 duplicates**. |
+| US-84 | As a seller working the CBD — the densest, most valuable part of the island — I want the names legible, not stacked on each other. | ✅ | Greedy screen-space de-overlap, best-first by rank (towns by area, roads by stop count) so the survivors are the significant ones. Before: `TANGLIN NEWTON` / `ORCHARD ROCHOR` / `DOWNTOWN CORE OUTRAM MARINA SOUTH` printed over each other at z12 — caught on a screenshot, not in review. After: clean, 47 → 39 labels. |
+| US-85 | As a seller, I want the names in the file I send the client, not just on my screen. | ✅ | Real `captureFramed` render with routes 7 and 14: the exported frame reads Clementi, Queenstown, Tanglin, Orchard, River Valley, Downtown Core, Kallang, Geylang, Marine Parade, Bedok, Tampines with the two routes over it. No export code changed — the labels sit in the existing `label` pane the capture already snapshots. |
+| US-86 | As the owner, when I finally set a key I don't want two sets of street names fighting each other. | ✅ | Labels gated on the same `landWanted` flag as the ground itself, so nothing is even constructed on the keyed path. Verified with the tile host stubbed: **0** `.roadlab`/`.townlab` in the DOM. They also follow the ground back on a `tileerror` fallback. |
+| US-87 | As a seller shading by demographics, I don't want the town name printed twice. | ✅ | The choropleth already draws its own area names. Ground town names suppressed while shading, cleared on the spot via `paintChoro` rather than on the next pan: z12 + shading → **0 town labels, 48 area labels**. |
+| US-88 | As anyone using the map, I don't want it to get slower or lose a click. | ✅ | Only the screenful in view is built, on `moveend`; 1,285 candidates never all exist at once. Labels are `pointer-events:none` — every existing hover, tooltip and drill-down unchanged, confirmed by the 015 suites still passing 34/34. |
+
+**Still not claimed:** this is not Positron. No buildings, no parks or inland water, and no road
+the bus network never touches — road names come from bus-stop data, so a road with no stops has no
+name here. Setting `BASEMAP_KEY` remains the real fix, and this whole layer deletes itself when
+you do.
+
+**Also corrected:** `docs/basemap.md` said getting a CARTO key needs "a free account". It doesn't —
+anyone can request one at carto.com/basemaps/apikey, commercial use included. That overstatement
+is part of why the key never got set.

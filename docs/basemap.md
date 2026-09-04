@@ -4,7 +4,7 @@ The atlas has two basemaps, and `BASEMAP_KEY` decides which one you get.
 
 | `BASEMAP_KEY` | What renders | Street detail |
 |---|---|---|
-| empty (today) | the built-in Singapore map — coastline + road network | centrelines only, no names |
+| empty (today) | the built-in Singapore map — coastline, road network, **town + street names** | names, but no buildings or minor roads |
 | a valid CARTO key | CARTO Positron, as originally designed | yes |
 
 Spec: [`specs/015-basemap-watermark/`](../specs/015-basemap-watermark/spec.md)
@@ -35,18 +35,26 @@ Singapore, drawn from two files the app already fetches on every load:
   services skip, and they are what makes an estate look like an estate. Stroke width scales with
   zoom, because a width that reads at street level is a smear at island level.
 
-The coastline alone was tried first and was not enough — it told you the shape of Singapore and
-nothing else. Roads are what make it a map you can orient on.
+- **The names** — town names at island zoom, street names from z15. Both were already in the
+  repository and going unused: every one of the 5,207 entries in `data/stops.json` carries the
+  road it stands on at index 3 (860 distinct roads), and the planning areas carry town names.
+  Labels are de-overlapped in screen space, best-first, so the dense middle of the island keeps
+  the big recognisable names instead of printing six on top of each other.
+
+This was built in two rounds, and both rounds were wrong before they were right. The coastline
+alone told you the shape of Singapore and nothing else. Adding roads made it orientable but still
+unnamed — a diagram, not a map. Names are what closed it. See
+[`specs/016-ground-labels/`](../specs/016-ground-labels/spec.md).
 
 - No third-party host, no key, no new file, no new dependency, no build step.
 - The routes, rail lines, stops, places, shading and density surface all draw over it unchanged.
 - Export captures it like anything else — and with no cross-origin tile in the frame, the
   tainted-canvas risk that would break export outright goes away entirely.
 
-**What you lose: everything that is not a road centreline.** No street names, no buildings, no
-parks or water bodies inland, and no minor road the bus network never touches. A seller drilling
-into one stop's surroundings sees the road pattern but cannot read off a street name. That is the
-cost, and it is why this is a fallback rather than a replacement.
+**What you still lose.** No buildings, no parks or inland water, no POI names of CARTO's own, and
+no road the bus network never touches — roads are named from bus-stop data, so a road with no
+stops on it has no name here. For a bus-advertising tool that is the road network that matters,
+but it is not the whole road network. This remains a fallback, not a replacement.
 
 It also catches failure, not just absence: if a key is set and the tiles come back an error —
 revoked, expired, over quota, host unreachable — the app drops to the same ground rather than
@@ -57,7 +65,10 @@ at all.
 
 ## Getting the streets back
 
-Get a free key at [carto.com](https://carto.com) and set it in `index.html`:
+**You do not need a CARTO account.** Request a key at
+[carto.com/basemaps/apikey](https://carto.com/basemaps/apikey) — anyone can, commercial use
+included, free to 5 million tile requests a month. (An earlier version of this page said "get a
+free account", which overstated the effort.) Then set it in `index.html`:
 
 ```js
 const BASEMAP_KEY='';   // <-- paste it here
@@ -111,7 +122,8 @@ Verifiable in the sandbox, and covered by the headless run recorded in
 1. Load with `BASEMAP_KEY=''` and confirm the island renders with no watermark, and that the
    network log shows **zero** requests to `basemaps.cartocdn.com`. Zero requests is the
    assertion — "no watermark visible" is weaker.
-2. Confirm you can orient on it with no layers on: expressways, town centres, the CBD.
+2. Confirm you can orient on it with no layers on: town names at island zoom, street names from
+   z15, and no two labels overlapping.
 3. Zoom island → street level and confirm roads stay legible at both ends without swamping the
    route colours.
 4. Export a JPG and a deck and confirm the ground is in the image.
@@ -127,6 +139,10 @@ the map renders grey and a keyed run is indistinguishable from a failure. Check 
 3. Export a JPG with routes selected and confirm the basemap is *in* the image — if export
    silently produces a blank or route-only image, the basemap is tainting the canvas.
 4. Clear the key, reload, and confirm you are back on the built-in ground.
+
+**The built-in labels remove themselves when a key is set** — CARTO draws its own street and place
+names, and two sets stacked would be worse than either. Verified with the tile host stubbed: zero
+built-in labels on the keyed path.
 
 Until a key is set the console carries an informational line naming the trade and the fix, so
 running on the fallback is visible to whoever maintains the tool — and to nobody else. Nothing
