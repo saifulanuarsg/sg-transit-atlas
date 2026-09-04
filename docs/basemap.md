@@ -4,12 +4,12 @@ The atlas has two basemaps, and `BASEMAP_KEY` decides which one you get.
 
 | `BASEMAP_KEY` | What renders | Street detail |
 |---|---|---|
-| **a valid CARTO key — set since 2026-09-04** | CARTO Positron, as originally designed | yes |
-| empty | the built-in Singapore map — coastline, road network, town + street names | names, but no buildings or minor roads |
+| empty (today) | the built-in Singapore map — coastline, road network, town + street names | names, but no buildings or minor roads |
+| a valid CARTO key | CARTO Positron, as originally designed | yes |
 
-**A key is set.** The atlas is on Positron. The built-in map below is now the *fallback* — what
-renders if the key is ever cleared, revoked, expired, over quota, or the tile host is unreachable.
-It is no longer what testers see day to day.
+**A key was set on 2026-09-04 and reverted the same day: CARTO rejected it and answered with
+watermarked tiles.** See "When a key is rejected" below — that failure mode is the one this page
+had already flagged as undetectable, and it put the watermark straight back in front of testers.
 
 Spec: [`specs/015-basemap-watermark/`](../specs/015-basemap-watermark/spec.md)
 
@@ -62,10 +62,23 @@ but it is not the whole road network. This remains a fallback, not a replacement
 
 It also catches failure, not just absence: if a key is set and the tiles come back an error —
 revoked, expired, over quota, host unreachable — the app drops to the same ground rather than
-leaving a grey void. One case it cannot catch is a host that answers `200 OK` with a watermarked
-*image*, which is indistinguishable from a working tile without sampling pixels. That is exactly
-what CARTO does for an unkeyed request, which is why the keyless path does not make the request
-at all.
+leaving a grey void.
+
+## When a key is rejected
+
+**This happened, on 2026-09-04, and it is worth being blunt about.** A key was set, and CARTO
+answered every tile with **HTTP 200 and a watermarked image** rather than an error status. So
+`tileerror` never fired, the fallback never engaged, and the live site went straight back to
+`API KEY REQUIRED` tiled across the map — the exact bug the whole 015 feature existed to remove.
+
+This page had already named that case and dismissed it: "indistinguishable from a working tile
+without sampling pixels… rejected as disproportionate." That judgement was wrong. The case is not
+hypothetical, it is what CARTO actually does for any key it does not accept, and the cost of
+missing it is shipping the original defect to testers with no signal at all.
+
+The lesson for anyone setting a key here: **a key that is present is not a key that works, and the
+app cannot tell you the difference from the status code alone.** Load the live site and look
+before you trust it.
 
 ## Getting the streets back
 
