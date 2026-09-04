@@ -124,7 +124,19 @@ quota, all of which answer with an HTTP error.
 
 **Limit, stated plainly**: a host that answers `200 OK` with a *watermarked* image — which is
 exactly what CARTO does for an unkeyed request — is indistinguishable from a working tile
-without sampling pixels, so `tileerror` cannot catch it. This does not weaken the fix for the
+without sampling pixels, so `tileerror` cannot catch it.
+
+> **CORRECTION, 2026-09-04.** The paragraph below dismissed this case, and the dismissal was
+> wrong. A key was set on 2026-09-04; CARTO rejected it and answered every tile with 200 and a
+> stamped image. `tileerror` never fired, the fallback never engaged, and the live site went
+> straight back to `API KEY REQUIRED` across the map — FR-006's exact failure, shipped to beta
+> testers. Two things in the reasoning were wrong: this is not an edge case (it is what CARTO
+> does for *any* key it does not accept, which includes the expiry and quota cases FR-006 names),
+> and "the owner can see and fix it" assumed someone was watching the deploy. Nobody was.
+>
+> It is now detected: one probe of a single open-ocean tile at load, where a genuine Positron
+> tile is flat water and a stamped one is not. One request, off the render loop, only when a key
+> is set — not the per-tile readback dismissed below. FR-006 is now met as originally written. This does not weaken the fix for the
 reported bug: the no-key case never reaches the network at all, because the tile layer is not
 created. It means only that a *malformed* key which CARTO chooses to answer with watermarked
 tiles rather than a 401 would still show the watermark. Pixel-sampling every tile to detect it

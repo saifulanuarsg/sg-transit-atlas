@@ -352,3 +352,29 @@ built in 015/016 has become what it was always meant to be — the fallback, not
 The failure path is what makes shipping this safe without that check: if the key is wrong, tiles
 error, and the app falls back to the built-in map from 015/016 rather than to a grey void or a
 watermark. The worst case is that the site looks exactly like it did an hour ago.
+
+### Follow-up (2026-09-04): catching a rejected key
+
+The key set earlier was rejected by CARTO, and because CARTO answers a rejected key with **HTTP
+200 and a watermarked image** rather than an error, nothing caught it. The live site went back to
+`API KEY REQUIRED` across the map — the exact defect 015 existed to remove.
+
+015's FR-006 already required this ("MUST detect that the detailed basemap is not actually
+rendering… and fall back rather than display whatever the host returned"). The implementation
+only ever met it for failures that return an error status. The spec was right; the code was
+incomplete. `specs/015-basemap-watermark/research.md` R5 carries the correction.
+
+| # | Story | Status | Check |
+|---|-------|--------|-------|
+| US-89 | As the owner, if a key is rejected I want the app to notice, not to ship the watermark and wait for someone to spot it. | ✅ | One probe of an open-ocean tile (z5/13/19, South Atlantic gyre) at load. Stubbed both ways: **clean flat-water tile → stays on CARTO** (tiles on, ground off, 0 labels); **stamped tile → falls back** (tile layer removed, ground on, 31 labels drawn). 2/2. |
+| US-90 | As a tester, I never want to be the one who discovers the watermark. | ✅ | The fallback now engages on a rejected key without anyone looking, and the console says the key is being rejected rather than staying silent. |
+| US-91 | As the owner, I don't want a watermark check that costs anything on a working setup. | ✅ | One request, off the render loop, and **none at all when no key is set** — the keyless "0 requests to any tile host" assertion still passes. Not the per-tile readback that was rejected as disproportionate in 015; that judgement was about the wrong shape of fix. |
+| US-92 | As the owner, I don't want the checker itself to break the map if it goes wrong. | ✅ | A tainted or undecodable probe returns silently and leaves the basemap alone; a probe that fails to load does nothing, because a hard failure is already `tileerror`'s job. False positives are guarded by a generous threshold over ocean, and would in any case fail *safe* — to the built-in map, never to a watermark. |
+
+**34/34** across the three suites, unchanged, plus the 2/2 above.
+
+**What I got wrong, recorded so it isn't repeated:** I identified this failure mode in 015's
+research, wrote it down, and argued it wasn't worth guarding because "the owner can see and fix it
+in one edit." That assumed someone would be watching the minute it deployed. The correct read was
+that a failure which silently restores the original defect is exactly the one worth catching,
+however rare it looks.

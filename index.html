@@ -795,6 +795,46 @@ if(!BASEMAP_KEY)console.info('[atlas] No basemap key set — drawing the built-i
 // A key that is revoked, expired, over quota, or a host that is simply unreachable, answers
 // with an error rather than a tile. Drop to the silhouette instead of leaving a grey void.
 // (A host that answers 200 with a watermarked image cannot be caught here — see docs/basemap.md.)
+// A REJECTED key is the one failure CARTO does not signal. It answers with 200 and a tile that
+// has "API KEY REQUIRED" stamped across it — real street detail, just branded — so tileerror
+// never fires and the watermark ships. That is not hypothetical: it happened live on 2026-09-04
+// and put the original defect straight back in front of beta testers.
+//
+// Catch it by probing a single tile of open ocean: the South Atlantic gyre, thousands of km from
+// any coastline, where a genuine Positron tile is flat water. Flat water has almost no luminance
+// range; stamped dark text has a lot. One extra request, off the render path, only when a key is
+// actually set.
+const WM_PROBE='https://a.basemaps.cartocdn.com/light_all/5/13/19.png'
+  +(BASEMAP_KEY?'?api_key='+BASEMAP_KEY:'');
+const WM_SPREAD=40;   // luminance range flat water cannot reach but stamped text always does
+function probeBasemapWatermark(){
+  if(!baseTiles)return;                      // keyless: nothing is requested, nothing to probe
+  const img=new Image();img.crossOrigin='anonymous';
+  img.onload=()=>{
+    let spread=0;
+    try{
+      const c=document.createElement('canvas');c.width=img.width;c.height=img.height;
+      const cx=c.getContext('2d');cx.drawImage(img,0,0);
+      const d=cx.getImageData(0,0,c.width,c.height).data;
+      let min=255,max=0;
+      for(let i=0;i<d.length;i+=4*7){
+        const l=(d[i]*299+d[i+1]*587+d[i+2]*114)/1000;
+        if(l<min)min=l;if(l>max)max=l;}
+      spread=max-min;
+    }catch(e){return;}   // tainted or undecodable — say nothing rather than guess wrong
+    if(spread>WM_SPREAD){
+      console.error('[atlas] The CARTO key is NOT being accepted — tiles are coming back '
+        +'stamped "API KEY REQUIRED". CARTO answers a bad key with a watermarked image rather '
+        +'than an error, so nothing else catches this. Falling back to the built-in map. '
+        +'Check BASEMAP_KEY in index.html. See docs/basemap.md.');
+      if(map.hasLayer(baseTiles))map.removeLayer(baseTiles);
+      useLand(true);
+    }
+  };
+  img.onerror=()=>{};   // a hard failure is already the tileerror path's job
+  img.src=WM_PROBE;
+}
+probeBasemapWatermark();
 if(baseTiles)baseTiles.once('tileerror',()=>{
   console.warn('[atlas] CARTO tiles failed to load — falling back to the built-in silhouette. '
     +'Check the BASEMAP_KEY in index.html, or the network. See docs/basemap.md.');
