@@ -76,9 +76,18 @@ without sampling pixels… rejected as disproportionate." That judgement was wro
 hypothetical, it is what CARTO actually does for any key it does not accept, and the cost of
 missing it is shipping the original defect to testers with no signal at all.
 
-The lesson for anyone setting a key here: **a key that is present is not a key that works, and the
-app cannot tell you the difference from the status code alone.** Load the live site and look
-before you trust it.
+**This is now detected.** At load, when and only when a key is set, the app fetches one tile of
+open ocean — the South Atlantic gyre, thousands of km from any coastline — where a genuine
+Positron tile is flat water. Flat water has almost no luminance range; a stamped tile has a lot.
+If the probe sees a stamp, the app drops the tile layer and falls back to the built-in map, and
+logs an error saying the key is being rejected.
+
+One extra request, off the render loop, none at all when there is no key. It also covers the two
+cases that will eventually matter on a key that *did* work: expiry and quota exhaustion, both of
+which CARTO may express the same watermarked way.
+
+Still true, and worth keeping in mind: **a key that is present is not a key that works.** The app
+will now catch it and say so, but load the live site and look anyway.
 
 ## Getting the streets back
 
