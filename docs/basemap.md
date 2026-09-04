@@ -4,12 +4,20 @@ The atlas has two basemaps, and `BASEMAP_KEY` decides which one you get.
 
 | `BASEMAP_KEY` | What renders | Street detail |
 |---|---|---|
-| empty (today) | the built-in Singapore map — coastline, road network, town + street names | names, but no buildings or minor roads |
-| a valid CARTO key | CARTO Positron, as originally designed | yes |
+| **a valid CARTO key — set 2026-09-04** | CARTO Positron, as originally designed | yes |
+| empty | the built-in Singapore map — coastline, road network, town + street names | names, but no buildings or minor roads |
 
-**A key was set on 2026-09-04 and reverted the same day: CARTO rejected it and answered with
-watermarked tiles.** See "When a key is rejected" below — that failure mode is the one this page
-had already flagged as undetectable, and it put the watermark straight back in front of testers.
+## The parameter is `key=`, not `api_key=`
+
+Worth its own heading because it cost a live regression and looked exactly like a bad key.
+
+This file sent `?api_key=` from the day it was written, and nobody noticed because no key was ever
+set to exercise it. **CARTO does not reject an unrecognised parameter — it ignores it, treats the
+request as unkeyed, and returns a tile stamped `API KEY REQUIRED` with a 200.** So a perfectly
+valid key looked rejected, and the watermark went live. The key from CARTO's email was correct all
+along; only the parameter name was wrong.
+
+Do not "tidy" it back to `api_key=`.
 
 Spec: [`specs/015-basemap-watermark/`](../specs/015-basemap-watermark/spec.md)
 
@@ -91,7 +99,8 @@ will now catch it and say so, but load the live site and look anyway.
 
 ## Getting the streets back
 
-**Done — a key is set.** For the record, and for whoever has to replace it:
+**Done — a key is set**, and the tile URL uses `?key=` (see the heading above; this is the part
+that went wrong the first time). For the record, and for whoever has to replace it:
 
 **You do not need a CARTO account.** Request a key at
 [carto.com/basemaps/apikey](https://carto.com/basemaps/apikey) — anyone can, commercial use
@@ -117,6 +126,16 @@ you restrict it by domain rather than by secrecy. It belongs in `index.html`.
 
 The Cloudflare API token in `docs/access-setup.md` is the opposite: a real secret that grants
 account access, read from the environment, never committed. Do not treat the two the same way.
+
+## Two things CARTO's own email flags
+
+- **Raster is being retired.** CARTO are steering people to vector basemaps: sharper at any zoom,
+  fresher data, restyleable. This atlas is raster because vector means MapLibre and rewriting the
+  canvas export behind the JPG and deck — a rebuild, not a basemap change. That trade is still
+  right today, but the clock is running, and when raster goes the built-in map from 015/016 is
+  what stops that being an outage.
+- **Attribution must stay visible.** The free tier is in exchange for keeping the CARTO and
+  OpenStreetMap credit on the map. It is on the map (bottom right) and in every export.
 
 ## Why CARTO rather than another keyed or keyless source
 
