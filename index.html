@@ -773,7 +773,13 @@ L.control.scale({position:'bottomright',imperial:false,maxWidth:120}).addTo(map)
 // The key is PUBLISHABLE, client-side and domain-restrictable — the same category as a Google
 // Maps JS key, not a secret. It belongs in this file. Free at carto.com (5M tiles/month; a
 // gated tool for ~50 sellers will not come close).
-const BASEMAP_KEY='';   // <-- paste the CARTO API key here
+//
+// The parameter is `key=`, NOT `api_key=`. This file said api_key from the day it was written
+// and nobody noticed, because no key was ever set to exercise it. CARTO does not reject an
+// unrecognised parameter — it ignores it, treats the request as unkeyed, and returns a tile
+// stamped "API KEY REQUIRED" with a 200. On 2026-09-04 that put the watermark on the live site
+// with a perfectly valid key in place. Do not "tidy" this back to api_key.
+const BASEMAP_KEY='cb1_2w12_1_e89c356818f56b51c068841f';   // <-- paste the CARTO API key here
 // Positron-like ground for the keyless fallback. Land stays near-white so the route palette,
 // the choropleth ramps and the density surface all keep their contrast over it; water is a
 // touch bluer than the land so the coastline reads at island zoom. GROUND.water is the same
@@ -785,7 +791,7 @@ let landWanted=!BASEMAP_KEY;
 // null when no key is set — that is what stops a watermarked tile ever being requested.
 // Everything touching baseTiles must therefore null-check it (see tilesReady).
 const baseTiles=BASEMAP_KEY?L.tileLayer(
-  'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?api_key='+BASEMAP_KEY,{
+  'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key='+BASEMAP_KEY,{
   attribution:'&copy; OpenStreetMap contributors &copy; CARTO',maxZoom:19,
   crossOrigin:'anonymous'}).addTo(map):null;   // crossOrigin enables canvas export of the basemap
 if(!BASEMAP_KEY)console.info('[atlas] No basemap key set — drawing the built-in Singapore '
@@ -805,7 +811,7 @@ if(!BASEMAP_KEY)console.info('[atlas] No basemap key set — drawing the built-i
 // range; stamped dark text has a lot. One extra request, off the render path, only when a key is
 // actually set.
 const WM_PROBE='https://a.basemaps.cartocdn.com/light_all/5/13/19.png'
-  +(BASEMAP_KEY?'?api_key='+BASEMAP_KEY:'');
+  +(BASEMAP_KEY?'?key='+BASEMAP_KEY:'');
 const WM_SPREAD=40;   // luminance range flat water cannot reach but stamped text always does
 function probeBasemapWatermark(){
   if(!baseTiles)return;                      // keyless: nothing is requested, nothing to probe

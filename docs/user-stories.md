@@ -378,3 +378,30 @@ research, wrote it down, and argued it wasn't worth guarding because "the owner 
 in one edit." That assumed someone would be watching the minute it deployed. The correct read was
 that a failure which silently restores the original defect is exactly the one worth catching,
 however rare it looks.
+
+### Follow-up (2026-09-04): the key was fine — the parameter name was wrong
+
+Read CARTO's own email. The key they issued is character-for-character the one that was set and
+reverted: `cb1_2w12_…`. It was never rejected. **The tile URL sent `?api_key=`; CARTO's parameter
+is `?key=`.**
+
+CARTO does not error on an unrecognised parameter. It ignores it, treats the request as unkeyed,
+and returns a watermarked tile with a 200 — which is exactly what a rejected key looks like. So a
+valid key and a wrong parameter name are indistinguishable from the outside, and the diagnosis in
+the previous entry ("the key is not accepted") was wrong about the cause while right about the
+symptom.
+
+`?api_key=` had been in `index.html` since long before this work. It was never exercised, because
+a key was never set. The first time anyone set one, it failed — and looked like the key's fault.
+
+| # | Story | Status | Check |
+|---|-------|--------|-------|
+| US-93 | As the owner, I want the key I was issued to actually work. | ✅ | Parameter corrected to `?key=` in both the tile layer and the watermark probe. Every request verified: `…/light_all/{z}/{x}/{y}.png?key=cb1_2w12_…`, zero occurrences of `api_key` anywhere. Tiles load, ground off, 0 built-in labels, CARTO attribution. |
+| US-94 | As the next person touching this file, I want to not make the same mistake. | ✅ | The code comment beside the URL says the parameter is `key=` not `api_key=`, explains that CARTO answers the wrong name with a watermarked 200 rather than an error, and says not to tidy it back. `docs/basemap.md` gives it its own heading. The suite now asserts `?key=` **and** asserts `api_key` is absent, so a regression fails a test instead of a deploy. |
+| US-95 | As the owner, I want the guard to have been worth building. | ✅ | It was: with the probe from US-89 in place, this exact failure would have fallen back to the built-in map automatically instead of showing testers a watermark. Both are now live together. |
+
+**36/36** — the three suites (14 + 9 + 11) plus the 2 watermark-detection cases.
+
+**Honest note on the diagnosis.** I told the user their key had been rejected and suggested they
+check whether they had pasted the right string. They had. The fault was in this repository, in a
+line that predates the whole basemap effort, and reading the email would have found it in a minute.
